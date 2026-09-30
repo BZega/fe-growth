@@ -297,7 +297,9 @@
 
 .grid {
   display: grid;
-  grid-template-columns: 4.5rem repeat(var(--stat-count), minmax(0, 1fr));
+  grid-template-columns:
+    var(--label-col, 4.5rem)
+    repeat(var(--stat-count), minmax(var(--cell-min, 0px), 1fr));
   gap: 0.2rem;
 }
 
@@ -620,5 +622,144 @@
   display: flex;
   gap: 0.35rem;
   flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 1rem 0.6rem 0;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+
+    h1 {
+      font-size: 1.35rem;
+    }
+
+    p {
+      font-size: 0.85rem;
+    }
+  }
+
+  .page-header__actions {
+    flex-wrap: wrap;
+  }
+
+  .seed {
+    padding: 0.6rem;
+  }
+
+  .seed__header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    h2 {
+      font-size: 1rem;
+    }
+  }
+
+  // Give the unit select its own full-width row inside the wrapped header.
+  .picker--inline {
+    flex: 1 1 100%;
+
+    select {
+      flex: 1;
+      min-width: 0;
+      width: 100%;
+    }
+  }
+
+  .blocks {
+    gap: 0.6rem;
+  }
+
+  .block {
+    padding: 0.5rem;
+  }
+
+  // Safety net for anything narrower than the layout was tuned for.
+  .block,
+  .rng {
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .grid {
+    --label-col: 2.9rem;
+
+    gap: 0.15rem;
+  }
+
+  .grid__head {
+    font-size: 0.55rem;
+    letter-spacing: 0;
+  }
+
+  .grid__label {
+    font-size: 0.6rem;
+    gap: 0;
+  }
+
+  .grid__growth {
+    font-size: 0.6rem;
+  }
+
+  .roll {
+    font-size: 0.55rem;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+    padding: 0.35rem 0.05rem;
+  }
+
+  .cell {
+    font-size: 0.8rem;
+    padding: 0.45rem 0;
+  }
+
+  .level-input {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.1rem;
+  }
+
+  .saves {
+    padding: 0.75rem;
+  }
+
+  .saves__actions {
+    width: 100%;
+
+    .ghost-button {
+      flex: 1 1 auto;
+    }
+  }
+
+  .save-name {
+    flex: 1 1 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .confirm__buttons {
+    flex: 1 1 auto;
+
+    .ghost-button {
+      flex: 1 1 auto;
+    }
+  }
+
+  .save-list__load {
+    flex: 1 1 100%;
+  }
+
+  .save-list__tools {
+    width: 100%;
+
+    .ghost-button {
+      flex: 1 1 auto;
+    }
+  }
 }
 

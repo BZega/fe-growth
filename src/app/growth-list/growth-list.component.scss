@@ -134,6 +134,13 @@ thead .list__total {
   text-transform: uppercase;
 }
 
+// The cell spans the whole table, so the text pins itself while the table pans.
+.group__label {
+  position: sticky;
+  left: 0;
+  display: inline-block;
+}
+
 .group__count {
   margin-left: 0.5rem;
   opacity: 0.55;
@@ -169,4 +176,46 @@ thead .list__total {
 .tier-worst {
   color: #ff8d8d;
   font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .list {
+    font-size: 0.7rem;
+    white-space: normal;
+
+    th,
+    td {
+      padding: 0.25rem 0.2rem;
+    }
+  }
+
+  // The column headings already say these are percentages.
+  .unit {
+    display: none;
+  }
+
+  .list__name {
+    width: auto;
+    max-width: 7rem;
+    padding-right: 0.3rem;
+    font-size: 0.72rem;
+    overflow-wrap: anywhere;
+  }
+
+  // Stacking the arrow keeps each column as narrow as its label.
+  .sort {
+    flex-direction: column;
+    gap: 0;
+    padding: 0.3rem 0.1rem;
+    font-size: 0.62rem;
+    white-space: normal;
+
+    &--left {
+      align-items: flex-start;
+    }
+  }
+
+  .sort__arrow {
+    font-size: 0.85em;
+  }
 }

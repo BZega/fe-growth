@@ -222,3 +222,54 @@
   color: #b00020;
   font-weight: 700;
 }
+
+@media (max-width: 720px) {
+  .calculator {
+    padding: 0.75rem;
+  }
+
+  .calculator__header {
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+
+    h2 {
+      font-size: 1rem;
+    }
+  }
+
+  .pickers {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .growth {
+    font-size: 0.62rem;
+
+    th,
+    td {
+      padding: 0.2rem 0.1rem;
+    }
+
+    .growth__corner {
+      width: 21%;
+    }
+
+    .growth__total-head {
+      width: 12%;
+    }
+  }
+
+  .band__name {
+    font-size: 0.62rem;
+    overflow-wrap: anywhere;
+  }
+
+  .band__caption {
+    font-size: 0.62rem;
+  }
+
+  .band--grand .band__total--grand {
+    font-size: 0.8rem;
+  }
+}

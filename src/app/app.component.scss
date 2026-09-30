@@ -23,6 +23,7 @@ main {
 
 .topnav {
   flex: none;
+  position: relative;
   display: flex;
   align-items: center;
   gap: 1.5rem;
@@ -39,6 +40,30 @@ main {
   text-transform: uppercase;
   text-decoration: none;
   font-size: 0.95rem;
+  margin-right: auto;
+}
+
+.topnav__toggle {
+  display: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: currentColor;
+  }
+
+  &:hover {
+    background: rgb(255 255 255 / 8%);
+  }
 }
 
 .topnav__links {
@@ -72,9 +97,38 @@ main {
   }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 720px) {
   .topnav {
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .topnav__toggle {
+    display: grid;
+  }
+
+  // Drops out of flow so the bar keeps its height while the menu is open.
+  .topnav__links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.15rem;
+    padding: 0.5rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--panel-border);
+    box-shadow: 0 12px 24px rgb(0 0 0 / 45%);
+
+    &.is-open {
+      display: flex;
+    }
+
+    a {
+      padding: 0.65rem 0.75rem;
+      font-size: 0.95rem;
+    }
   }
 }

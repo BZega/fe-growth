@@ -33,8 +33,10 @@
           @if (group.key) {
             <tr class="group">
               <th scope="colgroup" [attr.colspan]="columnCount()">
-                {{ group.key }}
-                <span class="group__count">{{ group.rows.length }}</span>
+                <span class="group__label">
+                  {{ group.key }}
+                  <span class="group__count">{{ group.rows.length }}</span>
+                </span>
               </th>
             </tr>
           }
@@ -43,9 +45,11 @@
             <tr>
               <th scope="row" class="list__name">{{ row.name }}</th>
               @for (stat of statKeys; track stat) {
-                <td [class]="cellClass(row.growth[stat])">{{ row.growth[stat] }}%</td>
+                <td [class]="cellClass(row.growth[stat])">
+                  {{ row.growth[stat] }}<span class="unit">%</span>
+                </td>
               }
-              <td class="list__total">{{ row.total }}%</td>
+              <td class="list__total">{{ row.total }}<span class="unit">%</span></td>
             </tr>
           }
         </tbody>

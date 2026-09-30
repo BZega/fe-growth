@@ -31,3 +31,21 @@ app-growth-list {
   flex: 1;
   min-height: 0;
 }
+
+@media (max-width: 720px) {
+  :host {
+    padding: 1rem 0.75rem 0;
+  }
+
+  .browse-header {
+    margin-bottom: 0.9rem;
+
+    h1 {
+      font-size: 1.35rem;
+    }
+
+    p {
+      font-size: 0.85rem;
+    }
+  }
+}

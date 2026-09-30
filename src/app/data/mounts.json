@@ -361,21 +361,6 @@
   },
   {
     "id": 20,
-    "name": "Wild Elephant",
-    "type": "Elephant",
-    "hp": 0,
-    "str": 0,
-    "mag": 0,
-    "spd": 0,
-    "dex": 0,
-    "def": 0,
-    "res": 0,
-    "lck": 0,
-    "cha": 0,
-    "total": 0
-  },
-  {
-    "id": 21,
     "name": "Saramis War Elephant",
     "type": "Elephant",
     "hp": 5,
@@ -390,7 +375,7 @@
     "total": 25
   },
   {
-    "id": 22,
+    "id": 21,
     "name": "None",
     "type": "None",
     "hp": 0,

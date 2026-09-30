@@ -176,7 +176,36 @@
 }
 
 @media (max-width: 640px) {
+  :host {
+    padding: 0.75rem;
+  }
+
+  .dialog {
+    padding: 1rem;
+  }
+
+  .dialog__header h2 {
+    font-size: 1.1rem;
+  }
+
   .summary {
     grid-template-columns: 1fr;
+  }
+
+  .compare {
+    font-size: 0.8rem;
+
+    th,
+    td {
+      padding: 0.35rem 0.3rem;
+    }
+  }
+
+  .dialog__footer {
+    margin-top: 1rem;
+  }
+
+  .dialog__dismiss {
+    width: 100%;
   }
 }

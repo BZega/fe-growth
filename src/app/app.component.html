@@ -1,10 +1,37 @@
 <nav class="topnav">
-  <a class="topnav__brand" routerLink="/calculator">FE Growths</a>
+  <a class="topnav__brand" routerLink="/calculator" (click)="closeMenu()">
+    FE Growths
+  </a>
 
-  <ul class="topnav__links">
+  <button
+    type="button"
+    class="topnav__toggle"
+    aria-label="Toggle navigation"
+    aria-controls="topnav-links"
+    [attr.aria-expanded]="menuOpen()"
+    (click)="toggleMenu()"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      @if (menuOpen()) {
+        <path
+          d="M6.4 4.9 4.9 6.4 10.6 12l-5.7 5.6 1.5 1.5L12 13.4l5.6 5.7 1.5-1.5-5.7-5.6 5.7-5.6-1.5-1.5L12 10.6 6.4 4.9Z"
+        />
+      } @else {
+        <path d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z" />
+      }
+    </svg>
+  </button>
+
+  <ul id="topnav-links" class="topnav__links" [class.is-open]="menuOpen()">
     @for (link of links; track link.path) {
       <li>
-        <a [routerLink]="link.path" routerLinkActive="is-active">{{ link.label }}</a>
+        <a
+          [routerLink]="link.path"
+          routerLinkActive="is-active"
+          (click)="closeMenu()"
+        >
+          {{ link.label }}
+        </a>
       </li>
     }
   </ul>

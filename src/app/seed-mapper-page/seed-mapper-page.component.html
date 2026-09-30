@@ -1,0 +1,502 @@
+<header class="page-header">
+  <div>
+    <h1>Seed Mapper</h1>
+    <p>
+      Mark which stats rose on each level up. Add a comparator to run the same
+      levels through a different class of the same rank — the differing growth
+      rates narrow down the seed's underlying roll.
+    </p>
+  </div>
+
+  <div class="page-header__actions">
+    @let active = loadedSave();
+
+    @if (changeCount() > 0) {
+      <span class="dirty" title="Unsaved changes">
+        {{ changeCount() }} unsaved
+        {{ changeCount() === 1 ? 'change' : 'changes' }}
+      </span>
+    } @else if (active) {
+      <span class="saved">Saved — {{ active.name }}</span>
+    }
+
+    <button
+      type="button"
+      class="ghost-button"
+      [disabled]="!canAddSeed()"
+      (click)="addSeed()"
+    >
+      Add seed
+    </button>
+  </div>
+</header>
+
+<div class="seeds">
+  @for (seed of seeds(); track seed.id; let seedIndex = $index) {
+    @let seedName = 'Seed ' + (seedIndex + 1);
+
+    <div
+      class="seed-group"
+      [class.seed-group--compact]="seed.comparators.length === 0"
+    >
+      <section class="seed">
+        <header class="seed__header">
+          <h2>{{ seedName }}</h2>
+
+          <label class="picker picker--inline">
+            <select
+              aria-label="Unit"
+              [value]="seed.unitId ?? ''"
+              (change)="onUnitChange(seed, $event)"
+            >
+              <option value="">— Select a unit —</option>
+              @for (unit of units(); track unit.id) {
+                <option [value]="unit.id" [selected]="unit.id === seed.unitId">
+                  {{ unit.name }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <button
+            type="button"
+            class="ghost-button"
+            [disabled]="!canAddComparator(seed)"
+            (click)="addComparator(seed)"
+          >
+            Add comparator
+          </button>
+
+          <button
+            type="button"
+            class="icon icon--danger"
+            title="Remove this seed"
+            aria-label="Remove this seed"
+            [disabled]="seeds().length <= 1"
+            (click)="remove(seed)"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm4 2v8h2v-8h-2Zm4 0v8h2v-8h-2Z"
+              />
+            </svg>
+          </button>
+        </header>
+
+        <div class="blocks">
+          <article class="block">
+            <header class="block__header">
+              <h3>{{ seedName }}</h3>
+              <span class="tag">Base</span>
+            </header>
+
+            <div class="pickers">
+              <label class="picker">
+                <span class="picker__label">Class</span>
+                <select
+                  [value]="seed.classId ?? ''"
+                  (change)="onClassChange(seed, $event)"
+                >
+                  <option value="">— Select a class —</option>
+                  @for (group of classGroups(); track group.rank) {
+                    <optgroup [label]="group.rank">
+                      @for (unitClass of group.classes; track unitClass.id) {
+                        <option
+                          [value]="unitClass.id"
+                          [selected]="unitClass.id === seed.classId"
+                        >
+                          {{ unitClass.name }}
+                        </option>
+                      }
+                    </optgroup>
+                  }
+                </select>
+              </label>
+
+              @if (mountsForClass(seed.classId).length > 0) {
+                <label class="picker">
+                  <span class="picker__label">Mount</span>
+                  <select
+                    [value]="mountOf(seed)?.id ?? ''"
+                    (change)="onMountChange(seed, $event)"
+                  >
+                    @for (
+                      option of mountsForClass(seed.classId);
+                      track option.id
+                    ) {
+                      <option
+                        [value]="option.id"
+                        [selected]="option.id === mountOf(seed)?.id"
+                      >
+                        {{ option.name }}
+                      </option>
+                    }
+                  </select>
+                </label>
+              }
+            </div>
+
+            @let growth = growthOf(seed);
+
+            <div class="grid" [style.--stat-count]="statKeys.length">
+              <div class="grid__corner"></div>
+              @for (stat of statKeys; track stat) {
+                <div class="grid__head">{{ statLabels[stat] }}</div>
+              }
+
+              <div class="grid__label">Growth</div>
+              @for (stat of statKeys; track stat) {
+                <div class="grid__growth" [class.negative]="growth[stat] < 0">
+                  {{ growth[stat] }}%
+                </div>
+              }
+
+              @for (row of seed.rows; track row.id; let rowIndex = $index) {
+                <div class="grid__label">
+                  @if (rowIndex === 0) {
+                    <input
+                      class="level-input"
+                      type="number"
+                      inputmode="numeric"
+                      [min]="minLevel"
+                      [max]="maxLevel"
+                      placeholder="Lv"
+                      aria-label="Starting level"
+                      [value]="seed.startLevel ?? ''"
+                      (change)="onLevelChange(seed, $event)"
+                    />
+                  } @else {
+                    <span class="level">Lv {{ levelOf(seed, rowIndex) }}</span>
+                    <button
+                      type="button"
+                      class="level__remove"
+                      title="Remove this level"
+                      aria-label="Remove this level"
+                      (click)="removeLevel(seed, row)"
+                    >
+                      &times;
+                    </button>
+                  }
+                </div>
+
+                @for (stat of statKeys; track stat) {
+                  <button
+                    type="button"
+                    class="cell"
+                    [class.cell--on]="row.marks[stat] > 0"
+                    (click)="toggleStat(seed, row, stat)"
+                  >
+                    {{ row.marks[stat] }}
+                  </button>
+                }
+              }
+            </div>
+          </article>
+
+          @for (
+            comparator of seed.comparators;
+            track comparator.id;
+            let comparatorIndex = $index
+          ) {
+            @let options = comparatorClasses(seed, comparator);
+
+            <article class="block block--comparator">
+              <header class="block__header">
+                <h3>{{ seedName }}</h3>
+                <span class="tag">Comparator {{ comparatorIndex + 1 }}</span>
+                <button
+                  type="button"
+                  class="icon icon--danger"
+                  title="Remove this comparator"
+                  aria-label="Remove this comparator"
+                  (click)="removeComparator(seed, comparator)"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm4 2v8h2v-8h-2Zm4 0v8h2v-8h-2Z"
+                    />
+                  </svg>
+                </button>
+              </header>
+
+              <div class="pickers">
+                <label class="picker">
+                  <span class="picker__label">Class</span>
+                  <select
+                    [value]="comparator.classId ?? ''"
+                    [disabled]="options.length === 0"
+                    (change)="onComparatorClassChange(seed, comparator, $event)"
+                  >
+                    <option value="">— Select a class —</option>
+                    @for (unitClass of options; track unitClass.id) {
+                      <option
+                        [value]="unitClass.id"
+                        [selected]="unitClass.id === comparator.classId"
+                      >
+                        {{ unitClass.name }}
+                      </option>
+                    }
+                  </select>
+                </label>
+
+                @if (mountsForClass(comparator.classId).length > 0) {
+                  <label class="picker">
+                    <span class="picker__label">Mount</span>
+                    <select
+                      [value]="comparatorMountOf(comparator)?.id ?? ''"
+                      (change)="onComparatorMountChange(seed, comparator, $event)"
+                    >
+                      @for (
+                        option of mountsForClass(comparator.classId);
+                        track option.id
+                      ) {
+                        <option
+                          [value]="option.id"
+                          [selected]="
+                            option.id === comparatorMountOf(comparator)?.id
+                          "
+                        >
+                          {{ option.name }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+                }
+              </div>
+
+              @let comparatorGrowths = comparatorGrowth(seed, comparator);
+
+              <div class="grid" [style.--stat-count]="statKeys.length">
+                <div class="grid__corner"></div>
+                @for (stat of statKeys; track stat) {
+                  <div class="grid__head">{{ statLabels[stat] }}</div>
+                }
+
+                <div class="grid__label">Growth</div>
+                @for (stat of statKeys; track stat) {
+                  <div
+                    class="grid__growth"
+                    [class.negative]="comparatorGrowths[stat] < 0"
+                  >
+                    {{ comparatorGrowths[stat] }}%
+                  </div>
+                }
+
+                @for (
+                  row of comparator.rows;
+                  track row.id;
+                  let rowIndex = $index
+                ) {
+                  <div class="grid__label">
+                    <span class="level">Lv {{ levelOf(seed, rowIndex) }}</span>
+                  </div>
+
+                  @for (stat of statKeys; track stat) {
+                    <button
+                      type="button"
+                      class="cell"
+                      [class.cell--on]="row.marks[stat] > 0"
+                      (click)="toggleComparatorStat(seed, comparator, row, stat)"
+                    >
+                      {{ row.marks[stat] }}
+                    </button>
+                  }
+                }
+              </div>
+            </article>
+          }
+        </div>
+
+        @if (hasComparison(seed)) {
+          <div class="rng">
+            <h3 class="rng__title">Seed RNG</h3>
+
+            <div class="grid" [style.--stat-count]="statKeys.length">
+              <div class="grid__corner"></div>
+              @for (stat of statKeys; track stat) {
+                <div class="grid__head">{{ statLabels[stat] }}</div>
+              }
+
+              @for (row of seed.rows; track row.id; let rowIndex = $index) {
+                @let rolls = rollsFor(seed, rowIndex);
+
+                <div class="grid__label">
+                  <span class="level">Lv {{ levelOf(seed, rowIndex) }}</span>
+                </div>
+
+                @for (stat of statKeys; track stat; let statIndex = $index) {
+                  <div class="roll" [class]="'roll roll--' + rolls[statIndex].state">
+                    {{ rolls[statIndex].text }}
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        }
+
+        <footer class="seed__footer">
+          <button
+            type="button"
+            class="icon"
+            title="Add the next level"
+            aria-label="Add the next level"
+            (click)="addLevel(seed)"
+          >
+            +
+          </button>
+        </footer>
+      </section>
+    </div>
+  }
+
+  <section class="saves">
+    <header class="saves__header">
+      <h2>Saves</h2>
+
+      <div class="saves__actions">
+        <button
+          type="button"
+          class="ghost-button"
+          [disabled]="!canReset()"
+          (click)="requestReset()"
+        >
+          New seed map
+        </button>
+        <input
+          class="save-name"
+          type="text"
+          aria-label="Save name"
+          [placeholder]="defaultSaveName()"
+          [value]="saveName()"
+          (input)="saveName.set($any($event.target).value)"
+          (keydown.enter)="saveToList()"
+        />
+        <button type="button" class="ghost-button" (click)="saveToList()">
+          Save to browser
+        </button>
+        <button type="button" class="ghost-button" (click)="download()">
+          Download JSON
+        </button>
+        <button type="button" class="ghost-button" (click)="uploadInput.click()">
+          Upload JSON
+        </button>
+        <input
+          #uploadInput
+          type="file"
+          accept="application/json,.json"
+          hidden
+          (change)="onUpload($event)"
+        />
+      </div>
+    </header>
+
+    @if (visibleProblems().length > 0) {
+      <div class="problems">
+        <p class="problems__title">Fix these before saving:</p>
+        <ul>
+          @for (problem of visibleProblems(); track problem) {
+            <li>{{ problem }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    @if (pending(); as action) {
+      <div class="confirm" role="alertdialog">
+        <span>{{ action.message }}</span>
+        <div class="confirm__buttons">
+          <button type="button" class="ghost-button" (click)="confirmPending()">
+            Yes, continue
+          </button>
+          <button type="button" class="ghost-button" (click)="cancelPending()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (status(); as message) {
+      <p class="saves__status">{{ message }}</p>
+    }
+
+    @if (saves().length === 0) {
+      <p class="saves__empty">
+        No saves yet. “Save to browser” keeps a copy in this browser; “Download
+        JSON” gives you a file you can keep or share.
+      </p>
+    } @else {
+      <ul class="save-list">
+        @for (save of saves(); track save.id) {
+          <li
+            class="save-list__item"
+            [class.save-list__item--active]="loadedSave()?.id === save.id"
+          >
+            @if (renamingId() === save.id) {
+              <input
+                class="save-name save-name--inline"
+                type="text"
+                aria-label="New name"
+                [value]="renameValue()"
+                (input)="renameValue.set($any($event.target).value)"
+                (keydown.enter)="commitRename()"
+                (keydown.escape)="cancelRename()"
+              />
+              <div class="save-list__tools">
+                <button type="button" class="ghost-button" (click)="commitRename()">
+                  Save name
+                </button>
+                <button type="button" class="ghost-button" (click)="cancelRename()">
+                  Cancel
+                </button>
+              </div>
+            } @else {
+              <button
+                type="button"
+                class="save-list__load"
+                (click)="requestLoad(save)"
+              >
+                <span class="save-list__name">{{ save.name }}</span>
+                <span class="save-list__meta">
+                  {{ save.seeds.length }}
+                  {{ save.seeds.length === 1 ? 'seed' : 'seeds' }} ·
+                  {{ save.savedAt | date: 'medium' }}
+                </span>
+              </button>
+
+              <div class="save-list__tools">
+                <button
+                  type="button"
+                  class="ghost-button"
+                  (click)="requestOverwrite(save)"
+                >
+                  Overwrite
+                </button>
+                <button
+                  type="button"
+                  class="ghost-button"
+                  (click)="startRename(save)"
+                >
+                  Rename
+                </button>
+                <button
+                  type="button"
+                  class="ghost-button"
+                  (click)="downloadSave(save)"
+                >
+                  Download
+                </button>
+                <button
+                  type="button"
+                  class="ghost-button ghost-button--danger"
+                  (click)="requestDelete(save)"
+                >
+                  Delete
+                </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>

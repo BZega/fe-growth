@@ -1,0 +1,148 @@
+@let current = build();
+
+<section class="calculator">
+  <header class="calculator__header">
+    <h2>{{ heading() }}</h2>
+    <div class="calculator__actions">
+      <button type="button" class="reset" (click)="reset()">Reset</button>
+      <button
+        type="button"
+        class="icon icon--danger"
+        title="Remove this calculator"
+        aria-label="Remove this calculator"
+        [disabled]="!canRemove()"
+        (click)="removeRequested.emit()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm4 2v8h2v-8h-2Zm4 0v8h2v-8h-2Z"
+          />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="pickers">
+    <label class="picker">
+      <span class="picker__label">Unit</span>
+      <select [value]="selectedUnitId() ?? ''" (change)="onUnitChange($event)">
+        <option value="">— Select a unit —</option>
+        @for (unit of units(); track unit.id) {
+          <option [value]="unit.id" [selected]="unit.id === selectedUnitId()">
+            {{ unit.name }}
+          </option>
+        }
+      </select>
+    </label>
+
+    <label class="picker">
+      <span class="picker__label">Class</span>
+      <select [value]="selectedClassId() ?? ''" (change)="onClassChange($event)">
+        <option value="">— Select a class —</option>
+        @for (group of classGroups(); track group.rank) {
+          <optgroup [label]="group.rank">
+            @for (unitClass of group.classes; track unitClass.id) {
+              <option
+                [value]="unitClass.id"
+                [selected]="unitClass.id === selectedClassId()"
+              >
+                {{ unitClass.name }}
+              </option>
+            }
+          </optgroup>
+        }
+      </select>
+    </label>
+
+    @if (isMounted()) {
+      <label class="picker picker--mount">
+        <span class="picker__label">Mount ({{ mountType() }})</span>
+        <select [value]="mount()?.id ?? ''" (change)="onMountChange($event)">
+          @for (option of mountOptions(); track option.id) {
+            <option [value]="option.id" [selected]="option.id === mount()?.id">
+              {{ option.name }}
+            </option>
+          }
+        </select>
+      </label>
+    } @else {
+      <p class="picker picker--empty">This class is unmounted.</p>
+    }
+  </div>
+
+  <table class="growth">
+    <thead>
+      <tr>
+        <th class="growth__corner"></th>
+        @for (stat of statKeys; track stat) {
+          <th scope="col">{{ statLabels[stat] }}</th>
+        }
+        <th scope="col" class="growth__total-head">Total</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr class="band band--unit">
+        <th scope="rowgroup" rowspan="2" class="band__name">
+          {{ current.unit?.name ?? 'No unit' }}
+        </th>
+        <td class="band__caption" [attr.colspan]="statKeys.length">Unit Selection</td>
+        <td rowspan="2" class="band__total">{{ totalOf(current.unitGrowth) }}%</td>
+      </tr>
+      <tr class="band band--unit">
+        @for (stat of statKeys; track stat) {
+          <td [class.negative]="current.unitGrowth[stat] < 0">
+            {{ current.unitGrowth[stat] }}%
+          </td>
+        }
+      </tr>
+
+      <tr class="band band--class">
+        <th scope="rowgroup" rowspan="2" class="band__name">
+          {{ current.unitClass?.name ?? 'No class' }}
+        </th>
+        <td class="band__caption" [attr.colspan]="statKeys.length">
+          {{ current.unitClass ? current.unitClass.rank + ' Class Selected' : 'No Class Selected' }}
+        </td>
+        <td rowspan="2" class="band__total">{{ totalOf(current.classGrowth) }}%</td>
+      </tr>
+      <tr class="band band--class">
+        @for (stat of statKeys; track stat) {
+          <td [class.negative]="current.classGrowth[stat] < 0">
+            {{ current.classGrowth[stat] }}%
+          </td>
+        }
+      </tr>
+
+      <tr class="band band--mount">
+        <th scope="rowgroup" rowspan="2" class="band__name">
+          {{ current.mount?.name ?? 'None' }}
+        </th>
+        <td class="band__caption" [attr.colspan]="statKeys.length">
+          {{ isMounted() ? 'Growths From Mounts' : 'No Mount Growth' }}
+        </td>
+        <td rowspan="2" class="band__total">{{ totalOf(current.mountGrowth) }}%</td>
+      </tr>
+      <tr class="band band--mount">
+        @for (stat of statKeys; track stat) {
+          <td [class.negative]="current.mountGrowth[stat] < 0">
+            {{ current.mountGrowth[stat] }}%
+          </td>
+        }
+      </tr>
+
+      <tr class="band band--grand">
+        <th scope="rowgroup" rowspan="2" class="band__name">Total</th>
+        <td class="band__caption" [attr.colspan]="statKeys.length"></td>
+        <td rowspan="2" class="band__total band__total--grand">
+          {{ totalOf(current.total) }}%
+        </td>
+      </tr>
+      <tr class="band band--grand">
+        @for (stat of statKeys; track stat) {
+          <td [class.negative]="current.total[stat] < 0">{{ current.total[stat] }}%</td>
+        }
+      </tr>
+    </tbody>
+  </table>
+</section>

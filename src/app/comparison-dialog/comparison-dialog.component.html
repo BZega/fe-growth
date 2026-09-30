@@ -1,0 +1,96 @@
+@let a = buildA();
+@let b = buildB();
+@let d = delta();
+
+<div class="backdrop" (click)="close()"></div>
+
+<div
+  class="dialog"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="comparison-title"
+>
+  <header class="dialog__header">
+    <div>
+      <p class="dialog__eyebrow">{{ labelA() }} vs {{ labelB() }}</p>
+      <h2 id="comparison-title">{{ title() }}</h2>
+    </div>
+    <button type="button" class="dialog__close" aria-label="Close" (click)="close()">
+      &times;
+    </button>
+  </header>
+
+  <div class="summary">
+    <div class="summary__side summary__side--a">
+      <span class="summary__label">{{ labelA() }}</span>
+      <span class="summary__build">{{ describe(a) }}</span>
+      <span class="summary__total">{{ totalOf(a.total) }}%</span>
+    </div>
+    <div class="summary__side summary__side--b">
+      <span class="summary__label">{{ labelB() }}</span>
+      <span class="summary__build">{{ describe(b) }}</span>
+      <span class="summary__total">{{ totalOf(b.total) }}%</span>
+    </div>
+  </div>
+
+  <p class="verdict">
+    @if (totalDelta() > 0) {
+      <strong>{{ labelB() }}</strong> has {{ totalDelta() }}% more total growth.
+    } @else if (totalDelta() < 0) {
+      <strong>{{ labelA() }}</strong> has {{ -totalDelta() }}% more total growth.
+    } @else {
+      Both builds have identical total growth.
+    }
+    <span class="verdict__counts">
+      {{ labelA() }} wins {{ winsA() }} · {{ labelB() }} wins {{ winsB() }} ·
+      {{ ties() }} tied
+    </span>
+  </p>
+
+  <table class="compare">
+    <thead>
+      <tr>
+        <th scope="col">Stat</th>
+        <th scope="col">{{ labelA() }}</th>
+        <th scope="col">{{ labelB() }}</th>
+        <th scope="col">Difference</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (stat of statKeys; track stat) {
+        <tr>
+          <th scope="row">{{ statLabels[stat] }}</th>
+          <td [class.better]="d[stat] < 0">{{ a.total[stat] }}%</td>
+          <td [class.better]="d[stat] > 0">{{ b.total[stat] }}%</td>
+          <td
+            class="delta"
+            [class.delta--up]="d[stat] > 0"
+            [class.delta--down]="d[stat] < 0"
+          >
+            {{ d[stat] > 0 ? '+' : '' }}{{ d[stat] }}%
+          </td>
+        </tr>
+      }
+    </tbody>
+    <tfoot>
+      <tr>
+        <th scope="row">Total</th>
+        <td [class.better]="totalDelta() < 0">{{ totalOf(a.total) }}%</td>
+        <td [class.better]="totalDelta() > 0">{{ totalOf(b.total) }}%</td>
+        <td
+          class="delta"
+          [class.delta--up]="totalDelta() > 0"
+          [class.delta--down]="totalDelta() < 0"
+        >
+          {{ totalDelta() > 0 ? '+' : '' }}{{ totalDelta() }}%
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <footer class="dialog__footer">
+    <button type="button" class="dialog__dismiss" (click)="close()">
+      Back to calculators
+    </button>
+  </footer>
+</div>

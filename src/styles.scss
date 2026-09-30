@@ -1,0 +1,25 @@
+/* You can add global styles to this file, and also import other style files */
+
+:root {
+  --bg: #12161f;
+  --panel: #1a1f2b;
+  --panel-border: #2c3445;
+  --text: #e8ecf4;
+  --accent: #f0c04a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  // The app shell owns its own scrolling, so the document never scrolls.
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}

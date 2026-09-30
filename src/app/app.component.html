@@ -1,0 +1,15 @@
+<nav class="topnav">
+  <a class="topnav__brand" routerLink="/calculator">FE Growths</a>
+
+  <ul class="topnav__links">
+    @for (link of links; track link.path) {
+      <li>
+        <a [routerLink]="link.path" routerLinkActive="is-active">{{ link.label }}</a>
+      </li>
+    }
+  </ul>
+</nav>
+
+<main>
+  <router-outlet />
+</main>

@@ -1,0 +1,172 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.empty {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  // Stops the elastic overscroll past the first and last row.
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  border: 1px solid var(--panel-border);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: var(--panel);
+
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
+
+.list {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+  white-space: nowrap;
+
+  th,
+  td {
+    padding: 0.35rem 0.6rem;
+    text-align: right;
+    border-bottom: 1px solid rgb(255 255 255 / 12%);
+    border-right: 1px solid rgb(255 255 255 / 12%);
+  }
+
+  tr > *:last-child {
+    border-right: none;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 0;
+    background: #c00000;
+    color: #ffffff;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-bottom: none;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 45%);
+  }
+
+  tbody tr:not(.group):hover {
+    td,
+    th {
+      // Works over the solid tier fills as well as the plain cells.
+      filter: brightness(1.22);
+      border-bottom-color: rgb(240 192 74 / 45%);
+    }
+
+    th.list__name {
+      background: rgb(240 192 74 / 16%);
+      color: var(--accent);
+    }
+  }
+}
+
+.list__name {
+  text-align: left;
+  font-weight: 600;
+  // Shrinks the column to the longest name so the stat columns take the slack.
+  width: 1px;
+  padding-right: 1.25rem;
+}
+
+.sort {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgb(0 0 0 / 20%);
+  }
+
+  &--left {
+    justify-content: flex-start;
+  }
+}
+
+.sort__arrow {
+  font-size: 0.65em;
+  width: 0.75em;
+  text-align: center;
+}
+
+.list__total {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+thead .list__total {
+  background: #000000;
+  color: #ffffff;
+}
+
+.group th {
+  text-align: left;
+  background: #232b3a;
+  color: var(--accent);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.group__count {
+  margin-left: 0.5rem;
+  opacity: 0.55;
+  color: var(--text);
+}
+
+.negative {
+  color: #ff8d8d;
+}
+
+.positive {
+  color: #7ee08a;
+}
+
+// Graded text rather than filled cells, to match the sign colouring on the other lists.
+.tier-best {
+  color: #7ee08a;
+  font-weight: 700;
+}
+
+.tier-good {
+  color: #5fae70;
+}
+
+.tier-fair {
+  color: #94a7a0;
+}
+
+.tier-poor {
+  color: #c79b9b;
+}
+
+.tier-worst {
+  color: #ff8d8d;
+  font-weight: 700;
+}

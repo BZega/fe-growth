@@ -1,0 +1,55 @@
+@if (rowCount() === 0) {
+  <p class="empty">Loading…</p>
+} @else {
+  <div class="scroller">
+    <table class="list">
+      <thead>
+        <tr>
+          <th scope="col" class="list__name" [attr.aria-sort]="ariaSort('name')">
+            <button type="button" class="sort sort--left" (click)="sortBy('name')">
+              {{ nameHeader() }}
+              <span class="sort__arrow">{{ sortIndicator('name') }}</span>
+            </button>
+          </th>
+          @for (stat of statKeys; track stat) {
+            <th scope="col" [attr.aria-sort]="ariaSort(stat)">
+              <button type="button" class="sort" (click)="sortBy(stat)">
+                {{ statLabels[stat] }}
+                <span class="sort__arrow">{{ sortIndicator(stat) }}</span>
+              </button>
+            </th>
+          }
+          <th scope="col" class="list__total" [attr.aria-sort]="ariaSort('total')">
+            <button type="button" class="sort" (click)="sortBy('total')">
+              Total
+              <span class="sort__arrow">{{ sortIndicator('total') }}</span>
+            </button>
+          </th>
+        </tr>
+      </thead>
+
+      @for (group of sortedGroups(); track group.key) {
+        <tbody>
+          @if (group.key) {
+            <tr class="group">
+              <th scope="colgroup" [attr.colspan]="columnCount()">
+                {{ group.key }}
+                <span class="group__count">{{ group.rows.length }}</span>
+              </th>
+            </tr>
+          }
+
+          @for (row of group.rows; track row.id) {
+            <tr>
+              <th scope="row" class="list__name">{{ row.name }}</th>
+              @for (stat of statKeys; track stat) {
+                <td [class]="cellClass(row.growth[stat])">{{ row.growth[stat] }}%</td>
+              }
+              <td class="list__total">{{ row.total }}%</td>
+            </tr>
+          }
+        </tbody>
+      }
+    </table>
+  </div>
+}

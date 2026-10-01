@@ -23,48 +23,39 @@
   </header>
 
   <div class="pickers">
-    <label class="picker">
+    <div class="picker">
       <span class="picker__label">Unit</span>
-      <select [value]="selectedUnitId() ?? ''" (change)="onUnitChange($event)">
-        <option value="">— Select a unit —</option>
-        @for (unit of units(); track unit.id) {
-          <option [value]="unit.id" [selected]="unit.id === selectedUnitId()">
-            {{ unit.name }}
-          </option>
-        }
-      </select>
-    </label>
+      <app-searchable-select
+        label="Unit"
+        placeholder="— Select a unit —"
+        [items]="units()"
+        [value]="selectedUnitId()"
+        (valueChange)="onUnitChange($event)"
+      />
+    </div>
 
-    <label class="picker">
+    <div class="picker">
       <span class="picker__label">Class</span>
-      <select [value]="selectedClassId() ?? ''" (change)="onClassChange($event)">
-        <option value="">— Select a class —</option>
-        @for (group of classGroups(); track group.rank) {
-          <optgroup [label]="group.rank">
-            @for (unitClass of group.classes; track unitClass.id) {
-              <option
-                [value]="unitClass.id"
-                [selected]="unitClass.id === selectedClassId()"
-              >
-                {{ unitClass.name }}
-              </option>
-            }
-          </optgroup>
-        }
-      </select>
-    </label>
+      <app-searchable-select
+        label="Class"
+        placeholder="— Select a class —"
+        [groups]="classGroups()"
+        [value]="selectedClassId()"
+        (valueChange)="onClassChange($event)"
+      />
+    </div>
 
     @if (isMounted()) {
-      <label class="picker picker--mount">
+      <div class="picker picker--mount">
         <span class="picker__label">Mount ({{ mountType() }})</span>
-        <select [value]="mount()?.id ?? ''" (change)="onMountChange($event)">
-          @for (option of mountOptions(); track option.id) {
-            <option [value]="option.id" [selected]="option.id === mount()?.id">
-              {{ option.name }}
-            </option>
-          }
-        </select>
-      </label>
+        <app-searchable-select
+          label="Mount"
+          [items]="mountOptions()"
+          [clearable]="false"
+          [value]="mount()?.id ?? null"
+          (valueChange)="onMountChange($event)"
+        />
+      </div>
     } @else {
       <p class="picker picker--empty">This class is unmounted.</p>
     }

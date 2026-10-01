@@ -43,20 +43,16 @@
         <header class="seed__header">
           <h2>{{ seedName }}</h2>
 
-          <label class="picker picker--inline">
-            <select
-              aria-label="Unit"
-              [value]="seed.unitId ?? ''"
-              (change)="onUnitChange(seed, $event)"
-            >
-              <option value="">— Select a unit —</option>
-              @for (unit of units(); track unit.id) {
-                <option [value]="unit.id" [selected]="unit.id === seed.unitId">
-                  {{ unit.name }}
-                </option>
-              }
-            </select>
-          </label>
+          <div class="picker picker--inline">
+            <app-searchable-select
+              class="compact"
+              label="Unit"
+              placeholder="— Select a unit —"
+              [items]="units()"
+              [value]="seed.unitId"
+              (valueChange)="onUnitChange(seed, $event)"
+            />
+          </div>
 
           <button
             type="button"
@@ -91,48 +87,28 @@
             </header>
 
             <div class="pickers">
-              <label class="picker">
+              <div class="picker">
                 <span class="picker__label">Class</span>
-                <select
-                  [value]="seed.classId ?? ''"
-                  (change)="onClassChange(seed, $event)"
-                >
-                  <option value="">— Select a class —</option>
-                  @for (group of classGroups(); track group.rank) {
-                    <optgroup [label]="group.rank">
-                      @for (unitClass of group.classes; track unitClass.id) {
-                        <option
-                          [value]="unitClass.id"
-                          [selected]="unitClass.id === seed.classId"
-                        >
-                          {{ unitClass.name }}
-                        </option>
-                      }
-                    </optgroup>
-                  }
-                </select>
-              </label>
+                <app-searchable-select
+                  label="Class"
+                  placeholder="— Select a class —"
+                  [groups]="classGroups()"
+                  [value]="seed.classId"
+                  (valueChange)="onClassChange(seed, $event)"
+                />
+              </div>
 
               @if (mountsForClass(seed.classId).length > 0) {
-                <label class="picker">
+                <div class="picker">
                   <span class="picker__label">Mount</span>
-                  <select
-                    [value]="mountOf(seed)?.id ?? ''"
-                    (change)="onMountChange(seed, $event)"
-                  >
-                    @for (
-                      option of mountsForClass(seed.classId);
-                      track option.id
-                    ) {
-                      <option
-                        [value]="option.id"
-                        [selected]="option.id === mountOf(seed)?.id"
-                      >
-                        {{ option.name }}
-                      </option>
-                    }
-                  </select>
-                </label>
+                  <app-searchable-select
+                    label="Mount"
+                    [items]="mountsForClass(seed.classId)"
+                    [clearable]="false"
+                    [value]="mountOf(seed)?.id ?? null"
+                    (valueChange)="onMountChange(seed, $event)"
+                  />
+                </div>
               }
             </div>
 
@@ -220,47 +196,29 @@
               </header>
 
               <div class="pickers">
-                <label class="picker">
+                <div class="picker">
                   <span class="picker__label">Class</span>
-                  <select
-                    [value]="comparator.classId ?? ''"
+                  <app-searchable-select
+                    label="Class"
+                    placeholder="— Select a class —"
+                    [items]="options"
                     [disabled]="options.length === 0"
-                    (change)="onComparatorClassChange(seed, comparator, $event)"
-                  >
-                    <option value="">— Select a class —</option>
-                    @for (unitClass of options; track unitClass.id) {
-                      <option
-                        [value]="unitClass.id"
-                        [selected]="unitClass.id === comparator.classId"
-                      >
-                        {{ unitClass.name }}
-                      </option>
-                    }
-                  </select>
-                </label>
+                    [value]="comparator.classId"
+                    (valueChange)="onComparatorClassChange(seed, comparator, $event)"
+                  />
+                </div>
 
                 @if (mountsForClass(comparator.classId).length > 0) {
-                  <label class="picker">
+                  <div class="picker">
                     <span class="picker__label">Mount</span>
-                    <select
-                      [value]="comparatorMountOf(comparator)?.id ?? ''"
-                      (change)="onComparatorMountChange(seed, comparator, $event)"
-                    >
-                      @for (
-                        option of mountsForClass(comparator.classId);
-                        track option.id
-                      ) {
-                        <option
-                          [value]="option.id"
-                          [selected]="
-                            option.id === comparatorMountOf(comparator)?.id
-                          "
-                        >
-                          {{ option.name }}
-                        </option>
-                      }
-                    </select>
-                  </label>
+                    <app-searchable-select
+                      label="Mount"
+                      [items]="mountsForClass(comparator.classId)"
+                      [clearable]="false"
+                      [value]="comparatorMountOf(comparator)?.id ?? null"
+                      (valueChange)="onComparatorMountChange(seed, comparator, $event)"
+                    />
+                  </div>
                 }
               </div>
 

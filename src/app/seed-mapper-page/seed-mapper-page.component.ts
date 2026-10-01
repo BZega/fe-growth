@@ -4,15 +4,12 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { CLASS_RANK_ORDER, ClassRank, GrowthRates, Mount, STAT_KEYS, STAT_LABELS, StatKey, sumGrowth, toGrowth, Unit, UnitClass } from '../models/growth.models';
 import { estimateRoll, RollEstimate, RollObservation } from '../models/seed-roll';
 import { newSaveId, migrateSave, SeedSave } from '../models/seed-save';
+import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
 import { GrowthDataService } from '../services/growth-data.service';
 import { SeedSaveStorageService } from '../services/seed-save-storage.service';
 import { SeedSerializerService } from '../services/seed-serializer.service';
+import { SpoilerService } from '../services/spoiler.service';
 import { MAX_LEVEL, MIN_LEVEL, Seed, SeedComparator, SeedMapperStateService, SeedRow } from '../services/seed-mapper-state.service';
-
-interface ClassGroup {
-  rank: ClassRank;
-  classes: UnitClass[];
-}
 
 interface PendingAction {
   kind: 'load' | 'upload' | 'overwrite' | 'delete' | 'reset';
@@ -23,7 +20,7 @@ interface PendingAction {
 
 @Component({
   selector: 'app-seed-mapper-page',
-  imports: [DatePipe],
+  imports: [DatePipe, SearchableSelectComponent],
   templateUrl: './seed-mapper-page.component.html',
   styleUrl: './seed-mapper-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +30,7 @@ export class SeedMapperPageComponent {
   private readonly state = inject(SeedMapperStateService);
   private readonly storage = inject(SeedSaveStorageService);
   private readonly serializer = inject(SeedSerializerService);
+  private readonly spoilers = inject(SpoilerService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly seeds = this.state.seeds;
@@ -45,16 +43,18 @@ export class SeedMapperPageComponent {
   readonly minLevel = MIN_LEVEL;
   readonly maxLevel = MAX_LEVEL;
 
-  readonly units = toSignal(this.api.getUnits(), { initialValue: [] as Unit[] });
+  readonly allUnits = toSignal(this.api.getUnits(), { initialValue: [] as Unit[] });
   private readonly classes = toSignal(this.api.getClasses(), {
     initialValue: [] as UnitClass[],
   });
 
-  readonly classGroups = computed<ClassGroup[]>(() =>
-    CLASS_RANK_ORDER.map((rank) => ({
-      rank,
-      classes: this.classes().filter((unitClass) => unitClass.rank === rank),
-    })).filter((group) => group.classes.length > 0),
+  readonly units = computed(() => this.spoilers.filter(this.allUnits()));
+
+  readonly classGroups = computed<SelectItemGroup[]>(() =>
+    CLASS_RANK_ORDER.map((rank: ClassRank) => ({
+      label: rank,
+      items: this.classes().filter((unitClass) => unitClass.rank === rank),
+    })).filter((group) => group.items.length > 0),
   );
 
   private readonly mountsByClass = signal<ReadonlyMap<number, Mount[]>>(new Map());
@@ -196,18 +196,17 @@ export class SeedMapperPageComponent {
 
   // --- events ------------------------------------------------------------
 
-  onUnitChange(seed: Seed, event: Event): void {
-    this.state.setUnit(seed.id, readId(event));
+  onUnitChange(seed: Seed, id: number | null): void {
+    this.state.setUnit(seed.id, id);
   }
 
-  onClassChange(seed: Seed, event: Event): void {
-    const classId = readId(event);
+  onClassChange(seed: Seed, classId: number | null): void {
     this.state.setClass(seed.id, classId);
     this.loadMounts(classId);
   }
 
-  onMountChange(seed: Seed, event: Event): void {
-    this.state.setMount(seed.id, readId(event));
+  onMountChange(seed: Seed, id: number | null): void {
+    this.state.setMount(seed.id, id);
   }
 
   onLevelChange(seed: Seed, event: Event): void {
@@ -219,9 +218,8 @@ export class SeedMapperPageComponent {
   onComparatorClassChange(
     seed: Seed,
     comparator: SeedComparator,
-    event: Event,
+    classId: number | null,
   ): void {
-    const classId = readId(event);
     this.state.setComparatorClass(seed.id, comparator.id, classId);
     this.loadMounts(classId);
   }
@@ -229,9 +227,9 @@ export class SeedMapperPageComponent {
   onComparatorMountChange(
     seed: Seed,
     comparator: SeedComparator,
-    event: Event,
+    id: number | null,
   ): void {
-    this.state.setComparatorMount(seed.id, comparator.id, readId(event));
+    this.state.setComparatorMount(seed.id, comparator.id, id);
   }
 
   toggleStat(seed: Seed, row: SeedRow, stat: StatKey): void {
@@ -615,12 +613,6 @@ export class SeedMapperPageComponent {
         ),
       );
   }
-}
-
-function readId(event: Event): number | null {
-  const value = (event.target as HTMLSelectElement).value;
-
-  return value === '' ? null : Number(value);
 }
 
 function slugify(name: string): string {

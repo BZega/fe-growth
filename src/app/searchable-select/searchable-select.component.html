@@ -1,0 +1,70 @@
+<button
+  type="button"
+  class="field"
+  [class.field--open]="open()"
+  [class.field--empty]="selectedName() === null"
+  [disabled]="disabled()"
+  [attr.aria-label]="label() || null"
+  [attr.aria-expanded]="open()"
+  aria-haspopup="listbox"
+  (click)="toggle()"
+>
+  <span class="field__value">{{ selectedName() ?? placeholder() }}</span>
+  <span class="field__caret" aria-hidden="true">▾</span>
+</button>
+
+@if (open()) {
+  <div class="panel">
+    <input
+      #search
+      class="panel__search"
+      type="text"
+      autocomplete="off"
+      placeholder="Search…"
+      aria-label="Search options"
+      [value]="query()"
+      (input)="onSearch($event)"
+      (keydown)="onKeydown($event)"
+    />
+
+    <ul class="panel__list" role="listbox">
+      @if (clearable() && query().trim() === '') {
+        <li>
+          <button
+            type="button"
+            role="option"
+            class="option option--clear"
+            [attr.aria-selected]="value() === null"
+            (click)="pick(null)"
+          >
+            {{ placeholder() }}
+          </button>
+        </li>
+      }
+
+      @for (group of filtered(); track group.label) {
+        @if (group.label) {
+          <li class="option-group">{{ group.label }}</li>
+        }
+
+        @for (item of group.items; track item.id) {
+          <li>
+            <button
+              type="button"
+              role="option"
+              class="option"
+              [class.option--selected]="item.id === value()"
+              [class.option--active]="isActive(item)"
+              [attr.aria-selected]="item.id === value()"
+              (click)="pick(item.id)"
+            >
+              {{ item.name }}
+            </button>
+          </li>
+        }
+      } @empty {
+        <li class="panel__empty">No matches</li>
+      }
+    </ul>
+  </div>
+}

@@ -1,5 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { SpoilerService } from './services/spoiler.service';
 
 @Component({
   selector: 'app-root',
@@ -8,6 +9,8 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
+  private readonly spoilers = inject(SpoilerService);
+
   title = 'fe-growth-frontend';
 
   readonly links = [
@@ -19,6 +22,7 @@ export class AppComponent {
   ];
 
   readonly menuOpen = signal(false);
+  readonly hideSpoilers = this.spoilers.hidden;
 
   toggleMenu(): void {
     this.menuOpen.update((open) => !open);
@@ -26,5 +30,9 @@ export class AppComponent {
 
   closeMenu(): void {
     this.menuOpen.set(false);
+  }
+
+  toggleSpoilers(): void {
+    this.spoilers.toggle();
   }
 }

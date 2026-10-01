@@ -3,16 +3,14 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { CLASS_RANK_ORDER, ClassRank, GrowthBuild, growthTotal, Mount, MountType, STAT_KEYS, STAT_LABELS, sumGrowth, toGrowth, Unit, UnitClass } from '../models/growth.models';
+import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
 import { CalculatorStateService } from '../services/calculator-state.service';
 import { GrowthDataService } from '../services/growth-data.service';
-
-interface ClassGroup {
-  rank: ClassRank;
-  classes: UnitClass[];
-}
+import { SpoilerService } from '../services/spoiler.service';
 
 @Component({
   selector: 'app-growth-calculator',
+  imports: [SearchableSelectComponent],
   templateUrl: './growth-calculator.component.html',
   styleUrl: './growth-calculator.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,6 +18,7 @@ interface ClassGroup {
 export class GrowthCalculatorComponent implements OnInit {
   private readonly api = inject(GrowthDataService);
   private readonly state = inject(CalculatorStateService);
+  private readonly spoilers = inject(SpoilerService);
 
   readonly heading = input.required<string>();
   readonly slotKey = input.required<string>();
@@ -31,20 +30,24 @@ export class GrowthCalculatorComponent implements OnInit {
   readonly statLabels = STAT_LABELS;
   readonly totalOf = growthTotal;
 
-  readonly units = toSignal(this.api.getUnits(), { initialValue: [] as Unit[] });
+  private readonly allUnits = toSignal(this.api.getUnits(), {
+    initialValue: [] as Unit[],
+  });
   private readonly classes = toSignal(this.api.getClasses(), {
     initialValue: [] as UnitClass[],
   });
+
+  readonly units = computed(() => this.spoilers.filter(this.allUnits()));
 
   readonly selectedUnitId = signal<number | null>(null);
   readonly selectedClassId = signal<number | null>(null);
   readonly selectedMountId = signal<number | null>(null);
 
-  readonly classGroups = computed<ClassGroup[]>(() =>
-    CLASS_RANK_ORDER.map((rank) => ({
-      rank,
-      classes: this.classes().filter((unitClass) => unitClass.rank === rank),
-    })).filter((group) => group.classes.length > 0),
+  readonly classGroups = computed<SelectItemGroup[]>(() =>
+    CLASS_RANK_ORDER.map((rank: ClassRank) => ({
+      label: rank,
+      items: this.classes().filter((unitClass) => unitClass.rank === rank),
+    })).filter((group) => group.items.length > 0),
   );
 
   readonly mountOptions = toSignal(
@@ -97,19 +100,19 @@ export class GrowthCalculatorComponent implements OnInit {
     };
   });
 
-  onUnitChange(event: Event): void {
-    this.selectedUnitId.set(readId(event));
+  onUnitChange(id: number | null): void {
+    this.selectedUnitId.set(id);
     this.persist();
   }
 
-  onClassChange(event: Event): void {
-    this.selectedClassId.set(readId(event));
+  onClassChange(id: number | null): void {
+    this.selectedClassId.set(id);
     this.selectedMountId.set(null);
     this.persist();
   }
 
-  onMountChange(event: Event): void {
-    this.selectedMountId.set(readId(event));
+  onMountChange(id: number | null): void {
+    this.selectedMountId.set(id);
     this.persist();
   }
 
@@ -134,10 +137,4 @@ export class GrowthCalculatorComponent implements OnInit {
       mountId: this.selectedMountId(),
     });
   }
-}
-
-function readId(event: Event): number | null {
-  const value = (event.target as HTMLSelectElement).value;
-
-  return value === '' ? null : Number(value);
 }

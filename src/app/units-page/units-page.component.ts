@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { GrowthListComponent, GrowthListGroup } from '../growth-list/growth-list.component';
 import { toGrowth, Unit } from '../models/growth.models';
 import { GrowthDataService } from '../services/growth-data.service';
+import { SpoilerService } from '../services/spoiler.service';
 
 @Component({
   selector: 'app-units-page',
@@ -24,10 +25,13 @@ import { GrowthDataService } from '../services/growth-data.service';
 })
 export class UnitsPageComponent {
   private readonly api = inject(GrowthDataService);
+  private readonly spoilers = inject(SpoilerService);
 
-  private readonly units = toSignal(this.api.getUnits(), {
+  private readonly allUnits = toSignal(this.api.getUnits(), {
     initialValue: [] as Unit[],
   });
+
+  private readonly units = computed(() => this.spoilers.filter(this.allUnits()));
 
   readonly groups = computed<GrowthListGroup[]>(() => [
     {

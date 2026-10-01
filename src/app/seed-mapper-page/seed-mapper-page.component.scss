@@ -116,7 +116,6 @@
   }
 
   // Every control matches the icon button's height so the row reads as one line.
-  select,
   .ghost-button {
     height: 1.9rem;
     padding-top: 0;
@@ -140,7 +139,7 @@
   align-items: center;
   gap: 0.4rem;
 
-  select {
+  app-searchable-select {
     width: auto;
     min-width: 12rem;
   }
@@ -282,16 +281,6 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     opacity: 0.75;
-  }
-
-  select {
-    background: #1d222c;
-    border: 1px solid var(--panel-border);
-    border-radius: 6px;
-    color: inherit;
-    font-size: 0.9rem;
-    padding: 0.4rem 0.5rem;
-    width: 100%;
   }
 }
 
@@ -665,7 +654,7 @@
   .picker--inline {
     flex: 1 1 100%;
 
-    select {
+    app-searchable-select {
       flex: 1;
       min-width: 0;
       width: 100%;
@@ -678,13 +667,6 @@
 
   .block {
     padding: 0.5rem;
-  }
-
-  // Safety net for anything narrower than the layout was tuned for.
-  .block,
-  .rng {
-    overflow-x: auto;
-    scrollbar-width: thin;
   }
 
   .grid {

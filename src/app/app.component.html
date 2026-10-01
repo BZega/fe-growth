@@ -34,6 +34,21 @@
         </a>
       </li>
     }
+
+    <li class="topnav__spoilers">
+      <button
+        type="button"
+        class="spoiler-toggle"
+        [class.is-on]="hideSpoilers()"
+        [attr.aria-pressed]="hideSpoilers()"
+        (click)="toggleSpoilers()"
+      >
+        <span class="spoiler-toggle__track" aria-hidden="true">
+          <span class="spoiler-toggle__thumb"></span>
+        </span>
+        Hide spoilers
+      </button>
+    </li>
   </ul>
 </nav>
 

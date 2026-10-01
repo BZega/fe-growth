@@ -1,32 +1,32 @@
-<button
-  type="button"
+<div
   class="field"
   [class.field--open]="open()"
-  [class.field--empty]="selectedName() === null"
-  [disabled]="disabled()"
-  [attr.aria-label]="label() || null"
-  [attr.aria-expanded]="open()"
-  aria-haspopup="listbox"
-  (click)="toggle()"
+  [class.field--disabled]="disabled()"
+  (pointerdown)="onFieldPointerDown()"
+  (click)="onFieldClick()"
 >
-  <span class="field__value">{{ selectedName() ?? placeholder() }}</span>
+  <input
+    #search
+    class="field__input"
+    type="text"
+    role="combobox"
+    autocomplete="off"
+    autocapitalize="off"
+    spellcheck="false"
+    [attr.aria-label]="label() || null"
+    [attr.aria-expanded]="open()"
+    aria-haspopup="listbox"
+    [disabled]="disabled()"
+    [placeholder]="open() ? (selectedName() ?? placeholder()) : placeholder()"
+    (focus)="openPanel()"
+    (input)="onSearch($event)"
+    (keydown)="onKeydown($event)"
+  />
   <span class="field__caret" aria-hidden="true">▾</span>
-</button>
+</div>
 
 @if (open()) {
   <div class="panel">
-    <input
-      #search
-      class="panel__search"
-      type="text"
-      autocomplete="off"
-      placeholder="Search…"
-      aria-label="Search options"
-      [value]="query()"
-      (input)="onSearch($event)"
-      (keydown)="onKeydown($event)"
-    />
-
     <ul class="panel__list" role="listbox">
       @if (clearable() && query().trim() === '') {
         <li>

@@ -14,23 +14,26 @@
   border-radius: 6px;
   color: inherit;
   cursor: pointer;
-  font-family: inherit;
   font-size: 0.9rem;
   padding: 0.4rem 0.5rem;
   text-align: left;
 
-  &:hover:not(:disabled) {
+  &:hover {
     border-color: var(--accent);
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 }
 
 .field--open {
   border-color: var(--accent);
+}
+
+.field--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+
+  &:hover {
+    border-color: var(--panel-border);
+  }
 }
 
 :host(.compact) .field {
@@ -39,22 +42,37 @@
   padding-bottom: 0;
 }
 
-.field--empty .field__value {
-  opacity: 0.55;
-}
-
-.field__value {
+.field__input {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
   text-overflow: ellipsis;
-  white-space: nowrap;
+
+  &:focus {
+    outline: none;
+  }
+
+  &::placeholder {
+    color: inherit;
+    opacity: 0.55;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
 }
 
 .field__caret {
   flex: none;
   font-size: 0.7rem;
   opacity: 0.6;
+  pointer-events: none;
 }
 
 .panel {
@@ -73,30 +91,21 @@
   overflow: hidden;
 }
 
-.panel__search {
-  flex: none;
-  background: #1d222c;
-  border: none;
-  border-bottom: 1px solid var(--panel-border);
-  color: inherit;
-  font-family: inherit;
-  font-size: 0.85rem;
-  padding: 0.5rem 0.6rem;
-
-  &:focus {
-    outline: none;
-    background: #222935;
-  }
-}
-
 .panel__list {
   flex: 1;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   list-style: none;
   margin: 0;
   padding: 0.25rem;
+
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 }
 
 .panel__empty {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, HostListener, inject, input, output, signal, viewChild } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, effect, ElementRef, HostListener, inject, Injector, input, output, signal, viewChild } from '@angular/core';
 
 export interface SelectItem {
   id: number;
@@ -18,6 +18,7 @@ export interface SelectItemGroup {
 })
 export class SearchableSelectComponent {
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly injector = inject(Injector);
 
   readonly items = input<readonly SelectItem[]>([]);
   readonly groups = input<readonly SelectItemGroup[]>([]);
@@ -60,66 +61,109 @@ export class SearchableSelectComponent {
     this.filtered().flatMap((group) => [...group.items]),
   );
 
+  private readonly allItems = computed<SelectItem[]>(() =>
+    this.allGroups().flatMap((group) => [...group.items]),
+  );
+
   readonly selectedName = computed(() => {
     const id = this.value();
 
     return id === null
       ? null
-      : (this.allGroups()
-          .flatMap((group) => [...group.items])
-          .find((item) => item.id === id)?.name ?? null);
+      : (this.allItems().find((item) => item.id === id)?.name ?? null);
   });
 
   readonly activeIndex = signal(0);
 
+  private openBeforePress = false;
+
   constructor() {
     effect(() => {
-      if (this.open()) {
-        this.searchBox()?.nativeElement.focus();
+      const element = this.searchBox()?.nativeElement;
+
+      if (element && !this.open()) {
+        element.value = this.selectedName() ?? '';
       }
     });
   }
 
-  toggle(): void {
-    if (this.disabled()) {
+  openPanel(): void {
+    if (this.disabled() || this.open()) {
       return;
     }
 
-    this.open.update((open) => !open);
+    this.open.set(true);
     this.query.set('');
-    this.activeIndex.set(0);
+
+    const selected = this.flattened().findIndex(
+      (item) => item.id === this.value(),
+    );
+    this.activeIndex.set(Math.max(selected, 0));
+    this.scrollActiveIntoView();
+
+    const element = this.searchBox()?.nativeElement;
+
+    if (element) {
+      element.value = '';
+    }
+  }
+
+  onFieldPointerDown(): void {
+    this.openBeforePress = this.open();
+  }
+
+  onFieldClick(): void {
+    if (this.openBeforePress) {
+      this.close();
+
+      return;
+    }
+
+    this.openPanel();
+    this.searchBox()?.nativeElement.focus();
   }
 
   pick(id: number | null): void {
     this.valueChange.emit(id);
-    this.close();
+    this.open.set(false);
+    this.query.set('');
+
+    if (matchMedia('(pointer: coarse)').matches) {
+      this.searchBox()?.nativeElement.blur();
+    }
   }
 
   close(): void {
     this.open.set(false);
     this.query.set('');
+    this.searchBox()?.nativeElement.blur();
   }
 
   onSearch(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);
     this.activeIndex.set(0);
+    this.open.set(true);
   }
 
   onKeydown(event: KeyboardEvent): void {
-    const options = this.flattened();
-
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        this.activeIndex.update((i) => Math.min(i + 1, options.length - 1));
+        this.step(1);
         break;
       case 'ArrowUp':
         event.preventDefault();
-        this.activeIndex.update((i) => Math.max(i - 1, 0));
+        this.step(-1);
         break;
       case 'Enter': {
         event.preventDefault();
-        const option = options[this.activeIndex()];
+
+        if (!this.open()) {
+          this.openPanel();
+          break;
+        }
+
+        const option = this.flattened()[this.activeIndex()];
 
         if (option) {
           this.pick(option.id);
@@ -131,6 +175,35 @@ export class SearchableSelectComponent {
         this.close();
         break;
     }
+  }
+
+  private step(delta: number): void {
+    if (!this.open()) {
+      const items = this.allItems();
+      const current = items.findIndex((item) => item.id === this.value());
+      const next = items[clamp(current + delta, items.length)];
+
+      if (next && next.id !== this.value()) {
+        this.valueChange.emit(next.id);
+      }
+
+      return;
+    }
+
+    this.activeIndex.update((index) =>
+      clamp(index + delta, this.flattened().length),
+    );
+    this.scrollActiveIntoView();
+  }
+
+  private scrollActiveIntoView(): void {
+    afterNextRender(
+      () =>
+        this.host.nativeElement
+          .querySelector('.option--active')
+          ?.scrollIntoView({ block: 'nearest' }),
+      { injector: this.injector },
+    );
   }
 
   isActive(item: SelectItem): boolean {
@@ -146,4 +219,8 @@ export class SearchableSelectComponent {
       this.close();
     }
   }
+}
+
+function clamp(index: number, length: number): number {
+  return Math.min(Math.max(index, 0), Math.max(length - 1, 0));
 }

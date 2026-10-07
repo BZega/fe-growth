@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy,  Component, computed, inject, input, OnInit, o
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { CLASS_RANK_ORDER, ClassRank, GrowthBuild, growthTotal, Mount, MountType, STAT_KEYS, STAT_LABELS, sumGrowth, toGrowth, Unit, UnitClass } from '../models/growth.models';
+import { CLASS_LEVEL_CONFIGS, CLASS_RANK_ORDER, ClassRank, GrowthBuild, growthTotal, Mount, MountType, scaleGrowth, STAT_KEYS, STAT_LABELS, sumGrowth, toGrowth, Unit, UnitClass } from '../models/growth.models';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
 import { CalculatorStateService } from '../services/calculator-state.service';
 import { GrowthDataService } from '../services/growth-data.service';
@@ -42,6 +42,7 @@ export class GrowthCalculatorComponent implements OnInit {
   readonly selectedUnitId = signal<number | null>(null);
   readonly selectedClassId = signal<number | null>(null);
   readonly selectedMountId = signal<number | null>(null);
+  readonly selectedLevel = signal<number | null>(null);
 
   readonly classGroups = computed<SelectItemGroup[]>(() =>
     CLASS_RANK_ORDER.map((rank: ClassRank) => ({
@@ -83,14 +84,34 @@ export class GrowthCalculatorComponent implements OnInit {
 
   readonly isMounted = computed(() => this.mountOptions().length > 0);
 
+  readonly levelConfig = computed(() => {
+    const name = this.unitClass()?.name;
+    return name ? (CLASS_LEVEL_CONFIGS[name] ?? null) : null;
+  });
+
+  readonly classLevel = computed(() => {
+    const config = this.levelConfig();
+    if (!config) {
+      return null;
+    }
+
+    const level = this.selectedLevel();
+    return level !== null && config.levels.includes(level) ? level : config.defaultLevel;
+  });
+
   readonly build = computed<GrowthBuild>(() => {
+    const config = this.levelConfig();
+    const level = this.classLevel();
     const unitGrowth = toGrowth(this.unit());
-    const classGrowth = toGrowth(this.unitClass());
-    const mountGrowth = this.isMounted() ? toGrowth(this.mount()) : toGrowth(null);
+    const levelBonus = toGrowth(config && level !== null ? config.bonuses[level] : null);
+    const classGrowth = sumGrowth(toGrowth(this.unitClass()), levelBonus);
+    const baseMountGrowth = this.isMounted() ? toGrowth(this.mount()) : toGrowth(null);
+    const mountGrowth = scaleGrowth(baseMountGrowth, config?.mountMultiplier ?? 1);
 
     return {
       unit: this.unit(),
       unitClass: this.unitClass(),
+      classLevel: level,
       mount: this.isMounted() ? this.mount() : null,
       mountType: this.mountType(),
       unitGrowth,
@@ -108,6 +129,12 @@ export class GrowthCalculatorComponent implements OnInit {
   onClassChange(id: number | null): void {
     this.selectedClassId.set(id);
     this.selectedMountId.set(null);
+    this.selectedLevel.set(null);
+    this.persist();
+  }
+
+  onLevelChange(value: string): void {
+    this.selectedLevel.set(Number(value));
     this.persist();
   }
 
@@ -120,6 +147,7 @@ export class GrowthCalculatorComponent implements OnInit {
     this.selectedUnitId.set(null);
     this.selectedClassId.set(null);
     this.selectedMountId.set(null);
+    this.selectedLevel.set(null);
     this.persist();
   }
 
@@ -128,6 +156,7 @@ export class GrowthCalculatorComponent implements OnInit {
     this.selectedUnitId.set(saved.unitId);
     this.selectedClassId.set(saved.classId);
     this.selectedMountId.set(saved.mountId);
+    this.selectedLevel.set(saved.classLevel);
   }
 
   private persist(): void {
@@ -135,6 +164,7 @@ export class GrowthCalculatorComponent implements OnInit {
       unitId: this.selectedUnitId(),
       classId: this.selectedClassId(),
       mountId: this.selectedMountId(),
+      classLevel: this.selectedLevel(),
     });
   }
 }

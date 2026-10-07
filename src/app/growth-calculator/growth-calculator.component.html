@@ -45,6 +45,21 @@
       />
     </div>
 
+    @if (levelConfig(); as config) {
+      <label class="picker picker--level">
+        <span class="picker__label">Level</span>
+        <select
+          class="picker__select"
+          [value]="classLevel()"
+          (change)="onLevelChange($any($event.target).value)"
+        >
+          @for (level of config.levels; track level) {
+            <option [value]="level" [selected]="level === classLevel()">Level {{ level }}</option>
+          }
+        </select>
+      </label>
+    }
+
     @if (isMounted()) {
       <div class="picker picker--mount">
         <span class="picker__label">Mount ({{ mountType() }})</span>
@@ -94,6 +109,9 @@
         </th>
         <td class="band__caption" [attr.colspan]="statKeys.length">
           {{ current.unitClass ? current.unitClass.rank + ' Class Selected' : 'No Class Selected' }}
+          @if (current.classLevel !== null) {
+            (Level {{ current.classLevel }})
+          }
         </td>
         <td rowspan="2" class="band__total">{{ totalOf(current.classGrowth) }}%</td>
       </tr>
@@ -111,6 +129,11 @@
         </th>
         <td class="band__caption" [attr.colspan]="statKeys.length">
           {{ isMounted() ? 'Growths From Mounts' : 'No Mount Growth' }}
+          @if (levelConfig(); as config) {
+            @if (isMounted() && config.mountMultiplier !== 1) {
+              (x{{ config.mountMultiplier }})
+            }
+          }
         </td>
         <td rowspan="2" class="band__total">{{ totalOf(current.mountGrowth) }}%</td>
       </tr>

@@ -82,22 +82,50 @@
 }
 
 .pickers {
-  display: grid;
+  display: flex;
   gap: 0.6rem;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   margin-bottom: 1rem;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+  }
 }
 
 .picker {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
   font-size: 0.78rem;
+
+  &--level {
+    flex: 0 0 6.5rem;
+
+    @media (max-width: 640px) {
+      flex-basis: auto;
+    }
+  }
 
   &__label {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     opacity: 0.75;
+  }
+
+  &__select {
+    background: #1d222c;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.5rem;
+
+    &:hover,
+    &:focus {
+      border-color: var(--accent);
+    }
   }
 }
 

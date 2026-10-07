@@ -88,10 +88,38 @@ export interface Mount extends GrowthRates {
   total: number;
 }
 
+export interface ClassLevelConfig {
+  levels: readonly number[];
+  defaultLevel: number;
+  /** Bonuses added to base class growths per level; levels do not stack. */
+  bonuses: Readonly<Record<number, Partial<GrowthRates>>>;
+  mountMultiplier: number;
+}
+
+export const CLASS_LEVEL_CONFIGS: Readonly<Record<string, ClassLevelConfig>> = {
+  'Elephant Rider': {
+    levels: [35, 45],
+    defaultLevel: 35,
+    // TODO: fill in Elephant Rider level bonuses.
+    bonuses: {},
+    mountMultiplier: 1,
+  },
+  Charioteer: {
+    levels: [20, 35, 45],
+    defaultLevel: 20,
+    bonuses: {
+      35: { hp: 10, str: 5, mag: 5, spd: 5, dex: 5, def: 10, cha: 5 },
+      45: { hp: 10, str: 15, mag: 5, spd: 5, dex: 10, def: 20, res: 5, lck: 5, cha: 10 },
+    },
+    mountMultiplier: 2,
+  },
+};
+
 /** A unit + class + mount selection and the growth rows it produces. */
 export interface GrowthBuild {
   unit: Unit | null;
   unitClass: UnitClass | null;
+  classLevel: number | null;
   mount: Mount | null;
   mountType: MountType;
   unitGrowth: GrowthRates;
@@ -112,7 +140,7 @@ export const ZERO_GROWTH: GrowthRates = {
   cha: 0,
 };
 
-export function toGrowth(source: GrowthRates | null | undefined): GrowthRates {
+export function toGrowth(source: Partial<GrowthRates> | null | undefined): GrowthRates {
   if (!source) {
     return { ...ZERO_GROWTH };
   }
@@ -131,6 +159,15 @@ export function sumGrowth(...parts: readonly GrowthRates[]): GrowthRates {
     for (const key of STAT_KEYS) {
       result[key] += part[key];
     }
+  }
+
+  return result;
+}
+
+export function scaleGrowth(growth: GrowthRates, factor: number): GrowthRates {
+  const result = { ...ZERO_GROWTH };
+  for (const key of STAT_KEYS) {
+    result[key] = growth[key] * factor;
   }
 
   return result;

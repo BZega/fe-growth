@@ -4,9 +4,15 @@ export interface CalculatorSelection {
   unitId: number | null;
   classId: number | null;
   mountId: number | null;
+  classLevel: number | null;
 }
 
-const EMPTY: CalculatorSelection = { unitId: null, classId: null, mountId: null };
+const EMPTY: CalculatorSelection = {
+  unitId: null,
+  classId: null,
+  mountId: null,
+  classLevel: null,
+};
 
 @Injectable({ providedIn: 'root' })
 export class CalculatorStateService {

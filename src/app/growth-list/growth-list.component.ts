@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { GrowthRates, STAT_KEYS, STAT_LABELS, StatKey } from '../models/growth.models';
 
 export interface GrowthListRow {
@@ -20,6 +21,7 @@ type SortDirection = 'asc' | 'desc';
 
 @Component({
   selector: 'app-growth-list',
+  imports: [RouterLink],
   templateUrl: './growth-list.component.html',
   styleUrl: './growth-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,6 +30,8 @@ export class GrowthListComponent {
   readonly groups = input.required<GrowthListGroup[]>();
   readonly nameHeader = input('Name');
   readonly colorScale = input<GrowthColorScale>('sign');
+  /** When set, each row name links to `[linkBase, row.id]`. */
+  readonly linkBase = input<string | null>(null);
 
   readonly statKeys = STAT_KEYS;
   readonly statLabels = STAT_LABELS;

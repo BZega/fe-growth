@@ -1,16 +1,14 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
-import { Mount, MountType, Unit, UnitClass } from '../models/growth.models';
+import { ClassAbility, FEMALE_ONLY_CLASS_NAMES, Mount, MountType, Unit, UnitClass } from '../models/growth.models';
+import classAbilityData from '../data/class-abilities.json';
 import classMountTypes from '../data/class-mount-types.json';
 import mountData from '../data/mounts.json';
 import unitClassData from '../data/unit-classes.json';
 import unitData from '../data/units.json';
 
-/**
- * Serves the growth data bundled with the app. Mirrors the shape the API
- * version exposed, so components and the serializer are unchanged.
- */
+
 @Injectable({ providedIn: 'root' })
 export class GrowthDataService {
   private readonly units: Unit[] = (unitData as Unit[])
@@ -19,9 +17,10 @@ export class GrowthDataService {
 
   private readonly classes = unitClassData as UnitClass[];
 
+  private readonly classAbilities = classAbilityData as ClassAbility[];
+
   private readonly allMounts = mountData as Mount[];
 
-  /** The placeholder "None" mount is never offered as a choice. */
   private readonly mounts = this.allMounts.filter(
     (mount) => mount.type !== 'None',
   );
@@ -39,6 +38,10 @@ export class GrowthDataService {
     return of(this.classes);
   }
 
+  getClassAbilities(): Observable<ClassAbility[]> {
+    return of(this.classAbilities);
+  }
+
   getMounts(): Observable<Mount[]> {
     return of(this.mounts);
   }
@@ -49,6 +52,27 @@ export class GrowthDataService {
 
   mountTypeOfClass(className: string): MountType {
     return this.mountTypesByClassName[className] ?? 'None';
+  }
+
+  /** Whether `unit` may take `unitClass`; every class is allowed when no unit is chosen. */
+  canUseClass(unit: Unit | null | undefined, unitClass: UnitClass): boolean {
+    if (!unit) {
+      return true;
+    }
+
+    if (unit.gender !== 'Female' && FEMALE_ONLY_CLASS_NAMES.has(unitClass.name)) {
+      return false;
+    }
+
+    return unit.canUseMounts || this.mountTypeOfClass(unitClass.name) === 'None';
+  }
+
+  classesForUnit(unit: Unit | null | undefined): UnitClass[] {
+    return this.classes.filter((unitClass) => this.canUseClass(unit, unitClass));
+  }
+
+  unitById(unitId: number | null): Unit | null {
+    return this.units.find((unit) => unit.id === unitId) ?? null;
   }
 
   private mountsForClass(classId: number): Mount[] {

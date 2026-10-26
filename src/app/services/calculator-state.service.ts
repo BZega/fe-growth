@@ -30,6 +30,14 @@ export class CalculatorStateService {
     this.selections.set(slotKey, selection);
   }
 
+  has(slotKey: string): boolean {
+    return this.selections.has(slotKey);
+  }
+
+  clear(slotKey: string): void {
+    this.selections.delete(slotKey);
+  }
+
   addSlot(): void {
     this.slotOrder.update((slots) => [...slots, `calc-${this.nextId++}`]);
   }

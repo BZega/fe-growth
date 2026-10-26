@@ -25,12 +25,26 @@ export const routes: Routes = [
       import('./units-page/units-page.component').then((m) => m.UnitsPageComponent),
   },
   {
+    path: 'characters/:id',
+    title: 'Character',
+    loadComponent: () =>
+      import('./character-page/character-page.component').then(
+        (m) => m.CharacterPageComponent,
+      ),
+  },
+  {
     path: 'classes',
     title: 'Classes',
     loadComponent: () =>
       import('./classes-page/classes-page.component').then(
         (m) => m.ClassesPageComponent,
       ),
+  },
+  {
+    path: 'classes/:id',
+    title: 'Class',
+    loadComponent: () =>
+      import('./class-page/class-page.component').then((m) => m.ClassPageComponent),
   },
   {
     path: 'mounts',

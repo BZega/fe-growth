@@ -68,9 +68,20 @@ export const MOUNT_TYPE_ORDER: readonly MountType[] = [
   'Elephant',
 ];
 
+export type Gender = 'Male' | 'Female';
+
+/** Classes only female units may take. */
+export const FEMALE_ONLY_CLASS_NAMES: ReadonlySet<string> = new Set([
+  'Winged Soldier',
+  'Celestial Trooper',
+]);
+
 export interface Unit extends GrowthRates {
   id: number;
   name: string;
+  gender: Gender;
+  /** False for units that cannot take any mounted class. */
+  canUseMounts: boolean;
   total: number;
 }
 
@@ -78,7 +89,75 @@ export interface UnitClass extends GrowthRates {
   id: number;
   name: string;
   rank: ClassRank;
+  description: string;
+  bonusStats: StatBonuses;
+  skills: Record<SkillKey, boolean>;
+  skillExpBonus: Record<SkillKey, number>;
+  classAbilities: number[];
+  masterAbilities: number[];
   total: number;
+}
+
+export type BonusStatKey = StatKey | 'mov';
+
+export type StatBonuses = Record<BonusStatKey, number>;
+
+export const BONUS_STAT_KEYS = [...STAT_KEYS, 'mov'] as const satisfies readonly BonusStatKey[];
+
+export const BONUS_STAT_LABELS: Record<BonusStatKey, string> = {
+  ...STAT_LABELS,
+  mov: 'Mov',
+};
+
+export type SkillKey =
+  | 'sword'
+  | 'spear'
+  | 'axe'
+  | 'bow'
+  | 'gauntlet'
+  | 'blackMagic'
+  | 'whiteMagic'
+  | 'authority'
+  | 'infantry'
+  | 'riding'
+  | 'heavyArmor'
+  | 'flying';
+
+export const SKILL_KEYS = [
+  'sword',
+  'spear',
+  'axe',
+  'bow',
+  'gauntlet',
+  'blackMagic',
+  'whiteMagic',
+  'authority',
+  'infantry',
+  'riding',
+  'heavyArmor',
+  'flying',
+] as const satisfies readonly SkillKey[];
+
+export const SKILL_LABELS: Record<SkillKey, string> = {
+  sword: 'Sword',
+  spear: 'Spear',
+  axe: 'Axe',
+  bow: 'Bow',
+  gauntlet: 'Gauntlet',
+  blackMagic: 'Black Magic',
+  whiteMagic: 'White Magic',
+  authority: 'Authority',
+  infantry: 'Infantry',
+  riding: 'Riding',
+  heavyArmor: 'Heavy Armor',
+  flying: 'Flying',
+};
+
+export interface ClassAbility {
+  id: number;
+  name: string;
+  description: string;
+  isCombatArt: boolean;
 }
 
 export interface Mount extends GrowthRates {
@@ -100,8 +179,9 @@ export const CLASS_LEVEL_CONFIGS: Readonly<Record<string, ClassLevelConfig>> = {
   'Elephant Rider': {
     levels: [35, 45],
     defaultLevel: 35,
-    // TODO: fill in Elephant Rider level bonuses.
-    bonuses: {},
+    bonuses: { 
+      45: {hp: 10, str: 10, dex: 10, def: 10, res: 10}
+    },
     mountMultiplier: 1,
   },
   Charioteer: {

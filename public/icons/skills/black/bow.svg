@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2c3445"/>
+      <stop offset="0.55" stop-color="#1d2330"/>
+      <stop offset="1" stop-color="#12161f"/>
+    </linearGradient>
+    <mask id="glyph" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <g transform="rotate(45 32 32) translate(32 32) scale(0.9) translate(-32 -32)">
+      <path d="M22 6 C46 18 46 46 22 58" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+      <path fill="#fff" d="M22 6 L22 58" stroke="#fff" stroke-width="1.6"/>
+      <path fill="#fff" d="M12 32 L50 32" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+      <path fill="#fff" d="M56 32 L48 27 L48 37 Z"/>
+      <path fill="#fff" d="M12 32 L8 27 L14 27 Z M12 32 L8 37 L14 37 Z"/></g>
+      <g transform="rotate(45 32 32) translate(32 32) scale(0.9) translate(-32 -32)" fill="#000"></g>
+    </mask>
+  </defs>
+  <rect x="1" y="1" width="62" height="62" rx="12" fill="url(#bg)"/>
+  <rect x="2" y="2" width="60" height="60" rx="11" fill="none" stroke="#3d4760" stroke-opacity="0.45" stroke-width="1.5"/>
+  <rect width="64" height="64" fill="#ece3cf" mask="url(#glyph)"/>
+</svg>

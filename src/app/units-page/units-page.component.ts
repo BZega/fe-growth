@@ -18,6 +18,7 @@ import { SpoilerService } from '../services/spoiler.service';
       [groups]="groups()"
       nameHeader="Character"
       [colorScale]="'tier'"
+      linkBase="/characters"
     />
   `,
   styleUrl: '../styles/browse-page.scss',

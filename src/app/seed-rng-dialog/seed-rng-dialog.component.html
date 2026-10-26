@@ -1,0 +1,85 @@
+<div class="backdrop" (click)="close()"></div>
+
+<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="rng-title">
+  <header class="dialog__header">
+    <div>
+      <p class="dialog__eyebrow">Seed RNG</p>
+      <h2 id="rng-title">{{ active()?.title }}</h2>
+    </div>
+    <button type="button" class="dialog__close" aria-label="Close" (click)="close()">
+      &times;
+    </button>
+  </header>
+
+  @if (sections().length > 1) {
+    <div class="tabs">
+      <button
+        type="button"
+        class="tabs__arrow"
+        aria-label="Scroll sections left"
+        [disabled]="!canScrollBack()"
+        (click)="scrollTabs(-1)"
+      >
+        &lsaquo;
+      </button>
+
+      <div
+        #strip
+        class="tabs__strip"
+        role="tablist"
+        aria-label="Sections"
+        (scroll)="updateScroll()"
+        (wheel)="onWheel($event)"
+        (keydown.arrowLeft)="selectNext(-1)"
+        (keydown.arrowRight)="selectNext(1)"
+      >
+        @for (section of sections(); track section.id) {
+          <button
+            type="button"
+            role="tab"
+            class="tabs__tab"
+            [attr.data-section]="section.id"
+            [class.tabs__tab--active]="section.id === activeId()"
+            [attr.aria-selected]="section.id === activeId()"
+            [attr.tabindex]="section.id === activeId() ? 0 : -1"
+            (click)="selected.emit(section.id)"
+          >
+            {{ section.title }}
+          </button>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="tabs__arrow"
+        aria-label="Scroll sections right"
+        [disabled]="!canScrollForward()"
+        (click)="scrollTabs(1)"
+      >
+        &rsaquo;
+      </button>
+    </div>
+  }
+
+  <p class="hint">
+    The range each roll must fall in, using every section that shares it. Green means
+    the stat rose at that growth or lower; red means the roll was above that growth.
+  </p>
+
+  @if (active(); as section) {
+    <div class="grid" [style.--stat-count]="statKeys.length">
+      <div></div>
+      @for (stat of statKeys; track stat) {
+        <div class="grid__head">{{ statLabels[stat] }}</div>
+      }
+
+      @for (row of section.rows; track $index) {
+        <div class="grid__label" [class.grid__label--exam]="row.exam">{{ row.label }}</div>
+
+        @for (roll of row.rolls; track $index) {
+          <div [class]="'roll roll--' + roll.state">{{ roll.text }}</div>
+        }
+      }
+    </div>
+  }
+</div>

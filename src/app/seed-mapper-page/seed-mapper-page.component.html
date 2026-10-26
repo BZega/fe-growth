@@ -2,9 +2,12 @@
   <div>
     <h1>Seed Mapper</h1>
     <p>
-      Mark which stats rose on each level up. Add a comparator to run the same
-      levels through a different class of the same rank the differing growth
-      rates narrow down the seed's underlying roll.
+      Enter the unit's stats and change the starting level if it isn't 1. Mark which stats rose on each level up. 
+      Add classes the unit already has available
+      <strong>Available classes</strong>; Noble/Commoner is defaulted and always available. 
+      Comparators replay the same levels in another available class. 
+      Press the <strong>+</strong> beside a level to take an exam in place of that level up, or
+      click <strong>Take Exam</strong> to take one after the last level up.
     </p>
   </div>
 
@@ -23,96 +26,147 @@
     <button
       type="button"
       class="ghost-button"
-      [disabled]="!canAddSeed()"
-      (click)="addSeed()"
+      [disabled]="!canOpenRng()"
+      [title]="
+        canOpenRng()
+          ? 'Show the roll ranges for every section'
+          : 'Pick a unit and class first'
+      "
+      (click)="openRng()"
     >
-      Add seed
+      Seed RNG
+    </button>
+
+    <button
+      type="button"
+      class="ghost-button"
+      [disabled]="!canTakeLatestExam()"
+      [title]="latestExamHint()"
+      (click)="openLatestExam()"
+    >
+      Take Exam
     </button>
   </div>
 </header>
 
 <div class="seeds">
-  @for (seed of seeds(); track seed.id; let seedIndex = $index) {
-    @let seedName = 'Seed ' + (seedIndex + 1);
+  @for (view of sectionViews(); track view.section.id) {
+    @let section = view.section;
+    @let exam = section.exam;
 
     <div
       class="seed-group"
-      [class.seed-group--compact]="seed.comparators.length === 0"
+      [class.seed-group--compact]="section.comparators.length === 0"
+      [id]="anchorOf(view)"
     >
-      <section class="seed">
+      <section class="seed" [class.seed--exam]="!!exam">
         <header class="seed__header">
-          <h2>{{ seedName }}</h2>
+          <h2>{{ view.title }}</h2>
 
-          <div class="picker picker--inline">
+          @if (exam) {
+            <span class="tag" [class.tag--pass]="exam.passed" [class.tag--fail]="!exam.passed">
+              {{ exam.passed ? 'Passed' : 'Failed' }}
+            </span>
+            <span class="seed__summary">
+              {{ className(exam.classId) }} exam · {{ exam.chance }}% · in place of Lv
+              {{ (view.exam?.level ?? 0) + 1 }} in {{ view.parentTitle }}
+            </span>
+            <button type="button" class="ghost-button" (click)="editExam(view)">
+              Edit exam
+            </button>
+          } @else {
+            <div class="picker picker--inline">
+              <app-searchable-select
+                class="compact"
+                label="Unit"
+                placeholder="— Select a unit —"
+                [items]="units()"
+                [value]="seedMap().unitId"
+                (valueChange)="onUnitChange($event)"
+              />
+            </div>
+          }
+          @if (!exam) {
             <app-searchable-select
-              class="compact"
-              label="Unit"
-              placeholder="— Select a unit —"
-              [items]="units()"
-              [value]="seed.unitId"
-              (valueChange)="onUnitChange(seed, $event)"
+              class="compact add-class"
+              label="Add available class"
+              placeholder="+ Add class"
+              [groups]="addableClassGroups()"
+              [clearable]="false"
+              [value]="null"
+              (valueChange)="onAddAvailableClass($event)"
             />
-          </div>
+          }
 
           <button
             type="button"
             class="ghost-button"
-            [disabled]="!canAddComparator(seed)"
-            (click)="addComparator(seed)"
+            [disabled]="!canAddComparator(view)"
+            (click)="addComparator(view)"
           >
             Add comparator
           </button>
 
-          <button
-            type="button"
-            class="icon icon--danger"
-            title="Remove this seed"
-            aria-label="Remove this seed"
-            [disabled]="seeds().length <= 1"
-            (click)="remove(seed)"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm4 2v8h2v-8h-2Zm4 0v8h2v-8h-2Z"
-              />
-            </svg>
-          </button>
+          @if (exam) {
+            <button
+              type="button"
+              class="icon icon--danger"
+              [title]="
+                canRemoveSection(view)
+                  ? 'Remove this exam'
+                  : 'Remove the exams taken after this one first'
+              "
+              aria-label="Remove this exam"
+              [disabled]="!canRemoveSection(view)"
+              (click)="removeSection(view)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Zm4 2v8h2v-8h-2Zm4 0v8h2v-8h-2Z"
+                />
+              </svg>
+            </button>
+          }
         </header>
 
-        <div class="blocks">
-          <article class="block">
-            <header class="block__header">
-              <h3>{{ seedName }}</h3>
-              <span class="tag">Base</span>
-            </header>
-
-            <div class="pickers">
-              <div class="picker">
-                <span class="picker__label">Class</span>
-                <app-searchable-select
-                  label="Class"
-                  placeholder="— Select a class —"
-                  [groups]="classGroups()"
-                  [value]="seed.classId"
-                  (valueChange)="onClassChange(seed, $event)"
-                />
-              </div>
-
-              @if (mountsForClass(seed.classId).length > 0) {
-                <div class="picker">
-                  <span class="picker__label">Mount</span>
-                  <app-searchable-select
-                    label="Mount"
-                    [items]="mountsForClass(seed.classId)"
-                    [clearable]="false"
-                    [value]="mountOf(seed)?.id ?? null"
-                    (valueChange)="onMountChange(seed, $event)"
-                  />
-                </div>
+        <div class="available">
+          <span class="available__label">Available classes</span>
+          @for (unitClass of availableClasses(view); track unitClass.id) {
+            <span class="chip" [class.chip--fixed]="!isRemovableClass(view, unitClass)">
+              {{ unitClass.name }}
+              @if (isRemovableClass(view, unitClass)) {
+                <button
+                  type="button"
+                  class="chip__remove"
+                  [attr.aria-label]="'Remove ' + unitClass.name"
+                  [title]="'Remove ' + unitClass.name"
+                  (click)="removeAvailableClass(unitClass)"
+                >
+                  &times;
+                </button>
               }
-            </div>
+            </span>
+          }
+        </div>
 
-            @let growth = growthOf(seed);
+        @if (!exam) {
+          <div class="start-stats">
+            <div class="start-stats__heading">
+              <label class="stats-level">
+                Starting stats at Lv
+                <input
+                  class="level-input level-input--inline"
+                  type="number"
+                  inputmode="numeric"
+                  [min]="minLevel"
+                  [max]="maxLevel - 1"
+                  aria-label="Stats level"
+                  [value]="seedMap().statsLevel"
+                  (change)="onStatsLevelChange($event)"
+                  (keydown.enter)="focusNextStartField($event)"
+                />
+              </label>
+            </div>
 
             <div class="grid" [style.--stat-count]="statKeys.length">
               <div class="grid__corner"></div>
@@ -120,35 +174,124 @@
                 <div class="grid__head">{{ statLabels[stat] }}</div>
               }
 
-              <div class="grid__label">Growth</div>
+              <div class="grid__label">Stats</div>
               @for (stat of statKeys; track stat) {
-                <div class="grid__growth" [class.negative]="growth[stat] < 0">
-                  {{ growth[stat] }}%
+                <input
+                  class="stat-input"
+                  type="number"
+                  inputmode="numeric"
+                  min="0"
+                  placeholder="—"
+                  [attr.aria-label]="'Lv ' + startLevelOf(view) + ' ' + statLabels[stat]"
+                  [value]="seedMap().startStats[stat] ?? ''"
+                  (change)="onStartStatChange(stat, $event)"
+                  (keydown.enter)="focusNextStartField($event)"
+                />
+              }
+            </div>
+          </div>
+        }
+
+        <div class="blocks">
+          <article class="block">
+            <header class="block__header">
+              <h3>{{ view.title }}</h3>
+              <span class="tag">Base</span>
+            </header>
+
+            <div class="pickers">
+              <div class="picker">
+                <span class="picker__label">
+                  Class
+                  @if (exam) {
+                    <span class="picker__note">{{ exam.passed ? '(from exam)' : '(unchanged)' }}</span>
+                  }
+                </span>
+                <app-searchable-select
+                  label="Class"
+                  placeholder="— Select a class —"
+                  [groups]="availableClassGroups(view)"
+                  [clearable]="false"
+                  [disabled]="!!exam"
+                  [value]="view.classId"
+                  (valueChange)="onClassChange(view, $event)"
+                />
+              </div>
+
+              @if (mountsForClass(view.classId).length > 0) {
+                <div class="picker">
+                  <span class="picker__label">Mount</span>
+                  <app-searchable-select
+                    label="Mount"
+                    [items]="mountsForClass(view.classId)"
+                    [clearable]="false"
+                    [value]="view.mount?.id ?? null"
+                    (valueChange)="onMountChange(view, $event)"
+                  />
                 </div>
               }
+            </div>
 
-              @for (row of seed.rows; track row.id; let rowIndex = $index) {
+            <div class="grid grid--actions" [style.--stat-count]="statKeys.length">
+              <div class="grid__corner"></div>
+              @for (stat of statKeys; track stat) {
+                <div class="grid__head">{{ statLabels[stat] }}</div>
+              }
+              <div class="grid__corner"></div>
+
+              <div class="grid__label">Growth</div>
+              @for (stat of statKeys; track stat) {
+                <div class="grid__growth" [class.negative]="view.growth[stat] < 0">
+                  {{ view.growth[stat] }}%
+                </div>
+              }
+              <div class="grid__corner"></div>
+
+              @if (exam) {
+                @let carried = startStatsOf(view);
+
+                <div class="grid__caption">
+                  Lv {{ startLevelOf(view) }} stats
+                  <span class="grid__caption-note">carried over from {{ view.parentTitle }}</span>
+                </div>
+                <div class="grid__label">Stats</div>
+                @for (stat of statKeys; track stat; let statIndex = $index) {
+                  <ng-container
+                    [ngTemplateOutlet]="statTotal"
+                    [ngTemplateOutletContext]="{ total: carried[statIndex] }"
+                  />
+                }
+                <div class="grid__corner"></div>
+              }
+
+              @if (exam && view.exam) {
+                <ng-container
+                  [ngTemplateOutlet]="examRow"
+                  [ngTemplateOutletContext]="{ view: view, exam: exam }"
+                />
+                <div class="grid__corner"></div>
+              }
+
+              @for (row of section.rows; track row.id; let rowIndex = $index) {
+                @let examHere = hasExamAt(view, rowIndex);
+                @let examSection = examSectionAt(view, rowIndex);
+                @let anchored = isBranchRow(view, rowIndex);
+                @let cells = effectiveRow(
+                  view.classId === null ? null : view.growth,
+                  row,
+                  view.firstSlot + rowIndex
+                );
+
                 <div class="grid__label">
-                  @if (rowIndex === 0) {
-                    <input
-                      class="level-input"
-                      type="number"
-                      inputmode="numeric"
-                      [min]="minLevel"
-                      [max]="maxLevel"
-                      placeholder="Lv"
-                      aria-label="Starting level"
-                      [value]="seed.startLevel ?? ''"
-                      (change)="onLevelChange(seed, $event)"
-                    />
-                  } @else {
-                    <span class="level">Lv {{ levelOf(seed, rowIndex) }}</span>
+                  <span class="level">Lv {{ levelOf(view, rowIndex) }}</span>
+                  @if (rowIndex > 0) {
                     <button
                       type="button"
                       class="level__remove"
-                      title="Remove this level"
+                      [title]="anchored ? 'An exam is taken at or right after this level' : 'Remove this level'"
                       aria-label="Remove this level"
-                      (click)="removeLevel(seed, row)"
+                      [disabled]="anchored"
+                      (click)="removeLevel(view, row)"
                     >
                       &times;
                     </button>
@@ -159,33 +302,57 @@
                   <button
                     type="button"
                     class="cell"
-                    [class.cell--on]="row.marks[stat] > 0"
-                    (click)="toggleStat(seed, row, stat)"
+                    [class.cell--on]="cells.marks[stat] > 0"
+                    [class.cell--auto]="cells.auto[stat]"
+                    [title]="cells.auto[stat] ? autoHint : ''"
+                    (click)="toggleStat(view, row, stat)"
                   >
-                    {{ row.marks[stat] }}
+                    {{ cells.marks[stat] }}
                   </button>
                 }
+
+                <button
+                  type="button"
+                  class="exam-add"
+                  [class.exam-add--used]="examHere"
+                  [title]="
+                    examSection
+                      ? 'Lv ' + levelOf(view, rowIndex) + ' was already skipped by ' + examSection.title +
+                        '. To skip it again, use the + on ' + examSection.title + ' Lv ' + levelOf(view, rowIndex) + '.'
+                      : 'Exam taken at Lv ' + levelOf(view, rowIndex) + ' (skips this level up)'
+                  "
+                  [attr.aria-label]="'Exam taken at Lv ' + levelOf(view, rowIndex)"
+                  [disabled]="!canTakeExamAtRow(view, rowIndex)"
+                  (click)="openExamAt(view, rowIndex)"
+                >
+                  +
+                </button>
               }
+
+              <ng-container
+                [ngTemplateOutlet]="endStats"
+                [ngTemplateOutletContext]="{ view: view, totals: endStatsOf(view), actions: true }"
+              />
             </div>
           </article>
 
           @for (
-            comparator of seed.comparators;
+            comparator of section.comparators;
             track comparator.id;
             let comparatorIndex = $index
           ) {
-            @let options = comparatorClasses(seed, comparator);
+            @let options = comparatorClasses(view, comparator);
 
             <article class="block block--comparator">
               <header class="block__header">
-                <h3>{{ seedName }}</h3>
+                <h3>{{ view.title }}</h3>
                 <span class="tag">Comparator {{ comparatorIndex + 1 }}</span>
                 <button
                   type="button"
                   class="icon icon--danger"
                   title="Remove this comparator"
                   aria-label="Remove this comparator"
-                  (click)="removeComparator(seed, comparator)"
+                  (click)="removeComparator(view, comparator)"
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path
@@ -204,7 +371,7 @@
                     [items]="options"
                     [disabled]="options.length === 0"
                     [value]="comparator.classId"
-                    (valueChange)="onComparatorClassChange(seed, comparator, $event)"
+                    (valueChange)="onComparatorClassChange(view, comparator, $event)"
                   />
                 </div>
 
@@ -216,13 +383,13 @@
                       [items]="mountsForClass(comparator.classId)"
                       [clearable]="false"
                       [value]="comparatorMountOf(comparator)?.id ?? null"
-                      (valueChange)="onComparatorMountChange(seed, comparator, $event)"
+                      (valueChange)="onComparatorMountChange(view, comparator, $event)"
                     />
                   </div>
                 }
               </div>
 
-              @let comparatorGrowths = comparatorGrowth(seed, comparator);
+              @let comparatorGrowths = comparatorGrowth(comparator);
 
               <div class="grid" [style.--stat-count]="statKeys.length">
                 <div class="grid__corner"></div>
@@ -240,65 +407,63 @@
                   </div>
                 }
 
+                @if (exam && view.exam) {
+                  <ng-container
+                    [ngTemplateOutlet]="examRow"
+                    [ngTemplateOutletContext]="{ view: view, exam: exam }"
+                  />
+                }
+
                 @for (
                   row of comparator.rows;
                   track row.id;
                   let rowIndex = $index
                 ) {
+                  @let comparatorCells = effectiveRow(
+                    comparator.classId === null ? null : comparatorGrowths,
+                    row,
+                    view.firstSlot + rowIndex
+                  );
+
                   <div class="grid__label">
-                    <span class="level">Lv {{ levelOf(seed, rowIndex) }}</span>
+                    <span class="level">Lv {{ levelOf(view, rowIndex) }}</span>
                   </div>
 
                   @for (stat of statKeys; track stat) {
                     <button
                       type="button"
                       class="cell"
-                      [class.cell--on]="row.marks[stat] > 0"
-                      (click)="toggleComparatorStat(seed, comparator, row, stat)"
+                      [class.cell--on]="comparatorCells.marks[stat] > 0"
+                      [class.cell--auto]="comparatorCells.auto[stat]"
+                      [title]="comparatorCells.auto[stat] ? autoHint : ''"
+                      (click)="toggleComparatorStat(view, comparator, row, stat)"
                     >
-                      {{ row.marks[stat] }}
+                      {{ comparatorCells.marks[stat] }}
                     </button>
                   }
                 }
+
+                <ng-container
+                  [ngTemplateOutlet]="endStats"
+                  [ngTemplateOutletContext]="{
+                    view: view,
+                    totals: endStatsOf(view, comparator),
+                    actions: false,
+                  }"
+                />
               </div>
             </article>
           }
         </div>
 
-        @if (hasComparison(seed)) {
-          <div class="rng">
-            <h3 class="rng__title">Seed RNG</h3>
-
-            <div class="grid" [style.--stat-count]="statKeys.length">
-              <div class="grid__corner"></div>
-              @for (stat of statKeys; track stat) {
-                <div class="grid__head">{{ statLabels[stat] }}</div>
-              }
-
-              @for (row of seed.rows; track row.id; let rowIndex = $index) {
-                @let rolls = rollsFor(seed, rowIndex);
-
-                <div class="grid__label">
-                  <span class="level">Lv {{ levelOf(seed, rowIndex) }}</span>
-                </div>
-
-                @for (stat of statKeys; track stat; let statIndex = $index) {
-                  <div class="roll" [class]="'roll roll--' + rolls[statIndex].state">
-                    {{ rolls[statIndex].text }}
-                  </div>
-                }
-              }
-            </div>
-          </div>
-        }
-
         <footer class="seed__footer">
           <button
             type="button"
             class="icon"
-            title="Add the next level"
+            [title]="canAddLevel(view) ? 'Add the next level' : 'Lv ' + maxLevel + ' is the highest level'"
             aria-label="Add the next level"
-            (click)="addLevel(seed)"
+            [disabled]="!canAddLevel(view)"
+            (click)="addLevel(view)"
           >
             +
           </button>
@@ -408,6 +573,8 @@
                 </button>
               </div>
             } @else {
+              @let exams = examCount(save);
+
               <button
                 type="button"
                 class="save-list__load"
@@ -415,8 +582,10 @@
               >
                 <span class="save-list__name">{{ save.name }}</span>
                 <span class="save-list__meta">
-                  {{ save.seeds.length }}
-                  {{ save.seeds.length === 1 ? 'seed' : 'seeds' }} ·
+                  @if (save.seed.unit) {
+                    {{ save.seed.unit }} ·
+                  }
+                  {{ exams }} {{ exams === 1 ? 'exam' : 'exams' }} ·
                   {{ save.savedAt | date: 'medium' }}
                 </span>
               </button>
@@ -458,3 +627,82 @@
     }
   </section>
 </div>
+
+<ng-template #statTotal let-total="total">
+  @let delta = total.gained + total.classBonus;
+  <div
+    class="stat-value"
+    [class.stat-value--bonus-up]="total.classBonus > 0"
+    [class.stat-value--bonus-down]="total.classBonus < 0"
+    [title]="statTotalTitle(total)"
+  >
+    @if (total.value !== null) {
+      <span>{{ total.value }}</span>
+    } @else {
+      <span class="stat-value__unknown">{{ delta < 0 ? '' : '+' }}{{ delta }}</span>
+    }
+  </div>
+</ng-template>
+
+<ng-template #endStats let-view="view" let-totals="totals" let-actions="actions">
+  <div class="grid__caption grid__caption--end">Lv {{ endLevelOf(view) }} stats</div>
+  <div class="grid__label">Stats</div>
+  @for (stat of statKeys; track stat; let statIndex = $index) {
+    <ng-container
+      [ngTemplateOutlet]="statTotal"
+      [ngTemplateOutletContext]="{ total: totals[statIndex] }"
+    />
+  }
+  @if (actions) {
+    <div class="grid__corner"></div>
+  }
+</ng-template>
+
+<ng-template #examRow let-view="view" let-exam="exam">
+  <div class="grid__label" [title]="'Used the Lv ' + (view.exam.level + 1) + ' roll'">
+    <span class="level level--exam">{{ examLabel(view) }}</span>
+  </div>
+
+  @for (stat of statKeys; track stat) {
+    @if (stat === 'str') {
+      <div
+        class="exam-cell"
+        [class.exam-cell--pass]="exam.passed"
+        [class.exam-cell--fail]="!exam.passed"
+        [title]="
+          className(exam.classId) +
+          ' exam ' +
+          (exam.passed ? 'passed' : 'failed') +
+          ' at ' +
+          exam.chance +
+          '%'
+        "
+      >
+        {{ exam.passed ? '✓' : '✗' }} {{ exam.chance }}%
+      </div>
+    } @else {
+      <div class="blank-cell" aria-hidden="true"></div>
+    }
+  }
+</ng-template>
+
+@if (rngSectionId(); as activeId) {
+  <app-seed-rng-dialog
+    [sections]="rngSections()"
+    [activeId]="activeId"
+    (selected)="rngSectionId.set($event)"
+    (closed)="closeRng()"
+  />
+}
+
+@if (examDialog(); as dialog) {
+  <app-exam-dialog
+    [title]="dialog.title"
+    [context]="dialog.context"
+    [classGroups]="dialog.classGroups"
+    [initial]="dialog.initial"
+    [strBounds]="dialog.strBounds"
+    (confirmed)="onExamConfirmed($event)"
+    (closed)="closeExam()"
+  />
+}

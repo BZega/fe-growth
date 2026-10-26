@@ -99,6 +99,10 @@
   min-width: 0;
   font-size: 0.78rem;
 
+  &--unit {
+    flex-grow: 0.85;
+  }
+
   &--level {
     flex: 0 0 6.5rem;
 

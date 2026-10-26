@@ -1,7 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 
 import { GrowthRates, StatKey, ZERO_GROWTH } from '../models/growth.models';
-import { SeedSnapshot } from '../models/seed-save';
+import { EMPTY_STATS, SeedMapSnapshot, StatValues } from '../models/seed-save';
+import { GrowthDataService } from './growth-data.service';
 
 export interface SeedRow {
   id: number;
@@ -15,76 +16,208 @@ export interface SeedComparator {
   rows: SeedRow[];
 }
 
-export interface Seed {
+export interface SeedExam {
+  parentId: number;
+  afterRowId: number | null;
+  classId: number | null;
+  chance: number;
+  passed: boolean;
+}
+
+export interface SeedSection {
   id: number;
-  unitId: number | null;
+  exam: SeedExam | null;
   classId: number | null;
   mountId: number | null;
-  startLevel: number | null;
   rows: SeedRow[];
   comparators: SeedComparator[];
 }
 
+export interface SeedMap {
+  unitId: number | null;
+  statsLevel: number;
+  startStats: StatValues;
+  availableClassIds: number[];
+  sections: SeedSection[];
+}
+
+export interface ExamDraft {
+  classId: number;
+  chance: number;
+  passed: boolean;
+}
+
 export const MIN_LEVEL = 1;
 export const MAX_LEVEL = 99;
+export const ALWAYS_AVAILABLE_CLASS = 'Noble/Commoner';
+
+export function effectiveClassId(
+  sections: readonly SeedSection[],
+  section: SeedSection,
+): number | null {
+  let current: SeedSection | undefined = section;
+
+  while (current?.exam && !current.exam.passed) {
+    const parentId: number = current.exam.parentId;
+    current = sections.find((candidate) => candidate.id === parentId);
+  }
+
+  if (!current) {
+    return null;
+  }
+
+  return current.exam ? current.exam.classId : current.classId;
+}
+
+export function availableClassIds(
+  map: SeedMap,
+  section: SeedSection,
+  always: readonly number[],
+): Set<number> {
+  const available = new Set<number>([...always, ...map.availableClassIds]);
+  let current: SeedSection | undefined = section;
+
+  while (current?.exam) {
+    const exam: SeedExam = current.exam;
+
+    if (exam.passed && exam.classId !== null) {
+      available.add(exam.classId);
+    }
+
+    current = map.sections.find((candidate) => candidate.id === exam.parentId);
+  }
+
+  return available;
+}
 
 @Injectable({ providedIn: 'root' })
 export class SeedMapperStateService {
-  private nextSeedId = 1;
+  private nextSectionId = 1;
   private nextRowId = 1;
   private nextComparatorId = 1;
 
-  private readonly seedList = signal<Seed[]>([this.createSeed()]);
+  private readonly api = inject(GrowthDataService);
+
+  private alwaysAvailable: number[] = [];
+
+  private readonly mapState = signal<SeedMap>(this.createMap());
   private readonly changes = signal(0);
   private readonly activeSave = signal<{ id: string; name: string } | null>(null);
 
-  readonly seeds = this.seedList.asReadonly();
+  readonly seedMap = this.mapState.asReadonly();
   readonly changeCount = this.changes.asReadonly();
   readonly loadedSave = this.activeSave.asReadonly();
 
-  snapshot(): SeedSnapshot[] {
-    return this.seedList().map((seed) => ({
-      unitId: seed.unitId,
-      classId: seed.classId,
-      mountId: seed.mountId,
-      startLevel: seed.startLevel,
-      rows: seed.rows.map((row) => ({ ...row.marks })),
-      comparators: seed.comparators.map((comparator) => ({
-        classId: comparator.classId,
-        mountId: comparator.mountId,
-        rows: comparator.rows.map((row) => ({ ...row.marks })),
-      })),
-    }));
+  constructor() {
+    this.api
+      .getClasses()
+      .subscribe((classes) => {
+        this.alwaysAvailable = classes
+          .filter((unitClass) => unitClass.name === ALWAYS_AVAILABLE_CLASS)
+          .map((unitClass) => unitClass.id);
+        this.mapState.update((map) => fillDefaultClass(map, this.alwaysAvailable));
+      });
   }
 
-  restore(snapshots: SeedSnapshot[], save: { id: string; name: string } | null): void {
-    const seeds = snapshots.map((snapshot) => {
-      const rows = snapshot.rows.map((marks) => ({
+  get alwaysAvailableClassIds(): readonly number[] {
+    return this.alwaysAvailable;
+  }
+
+  snapshot(): SeedMapSnapshot {
+    const map = this.mapState();
+    const indexOf = new Map(map.sections.map((section, index) => [section.id, index]));
+
+    return {
+      unitId: map.unitId,
+      statsLevel: map.statsLevel,
+      startStats: { ...map.startStats },
+      availableClassIds: [...map.availableClassIds],
+      sections: map.sections.map((section) => {
+        const exam = section.exam;
+        const parent = exam
+          ? map.sections.find((candidate) => candidate.id === exam.parentId)
+          : undefined;
+
+        return {
+          exam:
+            exam && parent
+              ? {
+                  parentIndex: indexOf.get(parent.id) ?? 0,
+                  afterRowIndex:
+                    exam.afterRowId === null
+                      ? null
+                      : parent.rows.findIndex((row) => row.id === exam.afterRowId),
+                  classId: exam.classId,
+                  chance: exam.chance,
+                  passed: exam.passed,
+                }
+              : null,
+          classId: section.classId,
+          mountId: section.mountId,
+          rows: section.rows.map((row) => ({ ...row.marks })),
+          comparators: section.comparators.map((comparator) => ({
+            classId: comparator.classId,
+            mountId: comparator.mountId,
+            rows: comparator.rows.map((row) => ({ ...row.marks })),
+          })),
+        };
+      }),
+    };
+  }
+
+  restore(snapshot: SeedMapSnapshot, save: { id: string; name: string } | null): void {
+    const sections: SeedSection[] = [];
+
+    for (const entry of snapshot.sections) {
+      const rows = entry.rows.map((marks) => ({
         id: this.nextRowId++,
         marks: { ...marks },
       }));
+      const parent = entry.exam ? sections[entry.exam.parentIndex] : undefined;
 
-      return {
-        id: this.nextSeedId++,
-        unitId: snapshot.unitId,
-        classId: snapshot.classId,
-        mountId: snapshot.mountId,
-        startLevel: snapshot.startLevel,
+      sections.push({
+        id: this.nextSectionId++,
+        exam:
+          entry.exam && parent
+            ? {
+                parentId: parent.id,
+                afterRowId:
+                  entry.exam.afterRowIndex === null
+                    ? null
+                    : (parent.rows[entry.exam.afterRowIndex]?.id ?? null),
+                classId: entry.exam.classId,
+                chance: entry.exam.chance,
+                passed: entry.exam.passed,
+              }
+            : null,
+        classId: entry.classId,
+        mountId: entry.mountId,
         rows,
-        comparators: snapshot.comparators.map((comparator) => ({
+        comparators: entry.comparators.map((comparator) => ({
           id: this.nextComparatorId++,
           classId: comparator.classId,
           mountId: comparator.mountId,
-          // Comparator rows line up with the seed's rows by position.
           rows: rows.map((row, index) => ({
             id: row.id,
             marks: { ...(comparator.rows[index] ?? ZERO_GROWTH) },
           })),
         })),
-      } satisfies Seed;
-    });
+      });
+    }
 
-    this.seedList.set(seeds.length > 0 ? seeds : [this.createSeed()]);
+    const restored: SeedMap = {
+      unitId: snapshot.unitId,
+      statsLevel: snapshot.statsLevel ?? MIN_LEVEL,
+      startStats: { ...snapshot.startStats },
+      availableClassIds: [...snapshot.availableClassIds],
+      sections,
+    };
+
+    this.mapState.set(
+      sections.length > 0
+        ? fillDefaultClass(this.includeUsedClasses(restored), this.alwaysAvailable)
+        : this.createMap(),
+    );
     this.activeSave.set(save);
     this.changes.set(0);
   }
@@ -95,7 +228,7 @@ export class SeedMapperStateService {
   }
 
   reset(): void {
-    this.seedList.set([this.createSeed()]);
+    this.mapState.set(this.createMap());
     this.activeSave.set(null);
     this.changes.set(0);
   }
@@ -104,42 +237,73 @@ export class SeedMapperStateService {
     this.activeSave.set(null);
   }
 
-  setUnit(seedId: number, unitId: number | null): void {
-    this.patch(seedId, (seed) => ({ ...seed, unitId }));
-  }
+  setUnit(unitId: number | null): void {
+    const unit = this.api.unitById(unitId);
+    const usable = new Set(this.api.classesForUnit(unit).map((unitClass) => unitClass.id));
 
-  setClass(seedId: number, classId: number | null): void {
-    this.patch(seedId, (seed) => ({
-      ...seed,
-      classId,
-      mountId: null,
-      comparators: seed.comparators.map((comparator) => ({
-        ...comparator,
-        classId: null,
-        mountId: null,
-      })),
+    this.mutate((map) => ({
+      ...map,
+      unitId,
+      availableClassIds: map.availableClassIds.filter((id) => usable.has(id)),
     }));
   }
 
-  setMount(seedId: number, mountId: number | null): void {
-    this.patch(seedId, (seed) => ({ ...seed, mountId }));
-  }
-
-  setStartLevel(seedId: number, level: number | null): void {
+  setStatsLevel(level: number | null): void {
     const clamped =
-      level === null ? null : Math.min(MAX_LEVEL, Math.max(MIN_LEVEL, level));
+      level === null || Number.isNaN(level)
+        ? MIN_LEVEL
+        : Math.min(MAX_LEVEL - 1, Math.max(MIN_LEVEL, Math.round(level)));
 
-    this.patch(seedId, (seed) => ({ ...seed, startLevel: clamped }));
+    this.mutate((map) => ({ ...map, statsLevel: clamped }));
   }
 
-  addLevel(seedId: number): void {
-    this.patch(seedId, (seed) => {
+  addAvailableClass(classId: number): void {
+    if (
+      this.alwaysAvailable.includes(classId) ||
+      this.mapState().availableClassIds.includes(classId)
+    ) {
+      return;
+    }
+
+    this.mutate((map) => ({
+      ...map,
+      availableClassIds: [...map.availableClassIds, classId],
+    }));
+  }
+
+  removeAvailableClass(classId: number): void {
+    this.mutate((map) => ({
+      ...map,
+      availableClassIds: map.availableClassIds.filter((id) => id !== classId),
+    }));
+  }
+
+  setStartStat(stat: StatKey, value: number | null): void {
+    const cleaned =
+      value === null || !Number.isFinite(value) ? null : Math.max(0, Math.round(value));
+
+    this.mutate((map) => ({
+      ...map,
+      startStats: { ...map.startStats, [stat]: cleaned },
+    }));
+  }
+
+  setClass(sectionId: number, classId: number | null): void {
+    this.patch(sectionId, (section) => ({ ...section, classId }));
+  }
+
+  setMount(sectionId: number, mountId: number | null): void {
+    this.patch(sectionId, (section) => ({ ...section, mountId }));
+  }
+
+  addLevel(sectionId: number): void {
+    this.patch(sectionId, (section) => {
       const row = this.createRow();
 
       return {
-        ...seed,
-        rows: [...seed.rows, row],
-        comparators: seed.comparators.map((comparator) => ({
+        ...section,
+        rows: [...section.rows, row],
+        comparators: section.comparators.map((comparator) => ({
           ...comparator,
           rows: [...comparator.rows, { id: row.id, marks: { ...ZERO_GROWTH } }],
         })),
@@ -147,14 +311,18 @@ export class SeedMapperStateService {
     });
   }
 
-  removeLevel(seedId: number, rowId: number): void {
-    this.patch(seedId, (seed) =>
-      seed.rows.length <= 1
-        ? seed
+  removeLevel(sectionId: number, rowId: number): void {
+    if (this.isBranchRow(sectionId, rowId)) {
+      return;
+    }
+
+    this.patch(sectionId, (section) =>
+      section.rows.length <= 1
+        ? section
         : {
-            ...seed,
-            rows: seed.rows.filter((row) => row.id !== rowId),
-            comparators: seed.comparators.map((comparator) => ({
+            ...section,
+            rows: section.rows.filter((row) => row.id !== rowId),
+            comparators: section.comparators.map((comparator) => ({
               ...comparator,
               rows: comparator.rows.filter((row) => row.id !== rowId),
             })),
@@ -162,23 +330,23 @@ export class SeedMapperStateService {
     );
   }
 
-  toggleStat(seedId: number, rowId: number, stat: StatKey): void {
-    this.patch(seedId, (seed) => ({
-      ...seed,
-      rows: toggle(seed.rows, rowId, stat),
+  toggleStat(sectionId: number, rowId: number, stat: StatKey): void {
+    this.patch(sectionId, (section) => ({
+      ...section,
+      rows: toggle(section.rows, rowId, stat),
     }));
   }
 
-  addComparator(seedId: number): void {
-    this.patch(seedId, (seed) => ({
-      ...seed,
+  addComparator(sectionId: number): void {
+    this.patch(sectionId, (section) => ({
+      ...section,
       comparators: [
-        ...seed.comparators,
+        ...section.comparators,
         {
           id: this.nextComparatorId++,
           classId: null,
           mountId: null,
-          rows: seed.rows.map((row) => ({
+          rows: section.rows.map((row) => ({
             id: row.id,
             marks: { ...ZERO_GROWTH },
           })),
@@ -187,19 +355,19 @@ export class SeedMapperStateService {
     }));
   }
 
-  removeComparator(seedId: number, comparatorId: number): void {
-    this.patch(seedId, (seed) => ({
-      ...seed,
-      comparators: seed.comparators.filter((c) => c.id !== comparatorId),
+  removeComparator(sectionId: number, comparatorId: number): void {
+    this.patch(sectionId, (section) => ({
+      ...section,
+      comparators: section.comparators.filter((c) => c.id !== comparatorId),
     }));
   }
 
   setComparatorClass(
-    seedId: number,
+    sectionId: number,
     comparatorId: number,
     classId: number | null,
   ): void {
-    this.patchComparator(seedId, comparatorId, (comparator) => ({
+    this.patchComparator(sectionId, comparatorId, (comparator) => ({
       ...comparator,
       classId,
       mountId: null,
@@ -207,99 +375,240 @@ export class SeedMapperStateService {
   }
 
   setComparatorMount(
-    seedId: number,
+    sectionId: number,
     comparatorId: number,
     mountId: number | null,
   ): void {
-    this.patchComparator(seedId, comparatorId, (comparator) => ({
+    this.patchComparator(sectionId, comparatorId, (comparator) => ({
       ...comparator,
       mountId,
     }));
   }
 
   toggleComparatorStat(
-    seedId: number,
+    sectionId: number,
     comparatorId: number,
     rowId: number,
     stat: StatKey,
   ): void {
-    this.patchComparator(seedId, comparatorId, (comparator) => ({
+    this.patchComparator(sectionId, comparatorId, (comparator) => ({
       ...comparator,
       rows: toggle(comparator.rows, rowId, stat),
     }));
   }
 
-  duplicate(seedId: number): void {
-    const source = this.seedList().find((seed) => seed.id === seedId);
+  addExam(parentId: number, afterRowId: number | null, draft: ExamDraft): number | null {
+    const parent = this.mapState().sections.find((section) => section.id === parentId);
 
-    if (!source) {
-      return;
+    if (!parent || this.hasExamAfter(parentId, afterRowId)) {
+      return null;
     }
 
-    const copy: Seed = {
-      ...this.createSeed(),
-      unitId: source.unitId,
-      classId: source.classId,
-      mountId: source.mountId,
-      startLevel: source.startLevel,
+    const section: SeedSection = {
+      id: this.nextSectionId++,
+      exam: { parentId, afterRowId, ...draft },
+      classId: null,
+      mountId: draft.passed ? null : parent.mountId,
+      rows: [this.createRow()],
+      comparators: [],
     };
 
-    this.mutate((seeds) => {
-      const index = seeds.findIndex((seed) => seed.id === seedId);
-      const next = [...seeds];
-      next.splice(index + 1, 0, copy);
+    this.mutate((map) => ({ ...map, sections: [...map.sections, section] }));
 
-      return next;
-    });
+    return section.id;
   }
 
-  remove(seedId: number): void {
-    if (this.seedList().length <= 1) {
-      return;
-    }
-
-    this.mutate((seeds) => seeds.filter((seed) => seed.id !== seedId));
-  }
-
-  private mutate(change: (seeds: Seed[]) => Seed[]): void {
-    this.seedList.update(change);
-    this.changes.update((count) => count + 1);
-  }
-
-  private patch(seedId: number, change: (seed: Seed) => Seed): void {
-    this.mutate((seeds) =>
-      seeds.map((seed) => (seed.id === seedId ? change(seed) : seed)),
+  updateExam(sectionId: number, draft: ExamDraft): void {
+    this.patch(sectionId, (section) =>
+      section.exam ? { ...section, exam: { ...section.exam, ...draft } } : section,
     );
   }
 
+  canRemoveSection(sectionId: number): boolean {
+    const sections = this.mapState().sections;
+
+    return (
+      sections.find((section) => section.id === sectionId)?.exam != null &&
+      !sections.some((section) => section.exam?.parentId === sectionId)
+    );
+  }
+
+  hasExamAfter(sectionId: number, rowId: number | null): boolean {
+    return this.mapState().sections.some(
+      (section) =>
+        section.exam?.parentId === sectionId && section.exam.afterRowId === rowId,
+    );
+  }
+
+  isBranchRow(sectionId: number, rowId: number): boolean {
+    const rows = this.mapState().sections.find((section) => section.id === sectionId)?.rows ?? [];
+    const index = rows.findIndex((row) => row.id === rowId);
+    const before = index <= 0 ? null : rows[index - 1].id;
+
+    return this.hasExamAfter(sectionId, rowId) || this.hasExamAfter(sectionId, before);
+  }
+
+  removeSection(sectionId: number): void {
+    if (!this.canRemoveSection(sectionId)) {
+      return;
+    }
+
+    this.mutate((map) => ({
+      ...map,
+      sections: map.sections.filter((section) => section.id !== sectionId),
+    }));
+  }
+
+  private mutate(change: (map: SeedMap) => SeedMap): void {
+    this.mapState.update((map) =>
+      fillDefaultClass(
+        clearUnavailableClasses(resetChangedClasses(map, change(map)), this.alwaysAvailable),
+        this.alwaysAvailable,
+      ),
+    );
+    this.changes.update((count) => count + 1);
+  }
+
+  private includeUsedClasses(map: SeedMap): SeedMap {
+    const extra = new Set(map.availableClassIds);
+
+    for (const section of map.sections) {
+      const available = availableClassIds(map, section, this.alwaysAvailable);
+      const used = [
+        section.exam ? null : section.classId,
+        ...section.comparators.map((comparator) => comparator.classId),
+      ];
+
+      for (const classId of used) {
+        if (classId !== null && !available.has(classId)) {
+          extra.add(classId);
+        }
+      }
+    }
+
+    return extra.size === map.availableClassIds.length
+      ? map
+      : { ...map, availableClassIds: [...extra] };
+  }
+
+  private patch(sectionId: number, change: (section: SeedSection) => SeedSection): void {
+    this.mutate((map) => ({
+      ...map,
+      sections: map.sections.map((section) =>
+        section.id === sectionId ? change(section) : section,
+      ),
+    }));
+  }
+
   private patchComparator(
-    seedId: number,
+    sectionId: number,
     comparatorId: number,
     change: (comparator: SeedComparator) => SeedComparator,
   ): void {
-    this.patch(seedId, (seed) => ({
-      ...seed,
-      comparators: seed.comparators.map((comparator) =>
+    this.patch(sectionId, (section) => ({
+      ...section,
+      comparators: section.comparators.map((comparator) =>
         comparator.id === comparatorId ? change(comparator) : comparator,
       ),
     }));
   }
 
-  private createSeed(): Seed {
-    return {
-      id: this.nextSeedId++,
-      unitId: null,
-      classId: null,
-      mountId: null,
-      startLevel: null,
-      rows: [this.createRow()],
-      comparators: [],
-    };
+  private createMap(): SeedMap {
+    return fillDefaultClass(
+      {
+        unitId: null,
+        statsLevel: MIN_LEVEL,
+        startStats: { ...EMPTY_STATS },
+        availableClassIds: [],
+        sections: [
+          {
+            id: this.nextSectionId++,
+            exam: null,
+            classId: null,
+            mountId: null,
+            rows: [this.createRow()],
+            comparators: [],
+          },
+        ],
+      },
+      this.alwaysAvailable,
+    );
   }
 
   private createRow(): SeedRow {
     return { id: this.nextRowId++, marks: { ...ZERO_GROWTH } };
   }
+}
+
+function resetChangedClasses(before: SeedMap, after: SeedMap): SeedMap {
+  let changed = false;
+
+  const sections = after.sections.map((section) => {
+    const previous = before.sections.find((candidate) => candidate.id === section.id);
+    const classId = effectiveClassId(after.sections, section);
+
+    if (!previous || effectiveClassId(before.sections, previous) === classId) {
+      return section;
+    }
+
+    changed = true;
+
+    return {
+      ...section,
+      mountId: null,
+      comparators: section.comparators.map((comparator) =>
+        comparator.classId === classId
+          ? { ...comparator, classId: null, mountId: null }
+          : comparator,
+      ),
+    };
+  });
+
+  return changed ? { ...after, sections } : after;
+}
+
+function fillDefaultClass(map: SeedMap, always: readonly number[]): SeedMap {
+  const base = map.sections.find((section) => !section.exam);
+  const fallback = always[0];
+
+  if (!base || base.classId !== null || fallback === undefined) {
+    return map;
+  }
+
+  return {
+    ...map,
+    sections: map.sections.map((section) =>
+      section === base ? { ...section, classId: fallback } : section,
+    ),
+  };
+}
+
+function clearUnavailableClasses(map: SeedMap, always: readonly number[]): SeedMap {
+  let changed = false;
+
+  const sections = map.sections.map((section) => {
+    const available = availableClassIds(map, section, always);
+    const keep = (classId: number | null) => classId === null || available.has(classId);
+    const baseClassValid = section.exam !== null || keep(section.classId);
+    const comparatorsValid = section.comparators.every((comparator) => keep(comparator.classId));
+
+    if (baseClassValid && comparatorsValid) {
+      return section;
+    }
+
+    changed = true;
+
+    return {
+      ...section,
+      classId: baseClassValid ? section.classId : null,
+      mountId: baseClassValid ? section.mountId : null,
+      comparators: section.comparators.map((comparator) =>
+        keep(comparator.classId) ? comparator : { ...comparator, classId: null, mountId: null },
+      ),
+    };
+  });
+
+  return changed ? { ...map, sections } : map;
 }
 
 function toggle(rows: SeedRow[], rowId: number, stat: StatKey): SeedRow[] {

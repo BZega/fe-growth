@@ -1,0 +1,246 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 65%);
+  backdrop-filter: blur(2px);
+}
+
+.dialog {
+  position: relative;
+  width: min(820px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 55%);
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h2 {
+    margin: 0.15rem 0 0;
+    font-size: 1.3rem;
+  }
+}
+
+.dialog__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.dialog__close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.6rem;
+  line-height: 1;
+  padding: 0 0.25rem;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.9rem;
+}
+
+.tabs__strip {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  // The arrow buttons, wheel and keys scroll it, so the bar itself stays hidden.
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.tabs__arrow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 0 0.1rem;
+
+  &:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &:disabled {
+    opacity: 0.25;
+    cursor: default;
+  }
+}
+
+.tabs__tab {
+  flex: none;
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.75rem;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+}
+
+.tabs__tab--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #10141c;
+  font-weight: 700;
+}
+
+.hint {
+  margin: 0.75rem 0 0.9rem;
+  font-size: 0.8rem;
+  opacity: 0.65;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 4.5rem repeat(var(--stat-count), minmax(0, 1fr));
+  gap: 0.2rem;
+}
+
+.grid__head {
+  display: grid;
+  place-items: center;
+  background: #232b3a;
+  color: var(--accent);
+  border-radius: 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.25rem 0;
+}
+
+.grid__label {
+  display: flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.grid__label--exam {
+  color: var(--accent);
+}
+
+.roll {
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.15rem;
+  background: #1d222c;
+  border: 1px solid var(--panel-border);
+}
+
+.roll--none {
+  opacity: 0.3;
+}
+
+.roll--below {
+  background: #1d6f3a;
+  border-color: #2f9e4f;
+  color: #e8fff0;
+}
+
+.roll--range {
+  background: #2f9e4f;
+  border-color: #45b063;
+  color: #06240f;
+}
+
+.roll--exact {
+  background: #58c877;
+  border-color: #7ee08a;
+  color: #06240f;
+}
+
+.roll--above {
+  background: #9c2b2b;
+  border-color: #c04545;
+  color: #ffeaea;
+}
+
+.roll--conflict {
+  background: #5a1010;
+  border-color: #ff8d8d;
+  border-style: dashed;
+  color: #ff8d8d;
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 0.75rem;
+  }
+
+  .dialog {
+    padding: 1rem 0.75rem;
+  }
+
+  .grid {
+    grid-template-columns: 2.9rem repeat(var(--stat-count), minmax(0, 1fr));
+    gap: 0.15rem;
+  }
+
+  .grid__head {
+    font-size: 0.55rem;
+    letter-spacing: 0;
+  }
+
+  .grid__label {
+    font-size: 0.6rem;
+  }
+
+  .roll {
+    font-size: 0.55rem;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+    padding: 0.35rem 0.05rem;
+  }
+}

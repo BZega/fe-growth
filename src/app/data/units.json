@@ -2,6 +2,8 @@
   {
     "id": 10,
     "name": "Alexandra",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 30,
     "str": 35,
     "mag": 35,
@@ -58,6 +60,8 @@
   {
     "id": 4,
     "name": "Anatolia",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 35,
     "mag": 50,
@@ -135,6 +139,8 @@
   {
     "id": 63,
     "name": "Aswan",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 35,
     "mag": 10,
@@ -162,6 +168,8 @@
   {
     "id": 54,
     "name": "Aurora",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 35,
     "str": 40,
     "mag": 20,
@@ -189,6 +197,8 @@
   {
     "id": 48,
     "name": "Benditz",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 35,
     "mag": 20,
@@ -224,6 +234,8 @@
   {
     "id": 14,
     "name": "Bertrand",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 55,
     "mag": 15,
@@ -251,6 +263,8 @@
   {
     "id": 18,
     "name": "Bonaventure",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 35,
     "str": 35,
     "mag": 45,
@@ -314,6 +328,8 @@
   {
     "id": 47,
     "name": "Buccar",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 50,
     "mag": 20,
@@ -370,6 +386,8 @@
   {
     "id": 8,
     "name": "Cai",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 45,
     "mag": 40,
@@ -426,6 +444,8 @@
   {
     "id": 17,
     "name": "Catania",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 35,
     "str": 35,
     "mag": 35,
@@ -482,6 +502,8 @@
   {
     "id": 21,
     "name": "Centurio",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 45,
     "mag": 25,
@@ -509,6 +531,8 @@
   {
     "id": 61,
     "name": "Creek",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 50,
     "mag": 15,
@@ -536,6 +560,8 @@
   {
     "id": 51,
     "name": "Dadao",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 55,
     "mag": 20,
@@ -592,6 +618,8 @@
   {
     "id": 42,
     "name": "Dante",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 30,
     "str": 30,
     "mag": 45,
@@ -655,6 +683,8 @@
   {
     "id": 30,
     "name": "Diego",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 40,
     "mag": 20,
@@ -682,6 +712,8 @@
   {
     "id": 1,
     "name": "Dietrich",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 45,
     "mag": 30,
@@ -737,7 +769,60 @@
   },
   {
     "id": 58,
-    "name": "Eshmel",
+    "name": "Eshmel (M)",
+    "gender": "Male",
+    "canUseMounts": true,
+    "hp": 50,
+    "str": 45,
+    "mag": 45,
+    "spd": 45,
+    "dex": 45,
+    "def": 35,
+    "res": 35,
+    "lck": 40,
+    "cha": 50,
+    "personalAbility": null,
+    "swordAbility": [],
+    "spearAbility": [],
+    "axeAbility": [],
+    "bowAbility": [],
+    "gauntletAbility": [],
+    "blackMagicAbility": [
+      {
+        "rank": "D",
+        "unlockLevel": null,
+        "isAutoLearned": false,
+        "name": "Fire",
+        "description": ""
+      },
+      {
+        "rank": "C",
+        "unlockLevel": null,
+        "isAutoLearned": false,
+        "name": "Thunder",
+        "description": ""
+      },
+      {
+        "rank": "B",
+        "unlockLevel": null,
+        "isAutoLearned": false,
+        "name": "Bolganone",
+        "description": ""
+      }
+    ],
+    "whiteMagicAbility": [],
+    "authorityAbility": [],
+    "infantryAbility": [],
+    "ridingAbility": [],
+    "heavyArmorAbility": [],
+    "flyingAbility": [],
+    "total": 390
+  },
+  {
+    "id": 66,
+    "name": "Eshmel (F)",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 50,
     "str": 45,
     "mag": 45,
@@ -787,6 +872,8 @@
   {
     "id": 22,
     "name": "Esmeralda",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 55,
     "str": 55,
     "mag": 20,
@@ -843,6 +930,8 @@
   {
     "id": 32,
     "name": "Fabio",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 25,
     "mag": 50,
@@ -906,6 +995,8 @@
   {
     "id": 43,
     "name": "Fianna",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 30,
     "str": 35,
     "mag": 55,
@@ -962,6 +1053,8 @@
   {
     "id": 13,
     "name": "Gaitz",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 50,
     "mag": 20,
@@ -1004,6 +1097,8 @@
   {
     "id": 53,
     "name": "Goliath",
+    "gender": "Male",
+    "canUseMounts": false,
     "hp": 55,
     "str": 60,
     "mag": 5,
@@ -1053,6 +1148,8 @@
   {
     "id": 25,
     "name": "Guzran",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 45,
     "mag": 20,
@@ -1109,6 +1206,8 @@
   {
     "id": 27,
     "name": "Halvin",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 35,
     "str": 35,
     "mag": 30,
@@ -1158,6 +1257,8 @@
   {
     "id": 59,
     "name": "Hong Hua",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 40,
     "str": 30,
     "mag": 45,
@@ -1221,6 +1322,8 @@
   {
     "id": 39,
     "name": "Inyoni",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 50,
     "mag": 20,
@@ -1256,6 +1359,8 @@
   {
     "id": 35,
     "name": "Io",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 40,
     "mag": 25,
@@ -1312,6 +1417,8 @@
   {
     "id": 23,
     "name": "Jasmine",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 50,
     "str": 40,
     "mag": 20,
@@ -1368,6 +1475,8 @@
   {
     "id": 28,
     "name": "Jester",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 35,
     "mag": 15,
@@ -1410,6 +1519,8 @@
   {
     "id": 44,
     "name": "Kiroc",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 55,
     "str": 40,
     "mag": 15,
@@ -1459,6 +1570,8 @@
   {
     "id": 65,
     "name": "Klapka",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 40,
     "mag": 10,
@@ -1486,6 +1599,8 @@
   {
     "id": 9,
     "name": "Leda",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 40,
     "str": 35,
     "mag": 35,
@@ -1542,6 +1657,8 @@
   {
     "id": 26,
     "name": "Lilian",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 35,
     "str": 35,
     "mag": 30,
@@ -1591,6 +1708,8 @@
   {
     "id": 34,
     "name": "Loretta",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 35,
     "str": 35,
     "mag": 35,
@@ -1647,6 +1766,8 @@
   {
     "id": 52,
     "name": "Ludia",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 35,
     "mag": 20,
@@ -1682,6 +1803,8 @@
   {
     "id": 45,
     "name": "Lysander",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 40,
     "mag": 25,
@@ -1731,6 +1854,8 @@
   {
     "id": 56,
     "name": "Majide",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 65,
     "str": 50,
     "mag": 15,
@@ -1787,6 +1912,8 @@
   {
     "id": 29,
     "name": "Mikaela",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 50,
     "str": 45,
     "mag": 30,
@@ -1836,6 +1963,8 @@
   {
     "id": 57,
     "name": "Mu",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 30,
     "str": 30,
     "mag": 5,
@@ -1885,6 +2014,8 @@
   {
     "id": 12,
     "name": "Mu*",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 50,
     "mag": 25,
@@ -1934,6 +2065,8 @@
   {
     "id": 62,
     "name": "Nathan",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 55,
     "str": 60,
     "mag": 15,
@@ -1961,6 +2094,8 @@
   {
     "id": 40,
     "name": "Nezha",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 45,
     "mag": 25,
@@ -2024,6 +2159,8 @@
   {
     "id": 7,
     "name": "Ninae",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 45,
     "mag": 35,
@@ -2080,6 +2217,8 @@
   {
     "id": 36,
     "name": "Noctula",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 45,
     "mag": 20,
@@ -2136,6 +2275,8 @@
   {
     "id": 49,
     "name": "Nuzzuo",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 50,
     "mag": 15,
@@ -2178,6 +2319,8 @@
   {
     "id": 37,
     "name": "Nydine",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 40,
     "mag": 30,
@@ -2234,6 +2377,8 @@
   {
     "id": 24,
     "name": "Olympia",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 35,
     "str": 35,
     "mag": 50,
@@ -2297,6 +2442,8 @@
   {
     "id": 11,
     "name": "Orchel",
+    "gender": "Male",
+    "canUseMounts": false,
     "hp": 30,
     "str": 60,
     "mag": 45,
@@ -2360,6 +2507,8 @@
   {
     "id": 41,
     "name": "Peppe",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 30,
     "str": 30,
     "mag": 25,
@@ -2402,6 +2551,8 @@
   {
     "id": 46,
     "name": "Peter",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 35,
     "mag": 20,
@@ -2444,6 +2595,8 @@
   {
     "id": 15,
     "name": "Seteth",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 45,
     "mag": 30,
@@ -2486,6 +2639,8 @@
   {
     "id": 19,
     "name": "Sha Lan",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 35,
     "str": 30,
     "mag": 45,
@@ -2528,6 +2683,8 @@
   {
     "id": 20,
     "name": "Simon",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 50,
     "mag": 20,
@@ -2563,6 +2720,8 @@
   {
     "id": 5,
     "name": "Sirocco",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 40,
     "mag": 40,
@@ -2626,6 +2785,8 @@
   {
     "id": 50,
     "name": "Sofia",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 35,
     "str": 30,
     "mag": 45,
@@ -2675,6 +2836,8 @@
   {
     "id": 64,
     "name": "Tahonia",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 65,
     "str": 50,
     "mag": 5,
@@ -2702,6 +2865,8 @@
   {
     "id": 2,
     "name": "Talimun",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 40,
     "mag": 45,
@@ -2765,6 +2930,8 @@
   {
     "id": 6,
     "name": "Theodora",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 70,
     "str": 50,
     "mag": 30,
@@ -2821,6 +2988,8 @@
   {
     "id": 31,
     "name": "Tialla",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 30,
     "str": 25,
     "mag": 45,
@@ -2884,6 +3053,8 @@
   {
     "id": 38,
     "name": "Tobias",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 55,
     "str": 60,
     "mag": 15,
@@ -2933,6 +3104,8 @@
   {
     "id": 60,
     "name": "Troy",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 45,
     "mag": 45,
@@ -2960,6 +3133,8 @@
   {
     "id": 3,
     "name": "Ultand",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 45,
     "str": 40,
     "mag": 40,
@@ -3016,6 +3191,8 @@
   {
     "id": 16,
     "name": "Ursula",
+    "gender": "Female",
+    "canUseMounts": true,
     "hp": 40,
     "str": 35,
     "mag": 35,
@@ -3072,6 +3249,8 @@
   {
     "id": 33,
     "name": "Yang Jie",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 50,
     "str": 35,
     "mag": 40,
@@ -3128,6 +3307,8 @@
   {
     "id": 55,
     "name": "Zarcone",
+    "gender": "Male",
+    "canUseMounts": true,
     "hp": 40,
     "str": 30,
     "mag": 20,

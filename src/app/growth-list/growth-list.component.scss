@@ -120,6 +120,19 @@
   color: var(--accent);
 }
 
+.list__link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgb(255 255 255 / 25%);
+  text-underline-offset: 3px;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--accent);
+    text-decoration-color: currentColor;
+  }
+}
+
 thead .list__total {
   background: #000000;
   color: #ffffff;

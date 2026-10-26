@@ -1,0 +1,656 @@
+[
+  {
+    "id": 1,
+    "name": "Mount/Dismount",
+    "description": "Allows use of Mount and Dismount commands.",
+    "isCombatArt": false
+  },
+  {
+    "id": 2,
+    "name": "Combat Arts +1",
+    "description": "Unit can equip +1 combat arts.",
+    "isCombatArt": false
+  },
+  {
+    "id": 3,
+    "name": "Sword Crit +3",
+    "description": "When eequipped with a sword, grants Crit+3.",
+    "isCombatArt": false
+  },
+  {
+    "id": 4,
+    "name": "Axe Hit +3",
+    "description": "When equipped with an axe, grants Hit+3.",
+    "isCombatArt": false
+  },
+  {
+    "id": 5,
+    "name": "Brawl Avo +3",
+    "description": "When equipped with gauntlets, grants Avo+3.",
+    "isCombatArt": false
+  },
+  {
+    "id": 6,
+    "name": "Bow Hit +5",
+    "description": "When equipped with a bow, grants Hit+5.",
+    "isCombatArt": false
+  },
+  {
+    "id": 7,
+    "name": "Locktouch",
+    "description": "Allows the opening of chests even without keys.",
+    "isCombatArt": false
+  },
+  {
+    "id": 8,
+    "name": "Search",
+    "description": "Search results are slightly more likely to be perfect.",
+    "isCombatArt": false
+  },
+  {
+    "id": 9,
+    "name": "Strike-Last Def +3",
+    "description": "If foe attacks first, grants Prt+3 to unit during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 10,
+    "name": "Chariot Armor",
+    "description": "[Cavalry] Grants Shld+5. Unit cannot avoid attacks.",
+    "isCombatArt": false
+  },
+  {
+    "id": 11,
+    "name": "Charioteer Tactics",
+    "description": "Allows use of the Mount and Dismount commands. [Cavalry] Allows use of the Charge command.",
+    "isCombatArt": false
+  },
+  {
+    "id": 12,
+    "name": "Charioteer's Path",
+    "description": "Unit's growth rate increases with level.",
+    "isCombatArt": false
+  },
+  {
+    "id": 13,
+    "name": "Black-Magic Seeker",
+    "description": "Multiplies black magic uses by 2.",
+    "isCombatArt": false
+  },
+  {
+    "id": 14,
+    "name": "Magic Hit +3",
+    "description": "When equipped with magic, grants Hit+3.",
+    "isCombatArt": false
+  },
+  {
+    "id": 15,
+    "name": "White-Magic Seeker",
+    "description": "Multiplies white magic uses by 2.",
+    "isCombatArt": false
+  },
+  {
+    "id": 16,
+    "name": "Magic Heal +5",
+    "description": "When healing an ally with magic, restores +5 HP.",
+    "isCombatArt": false
+  },
+  {
+    "id": 17,
+    "name": "Combat Arts +2",
+    "description": "Unit can equip +2 combat arts.",
+    "isCombatArt": false
+  },
+  {
+    "id": 18,
+    "name": "Sword Crit +5",
+    "description": "When equipped with a sword, grants Crit+5.",
+    "isCombatArt": false
+  },
+  {
+    "id": 19,
+    "name": "Dance",
+    "description": "Allows use of the Dance combat art.",
+    "isCombatArt": false
+  },
+  {
+    "id": 20,
+    "name": "Axe Hit +5",
+    "description": "When equipped with an axe, grants Hit+5.",
+    "isCombatArt": false
+  },
+  {
+    "id": 21,
+    "name": "Brawl Hit +5",
+    "description": "When equipped with gauntlets, grants Hit+5.",
+    "isCombatArt": false
+  },
+  {
+    "id": 22,
+    "name": "Bow Hit +10",
+    "description": "When equipped with a bow, grants Hit+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 23,
+    "name": "Advanced Search",
+    "description": "Search results are more likely to be perfect.",
+    "isCombatArt": false
+  },
+  {
+    "id": 24,
+    "name": "Magic Heal +10",
+    "description": "When healing an ally with magic, restores +10 HP.",
+    "isCombatArt": false
+  },
+  {
+    "id": 25,
+    "name": "Strike-Last Def +5",
+    "description": "If foe attacks first, grants Prt+5 to unit during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 26,
+    "name": "War-Elephant Boots",
+    "description": "[Cavalry] Unit takes half damage when attacked. Unit cannot avoid attacks.",
+    "isCombatArt": false
+  },
+  {
+    "id": 27,
+    "name": "Elephant Tactics",
+    "description": "Allows use of the Mount and Dismount commands. [Cavalry] Allows use of the Heavy Charge command.",
+    "isCombatArt": false
+  },
+  {
+    "id": 28,
+    "name": "Elephant Riders Path",
+    "description": "Unit's growth rate increases with level.",
+    "isCombatArt": false
+  },
+  {
+    "id": 29,
+    "name": "Magic Hit +5",
+    "description": "When equipped with magic, grants Hit+5.",
+    "isCombatArt": false
+  },
+  {
+    "id": 30,
+    "name": "Combat Arts +3",
+    "description": "Unit can equip +3 combat arts.",
+    "isCombatArt": false
+  },
+  {
+    "id": 31,
+    "name": "Sword Crit +7",
+    "description": "When equipped with a sword, grants Crit+7.",
+    "isCombatArt": false
+  },
+  {
+    "id": 32,
+    "name": "Axe Hit +7",
+    "description": "When equipped with an axe, grants Hit+7.",
+    "isCombatArt": false
+  },
+  {
+    "id": 33,
+    "name": "Brawl Hit +7",
+    "description": "When equipped with gauntlets, grants Hit+7.",
+    "isCombatArt": false
+  },
+  {
+    "id": 34,
+    "name": "Brawl Avo +7",
+    "description": "When equipped with gauntlets, grants Avo+7.",
+    "isCombatArt": false
+  },
+  {
+    "id": 35,
+    "name": "Bow Hit +15",
+    "description": "When equipped with a bow, grants Hit+15.",
+    "isCombatArt": false
+  },
+  {
+    "id": 36,
+    "name": "Master Search",
+    "description": "Search results are considerably more likely to be perfect.",
+    "isCombatArt": false
+  },
+  {
+    "id": 37,
+    "name": "Strike-Last Def +7",
+    "description": "If foe attacks first, grants Prt+7 to unit during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 38,
+    "name": "Magic Hit +7",
+    "description": "When equipped with magic, grants Hit+7.",
+    "isCombatArt": false
+  },
+  {
+    "id": 39,
+    "name": "Magic Heal +15",
+    "description": "When healing an ally with magic, restores +15 HP.",
+    "isCombatArt": false
+  },
+  {
+    "id": 40,
+    "name": "Sword Crit +10",
+    "description": "When equipped with a sword, grants Crit+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 41,
+    "name": "Axe Hit +10",
+    "description": "When equipped with an axe, grants Hit+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 42,
+    "name": "Brawl Hit +10",
+    "description": "When equipped with gauntlets, grants Hit+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 43,
+    "name": "Brawl Avo +10",
+    "description": "When equipped with gauntlets, grants Avo+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 44,
+    "name": "White-Magic Zenith",
+    "description": "Multiplies white magic uses by 3.",
+    "isCombatArt": false
+  },
+  {
+    "id": 45,
+    "name": "Ultimate Search",
+    "description": "Search results are exceedingly more likely to be perfect.",
+    "isCombatArt": false
+  },
+  {
+    "id": 46,
+    "name": "All-Magic Zenith",
+    "description": "Multiplies black magic and white magic uses by 3.",
+    "isCombatArt": false
+  },
+  {
+    "id": 47,
+    "name": "Magic Hit +10",
+    "description": "When equipped with magic, grants Hit+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 48,
+    "name": "Magic Heal +20",
+    "description": "When healing an ally with magic, restores +20 HP.",
+    "isCombatArt": false
+  },
+  {
+    "id": 49,
+    "name": "Combat Basics",
+    "description": "Grants Hit/Avo+3.",
+    "isCombatArt": false
+  },
+  {
+    "id": 50,
+    "name": "Attack Basics",
+    "description": "Grants Str+1.",
+    "isCombatArt": false
+  },
+  {
+    "id": 51,
+    "name": "Hunting Basics",
+    "description": "Grants Dex/Spd+1.",
+    "isCombatArt": false
+  },
+  {
+    "id": 52,
+    "name": "Defense Basics",
+    "description": "Grants Def+1.",
+    "isCombatArt": false
+  },
+  {
+    "id": 53,
+    "name": "Offense Basics",
+    "description": "Grants Str/Mag+1.",
+    "isCombatArt": false
+  },
+  {
+    "id": 54,
+    "name": "Magic Basics",
+    "description": "Grants Mag/Res+1.",
+    "isCombatArt": false
+  },
+  {
+    "id": 55,
+    "name": "Ravaging Arts",
+    "description": "If unit makes a critical, deals +6 damage",
+    "isCombatArt": false
+  },
+  {
+    "id": 56,
+    "name": "Regroup",
+    "description": "When foe avoids an attack, grants Av+20 to unit during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 57,
+    "name": "Attack, Get Back",
+    "description": "When using a combat art, grants Avo+10 during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 58,
+    "name": "Crescendo",
+    "description": "After defeating a foe, grants Hit+3 until the end of the map. (Max +30)",
+    "isCombatArt": false
+  },
+  {
+    "id": 59,
+    "name": "In Shadow",
+    "description": "After defeating a foe, grants Avo+10 through unit's next combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 60,
+    "name": "Great Counter",
+    "description": "If foe attacks first, grants Atk+3 to unit during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 61,
+    "name": "Bolster Health",
+    "description": "Grants max HP+3.",
+    "isCombatArt": false
+  },
+  {
+    "id": 62,
+    "name": "Charger",
+    "description": "When using Charge, grants Prt+10 until unit's next phase.",
+    "isCombatArt": false
+  },
+  {
+    "id": 63,
+    "name": "Sense Threat",
+    "description": "If foe is effective against unit, grants Avo+20 to unit during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 64,
+    "name": "Bind Dexterity",
+    "description": "Inflicts Dex-3 on adjacent foes.",
+    "isCombatArt": false
+  },
+  {
+    "id": 65,
+    "name": "Piety",
+    "description": "Grants Lck+3.",
+    "isCombatArt": false
+  },
+  {
+    "id": 66,
+    "name": "Ever Vigilant",
+    "description": "After defeating a foe with a critical attack, restores a little HP to unit.",
+    "isCombatArt": false
+  },
+  {
+    "id": 67,
+    "name": "Special Dance",
+    "description": "When using Dance, grants Dex/Spd+3 to target ally for the current phase.",
+    "isCombatArt": false
+  },
+  {
+    "id": 68,
+    "name": "Practiced Art",
+    "description": "Grants Hit+10 when attacking with a combat art.",
+    "isCombatArt": false
+  },
+  {
+    "id": 69,
+    "name": "Makeshift",
+    "description": "When using a combat art, reduces weapon durability cost to 0 during combat. Trigger % = 10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 70,
+    "name": "Marksmanship",
+    "description": "When equipped with a bow, grants Hit+15.",
+    "isCombatArt": false
+  },
+  {
+    "id": 71,
+    "name": "Hunter's Eye",
+    "description": "When equipped with a bow, grants Atk+3 when making a follow-up.",
+    "isCombatArt": false
+  },
+  {
+    "id": 72,
+    "name": "Countershot",
+    "description": "When equipped with a bow, unit can counter adjacent foes during combat. Trigger % = 50.",
+    "isCombatArt": false
+  },
+  {
+    "id": 73,
+    "name": "Brace",
+    "description": "After defeating a foe, grants Prt+3 until unit's next phase.",
+    "isCombatArt": false
+  },
+  {
+    "id": 74,
+    "name": "Fcused Counter",
+    "description": "If foe attacks first, grants Hit+10 to unit during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 75,
+    "name": "Aegis",
+    "description": "Unit takes half damage when attacked with a magical attack. Trigger % = 20.",
+    "isCombatArt": false
+  },
+  {
+    "id": 76,
+    "name": "Pavise",
+    "description": "Unit takes half damage when attacked with a physical attack. Trigger % = 20.",
+    "isCombatArt": false
+  },
+  {
+    "id": 77,
+    "name": "Elephant Vanguard",
+    "description": "[Cavalry] If unit is an elephant rider, grants Hit+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 78,
+    "name": "Overtake",
+    "description": "After defeating a foe, grants Mov+1 through the end of the next turn. (Max +3)",
+    "isCombatArt": false
+  },
+  {
+    "id": 79,
+    "name": "Besieger",
+    "description": "If foe is on favorable terrain, grants Hit+20 to unit during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 80,
+    "name": "Bind Speed",
+    "description": "Inflicts Spd-3 on adjacent foes.",
+    "isCombatArt": false
+  },
+  {
+    "id": 81,
+    "name": "Barrier",
+    "description": "Grants Res+3 to adjacent allies.",
+    "isCombatArt": false
+  },
+  {
+    "id": 82,
+    "name": "Song of Courage",
+    "description": "Grants Dex/Spd+2 to allies in range until unit's next phase.",
+    "isCombatArt": true
+  },
+  {
+    "id": 83,
+    "name": "Astra",
+    "description": "Strikes 5 times at 50% damage.",
+    "isCombatArt": true
+  },
+  {
+    "id": 84,
+    "name": "Dark Moon",
+    "description": "Halves foe's Shld when attacking. Trigger % = 10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 85,
+    "name": "War Master's Strike",
+    "description": "Multiplies damage dealt by 1.5.",
+    "isCombatArt": true
+  },
+  {
+    "id": 86,
+    "name": "Strike and Heal",
+    "description": "After combat, unit can use assist magic.",
+    "isCombatArt": true
+  },
+  {
+    "id": 87,
+    "name": "Sky Hunter",
+    "description": "If foe is flying, grants Hit+50.",
+    "isCombatArt": true
+  },
+  {
+    "id": 88,
+    "name": "Hunter's Cross",
+    "description": "High Hit/Crit.",
+    "isCombatArt": true
+  },
+  {
+    "id": 89,
+    "name": "Dropshadow Blade",
+    "description": "If foe is on favorable terrain, ignores those terrain effects.",
+    "isCombatArt": true
+  },
+  {
+    "id": 90,
+    "name": "Resolute Stance",
+    "description": "If unit's HP = 100%, grants Shld+5 during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 91,
+    "name": "Intercept",
+    "description": "Reduces damage taken by 5 when attacked.",
+    "isCombatArt": false
+  },
+  {
+    "id": 92,
+    "name": "Fierce Spear",
+    "description": "Unit cannot suffer a follow-up attack during combat.",
+    "isCombatArt": true
+  },
+  {
+    "id": 93,
+    "name": "Fierce Shield",
+    "description": "If unit attacks first, unit takes half damage during combat. Trigger % = 50.",
+    "isCombatArt": false
+  },
+  {
+    "id": 94,
+    "name": "Lightning Reflexes",
+    "description": "If unit attacks first, and AS ≥ foe's AS+10, unit's follow-up occurs before foe's counter during combat.",
+    "isCombatArt": false
+  },
+  {
+    "id": 95,
+    "name": "Ambush",
+    "description": "If unit is on inaccessible terrain, grants Atk+4.",
+    "isCombatArt": false
+  },
+  {
+    "id": 96,
+    "name": "Bind Resistance",
+    "description": "Inflicts Res-3 on adjacent foes.",
+    "isCombatArt": false
+  },
+  {
+    "id": 97,
+    "name": "Dominate Magic",
+    "description": "If foe uses magic, unit cannot be countered during combat. Trigger % = 10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 98,
+    "name": "Song of Calm",
+    "description": "Grants Res+2 to allies within range until unit's next phase.",
+    "isCombatArt": true
+  },
+  {
+    "id": 99,
+    "name": "Divine Insight",
+    "description": "Grants Spd+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 100,
+    "name": "Divine Dance",
+    "description": "Grants Cha+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 101,
+    "name": "Divine Might",
+    "description": "Grants Str+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 102,
+    "name": "Divine Adornment",
+    "description": "Grants Res+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 103,
+    "name": "Divine Will",
+    "description": "Grants Lck+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 104,
+    "name": "Divine Wall",
+    "description": "Grants Def+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 105,
+    "name": "Divine Dexterity",
+    "description": "Grants Dex+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 106,
+    "name": "Divine Law",
+    "description": "Grants Mag+10.",
+    "isCombatArt": false
+  },
+  {
+    "id": 107,
+    "name": "Flying Avo +7",
+    "description": "[Flying] Grants Avo +7.",
+    "isCombatArt": false
+  },
+  {
+    "id": 108,
+    "name": "Golden Ride",
+    "description": "Neutralizes effective vs. cavalry.",
+    "isCombatArt": false
+  },
+  {
+    "id": 109,
+    "name": "Protective Wings",
+    "description": "Grants Res+3.",
+    "isCombatArt": false
+  }
+]

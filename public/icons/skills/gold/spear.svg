@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6d77c"/>
+      <stop offset="0.55" stop-color="#d8a63a"/>
+      <stop offset="1" stop-color="#a8781f"/>
+    </linearGradient>
+    <mask id="glyph" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <g transform="rotate(45 32 32)">
+      <path fill="#fff" d="M32 2 L38 15 L32 25 L26 15 Z"/>
+      <rect fill="#fff" x="27" y="24" width="10" height="4" rx="1.5"/>
+      <rect fill="#fff" x="30.25" y="27" width="3.5" height="34" rx="1.75"/></g>
+      <g transform="rotate(45 32 32)" fill="#000"><path d="M32 7 L32 21" stroke="#000" stroke-width="1.4" stroke-linecap="round"/></g>
+    </mask>
+  </defs>
+  <rect x="1" y="1" width="62" height="62" rx="12" fill="url(#bg)"/>
+  <rect x="2" y="2" width="60" height="60" rx="11" fill="none" stroke="#fff1c4" stroke-opacity="0.45" stroke-width="1.5"/>
+  <rect width="64" height="64" fill="#1b1f2a" mask="url(#glyph)"/>
+</svg>

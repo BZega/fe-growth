@@ -1,0 +1,223 @@
+@let current = unitClass();
+
+<a class="back" routerLink="/classes">&larr; All classes</a>
+
+@if (current) {
+  <article class="profile">
+    <!-- Profile header -->
+    <header class="hero">
+      <div class="portrait" [attr.data-class-id]="current.id" aria-hidden="true">
+        <span class="portrait__glyph">{{ initials(current.name) }}</span>
+      </div>
+
+      <div class="hero__body">
+        <p class="eyebrow">Class profile</p>
+
+        <div class="switcher" #switcher>
+          <h1>
+            <button
+              type="button"
+              class="switcher__toggle"
+              aria-haspopup="listbox"
+              [attr.aria-expanded]="switcherOpen()"
+              title="Switch to another class"
+              (click)="toggleSwitcher()"
+            >
+              {{ current.name }}
+              <span class="switcher__caret" aria-hidden="true">▾</span>
+            </button>
+          </h1>
+
+          @if (switcherOpen()) {
+            <div class="switcher__panel">
+              <input
+                #filterBox
+                class="switcher__filter"
+                type="text"
+                placeholder="Filter classes"
+                aria-label="Filter classes"
+                autocomplete="off"
+                spellcheck="false"
+                [value]="filter()"
+                (input)="filter.set($any($event.target).value)"
+                (keydown.enter)="openFirstMatch($event)"
+              />
+
+              <div class="switcher__list" role="listbox" aria-label="Classes">
+                @for (group of switcherGroups(); track group.rank) {
+                  <p class="switcher__group">{{ group.rank }}</p>
+                  @for (option of group.classes; track option.id) {
+                    <a
+                      class="switcher__option"
+                      role="option"
+                      [class.switcher__option--current]="option.id === current.id"
+                      [attr.aria-selected]="option.id === current.id"
+                      [routerLink]="['/classes', option.id]"
+                      (click)="closeSwitcher()"
+                    >
+                      {{ option.name }}
+                    </a>
+                  }
+                } @empty {
+                  <p class="switcher__empty">No classes match.</p>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="badges">
+          <span class="badge badge--rank" [attr.data-rank]="current.rank">
+            <span class="badge__label">Specialty</span>
+            {{ current.rank }}
+          </span>
+          <span class="badge" [class.badge--muted]="mountType() === 'None'">
+            <span class="badge__label">Mount</span>
+            {{ mountType() }}
+          </span>
+        </div>
+
+        @for (line of descriptionLines(); track $index) {
+          <p class="hero__description">{{ line }}</p>
+        }
+      </div>
+    </header>
+
+    <!-- Growth rates: primary card -->
+    <section class="card growth" aria-labelledby="growth-title">
+      <div class="growth__feature" [attr.data-tone]="tone(current.total)">
+        <span class="growth__feature-label">Total growth</span>
+        <span class="growth__feature-value">{{ signed(current.total) }}<small>%</small></span>
+        <span class="growth__feature-caption">Combined modifier across all stats</span>
+      </div>
+
+      <div class="growth__body">
+        <h2 class="section-title" id="growth-title">Growth rates</h2>
+        <ul class="pills pills--growth">
+          @for (stat of statKeys; track stat) {
+            <li class="pill" [attr.data-tone]="tone(current[stat])">
+              <span class="pill__label">{{ statLabels[stat] }}</span>
+              <span class="pill__value">{{ signed(current[stat]) }}%</span>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    <!-- Second row: bonuses + skills stacked on the left, abilities on the right -->
+    <div class="split">
+      <div class="stack">
+        <section class="card" aria-labelledby="bonus-title">
+          <h2 class="section-title" id="bonus-title">Stat bonuses</h2>
+          <ul class="pills pills--compact">
+            @for (stat of bonusStatKeys; track stat) {
+              <li class="pill" [attr.data-tone]="tone(current.bonusStats[stat])">
+                <span class="pill__label">{{ bonusStatLabels[stat] }}</span>
+                <span class="pill__value">{{ signed(current.bonusStats[stat]) }}</span>
+              </li>
+            }
+          </ul>
+        </section>
+
+        <section class="card" aria-labelledby="skill-title">
+          <div class="section-head">
+            <h2 class="section-title" id="skill-title">Skill training</h2>
+            @if (usableSkills().length) {
+              <span class="section-hint">EXP bonus</span>
+            }
+          </div>
+
+          @if (usableSkills().length === 0) {
+            <p class="empty">This class can't use any skills.</p>
+          } @else {
+            <ul class="skills">
+              @for (skill of usableSkills(); track skill.key) {
+                <li>
+                  <button
+                    type="button"
+                    class="skill"
+                    [class.skill--tip]="activeSkill() === skill.key"
+                    [attr.data-tone]="tone(skill.expBonus)"
+                    [attr.aria-label]="skill.label + ', ' + (skill.expBonus === 0 ? 'no EXP bonus' : signed(skill.expBonus) + ' EXP bonus')"
+                    (click)="toggleSkillTip(skill.key)"
+                  >
+                    <img
+                      class="skill__icon"
+                      [src]="skillIcon(skill.key)"
+                      [attr.data-skill]="skill.key"
+                      alt=""
+                      width="32"
+                      height="32"
+                    />
+                    <span class="skill__value" aria-hidden="true">
+                      {{ skill.expBonus === 0 ? '—' : signed(skill.expBonus) }}
+                    </span>
+                    <span class="skill__tip" aria-hidden="true">{{ skill.label }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      </div>
+
+      <section class="card abilities-card" aria-labelledby="abilities-title">
+        <h2 class="section-title" id="abilities-title">Abilities</h2>
+
+        <div class="ability-groups">
+          <div class="ability-group">
+            <h3 class="ability-group__title">
+              Class abilities
+              <span class="ability-group__count">{{ classAbilities().length }}</span>
+            </h3>
+            <ng-container
+              [ngTemplateOutlet]="abilityList"
+              [ngTemplateOutletContext]="{ abilities: classAbilities(), empty: 'No class abilities.' }"
+            />
+          </div>
+
+          <div class="ability-group">
+            <h3 class="ability-group__title">
+              Master abilities
+              <span class="ability-group__count">{{ masterAbilities().length }}</span>
+            </h3>
+            <ng-container
+              [ngTemplateOutlet]="abilityList"
+              [ngTemplateOutletContext]="{ abilities: masterAbilities(), empty: 'No master abilities.' }"
+            />
+          </div>
+        </div>
+      </section>
+    </div>
+  </article>
+} @else {
+  <header class="not-found">
+    <h1>Class not found</h1>
+    <p class="empty">No class matches this link.</p>
+  </header>
+}
+
+<ng-template #abilityList let-abilities="abilities" let-empty="empty">
+  @if (abilities.length === 0) {
+    <p class="empty empty--boxed">{{ empty }}</p>
+  } @else {
+    <ul class="abilities">
+      @for (ability of abilities; track ability.id) {
+        <li class="ability" [class.ability--art]="ability.isCombatArt">
+          <span class="icon-slot icon-slot--ability" [attr.data-ability-id]="ability.id" aria-hidden="true">
+            {{ ability.isCombatArt ? '✦' : initials(ability.name) }}
+          </span>
+          <div class="ability__body">
+            <div class="ability__head">
+              <span class="ability__name">{{ ability.name }}</span>
+              @if (ability.isCombatArt) {
+                <span class="tag tag--art">Combat art</span>
+              }
+            </div>
+            <p class="ability__description">{{ ability.description }}</p>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</ng-template>

@@ -23,6 +23,9 @@ export class GrowthCalculatorComponent implements OnInit {
   readonly heading = input.required<string>();
   readonly slotKey = input.required<string>();
   readonly canRemove = input(false);
+  readonly defaultUnitId = input<number | null>(null);
+  readonly lockUnit = input(false);
+  readonly defaultClassId = input<number | null>(null);
 
   readonly removeRequested = output<void>();
 
@@ -39,17 +42,23 @@ export class GrowthCalculatorComponent implements OnInit {
 
   readonly units = computed(() => this.spoilers.filter(this.allUnits()));
 
+  /** The selected unit even when spoilers hide it, so class rules still apply. */
+  private readonly ruleUnit = computed(() => this.api.unitById(this.selectedUnitId()));
+
   readonly selectedUnitId = signal<number | null>(null);
   readonly selectedClassId = signal<number | null>(null);
   readonly selectedMountId = signal<number | null>(null);
   readonly selectedLevel = signal<number | null>(null);
 
-  readonly classGroups = computed<SelectItemGroup[]>(() =>
-    CLASS_RANK_ORDER.map((rank: ClassRank) => ({
+  readonly classGroups = computed<SelectItemGroup[]>(() => {
+    const unit = this.ruleUnit();
+    const usable = this.classes().filter((unitClass) => this.api.canUseClass(unit, unitClass));
+
+    return CLASS_RANK_ORDER.map((rank: ClassRank) => ({
       label: rank,
-      items: this.classes().filter((unitClass) => unitClass.rank === rank),
-    })).filter((group) => group.items.length > 0),
-  );
+      items: usable.filter((unitClass) => unitClass.rank === rank),
+    })).filter((group) => group.items.length > 0);
+  });
 
   readonly mountOptions = toSignal(
     toObservable(this.selectedClassId).pipe(
@@ -123,6 +132,7 @@ export class GrowthCalculatorComponent implements OnInit {
 
   onUnitChange(id: number | null): void {
     this.selectedUnitId.set(id);
+    this.dropUnusableClass();
     this.persist();
   }
 
@@ -144,8 +154,8 @@ export class GrowthCalculatorComponent implements OnInit {
   }
 
   reset(): void {
-    this.selectedUnitId.set(null);
-    this.selectedClassId.set(null);
+    this.selectedUnitId.set(this.defaultUnitId());
+    this.selectedClassId.set(this.defaultClassId());
     this.selectedMountId.set(null);
     this.selectedLevel.set(null);
     this.persist();
@@ -153,10 +163,25 @@ export class GrowthCalculatorComponent implements OnInit {
 
   ngOnInit(): void {
     const saved = this.state.get(this.slotKey());
-    this.selectedUnitId.set(saved.unitId);
-    this.selectedClassId.set(saved.classId);
+    this.selectedUnitId.set(
+      this.lockUnit() ? this.defaultUnitId() : (saved.unitId ?? this.defaultUnitId()),
+    );
+    this.selectedClassId.set(
+      this.state.has(this.slotKey()) ? saved.classId : this.defaultClassId(),
+    );
     this.selectedMountId.set(saved.mountId);
     this.selectedLevel.set(saved.classLevel);
+    this.dropUnusableClass();
+  }
+
+  private dropUnusableClass(): void {
+    const unitClass = this.unitClass();
+
+    if (unitClass && !this.api.canUseClass(this.ruleUnit(), unitClass)) {
+      this.selectedClassId.set(null);
+      this.selectedMountId.set(null);
+      this.selectedLevel.set(null);
+    }
   }
 
   private persist(): void {

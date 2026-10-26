@@ -13,7 +13,7 @@ import { GrowthDataService } from '../services/growth-data.service';
       <p>Growth modifiers for each class.</p>
     </header>
 
-    <app-growth-list [groups]="groups()" nameHeader="Class" />
+    <app-growth-list [groups]="groups()" nameHeader="Class" linkBase="/classes" />
   `,
   styleUrl: '../styles/browse-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

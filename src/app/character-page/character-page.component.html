@@ -1,0 +1,112 @@
+@let current = unit();
+
+<header class="page-header">
+  <div>
+    <a class="back" routerLink="/characters">&larr; Characters</a>
+    <h1>{{ current?.name ?? 'Character not found' }}</h1>
+  </div>
+</header>
+
+@if (current) {
+  <div class="tabs" role="tablist" aria-label="Character sections">
+    @for (tab of tabs; track tab.key) {
+      <button
+        type="button"
+        role="tab"
+        class="tabs__tab"
+        [class.tabs__tab--active]="activeTab() === tab.key"
+        [attr.aria-selected]="activeTab() === tab.key"
+        (click)="selectTab(tab.key)"
+      >
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  <div class="tab-panel" role="tabpanel">
+    @switch (activeTab()) {
+      @case ('build') {
+        <div class="build-actions">
+          @if (!comparing()) {
+            <button type="button" class="compare-button" (click)="startCompare()">
+              Compare
+            </button>
+          }
+        </div>
+
+        @for (id of [current.id]; track id) {
+          <div class="panels">
+            <div class="panel">
+              <app-growth-calculator
+                heading="Build 1"
+                [slotKey]="slotA()"
+                [defaultUnitId]="id"
+                [lockUnit]="true"
+                [defaultClassId]="defaultClassId()"
+              />
+            </div>
+
+            @if (comparing()) {
+              <div class="panel">
+                <app-growth-calculator
+                  heading="Build 2"
+                  [slotKey]="slotB()"
+                  [defaultUnitId]="id"
+                  [lockUnit]="true"
+                  [defaultClassId]="defaultClassId()"
+                  [canRemove]="true"
+                  (removeRequested)="stopCompare()"
+                />
+              </div>
+            }
+          </div>
+        }
+
+        @if (difference(); as diff) {
+          <section class="difference">
+            <p class="difference__caption">
+              How <strong>Build 1</strong> ({{ diff.labelA }}) compares to
+              <strong>Build 2</strong> ({{ diff.labelB }}).
+            </p>
+            <table class="difference__table">
+              <thead>
+                <tr>
+                  <th class="difference__corner"></th>
+                  @for (stat of statKeys; track stat) {
+                    <th scope="col">{{ statLabels[stat] }}</th>
+                  }
+                  <th scope="col" class="difference__total-head">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row" class="difference__label">Difference</th>
+                  @for (stat of statKeys; track stat) {
+                    <td
+                      [class.up]="diff.growth[stat] > 0"
+                      [class.down]="diff.growth[stat] < 0"
+                    >
+                      {{ diff.growth[stat] > 0 ? '+' : '' }}{{ diff.growth[stat] }}%
+                    </td>
+                  }
+                  <td
+                    class="difference__total"
+                    [class.up]="diff.total > 0"
+                    [class.down]="diff.total < 0"
+                  >
+                    {{ diff.total > 0 ? '+' : '' }}{{ diff.total }}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        }
+      }
+      @default {
+        <p class="wip">Work in progress</p>
+      }
+    }
+  </div>
+} @else {
+  <p class="wip">No character matches this link.</p>
+}

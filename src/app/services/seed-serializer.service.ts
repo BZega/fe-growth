@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { Mount, Unit, UnitClass } from '../models/growth.models';
-import { SeedDto, SeedSnapshot } from '../models/seed-save';
+import { SeedMapDto, SeedMapSnapshot } from '../models/seed-save';
 import { GrowthDataService } from './growth-data.service';
 
 @Injectable({ providedIn: 'root' })
@@ -19,37 +19,65 @@ export class SeedSerializerService {
     initialValue: [] as Mount[],
   });
 
-  toDto(snapshots: SeedSnapshot[]): SeedDto[] {
-    return snapshots.map((snapshot) => ({
+  toDto(snapshot: SeedMapSnapshot): SeedMapDto {
+    return {
       unit: this.nameOf(this.units(), snapshot.unitId),
-      unitClass: this.nameOf(this.classes(), snapshot.classId),
-      mount: this.nameOf(this.mounts(), snapshot.mountId),
-      startLevel: snapshot.startLevel,
-      rows: snapshot.rows,
-      comparators: snapshot.comparators.map((comparator) => ({
-        unitClass: this.nameOf(this.classes(), comparator.classId),
-        mount: this.nameOf(this.mounts(), comparator.mountId),
-        rows: comparator.rows,
+      statsLevel: snapshot.statsLevel,
+      startStats: { ...snapshot.startStats },
+      availableClasses: snapshot.availableClassIds.flatMap((id) => {
+        const name = this.nameOf(this.classes(), id);
+        return name === null ? [] : [name];
+      }),
+      sections: snapshot.sections.map((section) => ({
+        exam: section.exam && {
+          parent: section.exam.parentIndex,
+          afterRow: section.exam.afterRowIndex,
+          unitClass: this.nameOf(this.classes(), section.exam.classId),
+          chance: section.exam.chance,
+          passed: section.exam.passed,
+        },
+        unitClass: this.nameOf(this.classes(), section.classId),
+        mount: this.nameOf(this.mounts(), section.mountId),
+        rows: section.rows,
+        comparators: section.comparators.map((comparator) => ({
+          unitClass: this.nameOf(this.classes(), comparator.classId),
+          mount: this.nameOf(this.mounts(), comparator.mountId),
+          rows: comparator.rows,
+        })),
       })),
-    }));
+    };
   }
 
-  fromDto(seeds: SeedDto[]): SeedSnapshot[] {
-    return seeds.map((seed) => ({
+  fromDto(seed: SeedMapDto): SeedMapSnapshot {
+    return {
       unitId: this.idOf(this.units(), seed.unit),
-      classId: this.idOf(this.classes(), seed.unitClass),
-      mountId: this.idOf(this.mounts(), seed.mount),
-      startLevel: seed.startLevel,
-      rows: seed.rows,
-      comparators: seed.comparators.map((comparator) => ({
-        classId: this.idOf(this.classes(), comparator.unitClass),
-        mountId: this.idOf(this.mounts(), comparator.mount),
-        rows: comparator.rows,
+      statsLevel: seed.statsLevel,
+      startStats: { ...seed.startStats },
+      availableClassIds: seed.availableClasses.flatMap((name) => {
+        const id = this.idOf(this.classes(), name);
+        return id === null ? [] : [id];
+      }),
+      sections: seed.sections.map((section) => ({
+        exam: section.exam && {
+          parentIndex: section.exam.parent,
+          afterRowIndex: section.exam.afterRow,
+          classId: this.idOf(this.classes(), section.exam.unitClass),
+          chance: section.exam.chance,
+          passed: section.exam.passed,
+        },
+        classId: this.idOf(this.classes(), section.unitClass),
+        mountId: this.idOf(this.mounts(), section.mount),
+        rows: section.rows,
+        comparators: section.comparators.map((comparator) => ({
+          classId: this.idOf(this.classes(), comparator.unitClass),
+          mountId: this.idOf(this.mounts(), comparator.mount),
+          rows: comparator.rows,
+        })),
       })),
-    }));
+    };
   }
 
-  missingNames(seeds: SeedDto[]): string[] {
+  missingNames(seed: SeedMapDto): string[] {
     const missing = new Set<string>();
 
     const check = (
@@ -61,12 +89,21 @@ export class SeedSerializerService {
       }
     };
 
-    for (const seed of seeds) {
-      check(this.units(), seed.unit);
-      check(this.classes(), seed.unitClass);
-      check(this.mounts(), seed.mount);
+    check(this.units(), seed.unit);
 
-      for (const comparator of seed.comparators) {
+    for (const name of seed.availableClasses) {
+      check(this.classes(), name);
+    }
+
+    for (const section of seed.sections) {
+      check(this.classes(), section.unitClass);
+      check(this.mounts(), section.mount);
+
+      if (section.exam) {
+        check(this.classes(), section.exam.unitClass);
+      }
+
+      for (const comparator of section.comparators) {
         check(this.classes(), comparator.unitClass);
         check(this.mounts(), comparator.mount);
       }

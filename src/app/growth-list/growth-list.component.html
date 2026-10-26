@@ -43,7 +43,13 @@
 
           @for (row of group.rows; track row.id) {
             <tr>
-              <th scope="row" class="list__name">{{ row.name }}</th>
+              <th scope="row" class="list__name">
+                @if (linkBase(); as base) {
+                  <a class="list__link" [routerLink]="[base, row.id]">{{ row.name }}</a>
+                } @else {
+                  {{ row.name }}
+                }
+              </th>
               @for (stat of statKeys; track stat) {
                 <td [class]="cellClass(row.growth[stat])">
                   {{ row.growth[stat] }}<span class="unit">%</span>

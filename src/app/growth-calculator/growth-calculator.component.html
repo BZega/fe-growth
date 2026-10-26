@@ -23,12 +23,14 @@
   </header>
 
   <div class="pickers">
-    <div class="picker">
+    <div class="picker picker--unit">
       <span class="picker__label">Unit</span>
       <app-searchable-select
         label="Unit"
         placeholder="— Select a unit —"
         [items]="units()"
+        [clearable]="!lockUnit()"
+        [disabled]="lockUnit()"
         [value]="selectedUnitId()"
         (valueChange)="onUnitChange($event)"
       />
@@ -71,8 +73,6 @@
           (valueChange)="onMountChange($event)"
         />
       </div>
-    } @else {
-      <p class="picker picker--empty">This class is unmounted.</p>
     }
   </div>
 
@@ -122,28 +122,29 @@
           </td>
         }
       </tr>
-
-      <tr class="band band--mount">
-        <th scope="rowgroup" rowspan="2" class="band__name">
-          {{ current.mount?.name ?? 'None' }}
-        </th>
-        <td class="band__caption" [attr.colspan]="statKeys.length">
-          {{ isMounted() ? 'Growths From Mounts' : 'No Mount Growth' }}
-          @if (levelConfig(); as config) {
-            @if (isMounted() && config.mountMultiplier !== 1) {
-              (x{{ config.mountMultiplier }})
+      @if (isMounted()) {
+        <tr class="band band--mount">
+          <th scope="rowgroup" rowspan="2" class="band__name">
+            {{ current.mount?.name ?? 'None' }}
+          </th>
+          <td class="band__caption" [attr.colspan]="statKeys.length">
+            {{ isMounted() ? 'Growths From Mounts' : 'No Mount Growth' }}
+            @if (levelConfig(); as config) {
+              @if (isMounted() && config.mountMultiplier !== 1) {
+                (x{{ config.mountMultiplier }})
+              }
             }
-          }
-        </td>
-        <td rowspan="2" class="band__total">{{ totalOf(current.mountGrowth) }}%</td>
-      </tr>
-      <tr class="band band--mount">
-        @for (stat of statKeys; track stat) {
-          <td [class.negative]="current.mountGrowth[stat] < 0">
-            {{ current.mountGrowth[stat] }}%
           </td>
-        }
-      </tr>
+          <td rowspan="2" class="band__total">{{ totalOf(current.mountGrowth) }}%</td>
+        </tr>
+        <tr class="band band--mount">
+          @for (stat of statKeys; track stat) {
+            <td [class.negative]="current.mountGrowth[stat] < 0">
+              {{ current.mountGrowth[stat] }}%
+            </td>
+          }
+        </tr>
+      }
 
       <tr class="band band--grand">
         <th scope="rowgroup" rowspan="2" class="band__name">Total</th>

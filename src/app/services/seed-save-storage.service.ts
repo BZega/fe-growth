@@ -1,25 +1,29 @@
 import { Injectable, signal } from '@angular/core';
-import { migrateSave, newSaveId, SeedDto, SeedSave } from '../models/seed-save';
+import { CURRENT_SAVE_VERSION, migrateSave, newSaveId, SeedMapDto, SeedSave } from '../models/seed-save';
 
 const STORAGE_KEY = 'fe-growth.seed-saves';
 
 @Injectable({ providedIn: 'root' })
 export class SeedSaveStorageService {
+  private dropped = 0;
   private readonly saveList = signal<SeedSave[]>(this.read());
 
   readonly saves = this.saveList.asReadonly();
+
+  /** How many stored saves were deleted on start-up because they no longer fit the format. */
+  readonly droppedOnLoad = this.dropped;
 
   get(id: string): SeedSave | null {
     return this.saveList().find((save) => save.id === id) ?? null;
   }
 
-  create(name: string, seeds: SeedDto[]): SeedSave {
+  create(name: string, seed: SeedMapDto): SeedSave {
     const save: SeedSave = {
-      version: 1,
+      version: CURRENT_SAVE_VERSION,
       id: newSaveId(),
       name,
       savedAt: new Date().toISOString(),
-      seeds,
+      seed,
     };
 
     this.commit([...this.saveList(), save]);
@@ -27,7 +31,7 @@ export class SeedSaveStorageService {
     return save;
   }
 
-  overwrite(id: string, seeds: SeedDto[]): SeedSave | null {
+  overwrite(id: string, seed: SeedMapDto): SeedSave | null {
     const existing = this.get(id);
 
     if (!existing) {
@@ -36,7 +40,7 @@ export class SeedSaveStorageService {
 
     const updated: SeedSave = {
       ...existing,
-      seeds,
+      seed,
       savedAt: new Date().toISOString(),
     };
 
@@ -81,26 +85,40 @@ export class SeedSaveStorageService {
   }
 
   private read(): SeedSave[] {
+    let parsed: unknown;
+
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-
-      if (!raw) {
-        return [];
-      }
-
-      const parsed: unknown = JSON.parse(raw);
-
-      return Array.isArray(parsed)
-        ? parsed.flatMap((entry) => {
-            try {
-              return [migrateSave(entry)];
-            } catch {
-              return [];
-            }
-          })
-        : [];
+      parsed = raw ? JSON.parse(raw) : [];
     } catch {
       return [];
     }
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    const saves = parsed.flatMap((entry) => {
+      try {
+        return [migrateSave(entry)];
+      } catch {
+        return [];
+      }
+    });
+
+    this.dropped = parsed.length - saves.length;
+
+    const upgraded = parsed.some(
+      (entry) => (entry as { version?: unknown } | null)?.version !== CURRENT_SAVE_VERSION,
+    );
+
+    if (this.dropped > 0 || upgraded) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(saves));
+      } catch {
+      }
+    }
+
+    return saves;
   }
 }

@@ -1,0 +1,113 @@
+<div class="backdrop" (click)="close()"></div>
+
+<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="exam-title">
+  <header class="dialog__header">
+    <div>
+      <p class="dialog__eyebrow">Seed Mapper</p>
+      <h2 id="exam-title">{{ title() }}</h2>
+    </div>
+    <button type="button" class="dialog__close" aria-label="Close" (click)="close()">
+      &times;
+    </button>
+  </header>
+
+  @if (context()) {
+    <p class="dialog__context">{{ context() }}</p>
+  }
+
+  @if (knownRange(); as range) {
+    <p class="known">
+      Known Str roll for this level: <strong>{{ range }}</strong>
+    </p>
+  }
+
+  <div class="fields">
+    <div class="field">
+      <span class="field__label">Exam class</span>
+      <app-searchable-select
+        label="Exam class"
+        placeholder="— Select a class —"
+        [groups]="classGroups()"
+        [value]="classId()"
+        (valueChange)="classId.set($event)"
+      />
+    </div>
+
+    <label class="field field--chance">
+      <span class="field__label">Chance</span>
+      <span class="chance" [class.chance--invalid]="chanceInvalid()">
+        <input
+          type="number"
+          inputmode="numeric"
+          min="0"
+          max="100"
+          step="1"
+          placeholder="0"
+          aria-label="Pass chance"
+          [value]="chanceText()"
+          (input)="chanceText.set($any($event.target).value)"
+          (keydown.enter)="confirm()"
+        />
+        <span class="chance__unit">%</span>
+      </span>
+    </label>
+  </div>
+
+  @if (chanceInvalid()) {
+    <p class="hint hint--error">Chance must be a whole number from 0 to 100.</p>
+  }
+
+  <div class="field">
+    <span class="field__label">Result</span>
+    <div class="outcome" role="radiogroup" aria-label="Exam result">
+      <button
+        type="button"
+        role="radio"
+        class="outcome__option outcome__option--pass"
+        [class.outcome__option--selected]="outcome() === true"
+        [attr.aria-checked]="outcome() === true"
+        [disabled]="forced() === false"
+        (click)="passed.set(true)"
+      >
+        Pass
+      </button>
+      <button
+        type="button"
+        role="radio"
+        class="outcome__option outcome__option--fail"
+        [class.outcome__option--selected]="outcome() === false"
+        [attr.aria-checked]="outcome() === false"
+        [disabled]="forced() === true"
+        (click)="passed.set(false)"
+      >
+        Fail
+      </button>
+    </div>
+  </div>
+
+  <p class="hint" [class.hint--locked]="forced() !== null">
+    @if (forced() === true) {
+      The Str roll is {{ knownRange() }}, so a {{ chance() }}% exam has to pass.
+    } @else if (forced() === false) {
+      The Str roll is {{ knownRange() }}, so a {{ chance() }}% exam has to fail.
+    } @else if (outcome() === true) {
+      A pass switches to the new class and means the Str roll was at or below the chance.
+    } @else if (outcome() === false) {
+      A fail keeps the current class and means the Str roll was above the chance.
+    } @else {
+      The exam uses this level's Str roll instead of levelling up.
+    }
+  </p>
+
+  <footer class="dialog__footer">
+    <button type="button" class="button" (click)="close()">Cancel</button>
+    <button
+      type="button"
+      class="button button--primary"
+      [disabled]="!canConfirm()"
+      (click)="confirm()"
+    >
+      Confirm
+    </button>
+  </footer>
+</div>

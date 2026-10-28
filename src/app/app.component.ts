@@ -39,24 +39,32 @@ export class AppComponent {
       }
 
       let frame = 0;
+      let settle = 0;
       const schedule = () => {
         cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => this.fitToVisualViewport(viewport));
+        frame = requestAnimationFrame(() => this.updateKeyboardInset(viewport));
+        // Let the keyboard animation and iOS's own focus scroll finish before correcting.
+        clearTimeout(settle);
+        settle = window.setTimeout(() => this.revealFocusedField(viewport), 300);
       };
       const host = this.host.nativeElement;
+      const clearExtra = () => host.style.removeProperty('--scroll-extra');
 
       viewport.addEventListener('resize', schedule);
       host.addEventListener('focusin', schedule);
+      host.addEventListener('focusout', clearExtra);
       destroyRef.onDestroy(() => {
         cancelAnimationFrame(frame);
+        clearTimeout(settle);
         viewport.removeEventListener('resize', schedule);
         host.removeEventListener('focusin', schedule);
+        host.removeEventListener('focusout', clearExtra);
       });
     });
   }
 
   // iOS overlays the keyboard without resizing the layout, so pad the scroller by the covered height.
-  private fitToVisualViewport(viewport: VisualViewport): void {
+  private updateKeyboardInset(viewport: VisualViewport): number {
     const host = this.host.nativeElement;
     const zoomed = Math.abs(viewport.scale - 1) >= 0.01;
     const inset = zoomed ? 0 : Math.max(0, Math.round(window.innerHeight - viewport.height));
@@ -67,22 +75,49 @@ export class AppComponent {
       host.style.removeProperty('--keyboard-inset');
     }
 
-    const field = document.activeElement;
-    const scroller = host.querySelector('main');
+    return inset;
+  }
 
-    if (!inset || !scroller || !(field instanceof HTMLElement) || !field.matches(TEXT_FIELD)) {
+  private revealFocusedField(viewport: VisualViewport): void {
+    this.updateKeyboardInset(viewport);
+    const field = document.activeElement;
+    const scroller = this.host.nativeElement.querySelector('main');
+
+    if (
+      !matchMedia('(pointer: coarse)').matches ||
+      !scroller ||
+      !(field instanceof HTMLElement) ||
+      !field.matches(TEXT_FIELD)
+    ) {
       return;
     }
 
     const margin = 12;
-    const rect = field.getBoundingClientRect();
-    const visibleTop = Math.max(viewport.offsetTop, scroller.getBoundingClientRect().top);
-    const visibleBottom = viewport.offsetTop + viewport.height;
+    const visibleTop = Math.max(viewport.offsetTop, scroller.getBoundingClientRect().top) + margin;
+    const visibleBottom = viewport.offsetTop + viewport.height - margin;
+    const top = field.getBoundingClientRect().top;
+    const panel = field.closest('app-searchable-select')?.querySelector('.panel');
+    let delta: number;
 
-    if (rect.bottom > visibleBottom - margin) {
-      scroller.scrollTop += rect.bottom - visibleBottom + margin;
-    } else if (rect.top < visibleTop + margin) {
-      scroller.scrollTop -= visibleTop + margin - rect.top;
+    if (panel) {
+      // Rest the open dropdown right above the keyboard, but never push the field itself out of view.
+      delta = Math.min(panel.getBoundingClientRect().bottom - visibleBottom, top - visibleTop);
+    } else {
+      const bottom = field.getBoundingClientRect().bottom;
+      delta = bottom > visibleBottom ? bottom - visibleBottom : 0;
+    }
+
+    if (Math.abs(delta) > 1) {
+      // The dropdown can overhang the end of the page; add just enough room to scroll it clear.
+      const room = () => scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop;
+      let extra = 0;
+
+      for (let tries = 0; tries < 3 && delta > room() + 1; tries++) {
+        extra += Math.ceil(delta - room());
+        this.host.nativeElement.style.setProperty('--scroll-extra', `${extra}px`);
+      }
+
+      scroller.scrollBy({ top: delta, behavior: 'smooth' });
     }
   }
 

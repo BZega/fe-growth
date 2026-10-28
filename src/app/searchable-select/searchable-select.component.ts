@@ -196,12 +196,26 @@ export class SearchableSelectComponent {
     this.scrollActiveIntoView();
   }
 
+  // Scroll only the option list; scrollIntoView would also drag the page on mobile.
   private scrollActiveIntoView(): void {
     afterNextRender(
-      () =>
-        this.host.nativeElement
-          .querySelector('.option--active')
-          ?.scrollIntoView({ block: 'nearest' }),
+      () => {
+        const list = this.host.nativeElement.querySelector('.panel__list') as HTMLElement | null;
+        const option = list?.querySelector('.option--active') as HTMLElement | null;
+
+        if (!list || !option) {
+          return;
+        }
+
+        const top = option.offsetTop - list.offsetTop;
+        const bottom = top + option.offsetHeight;
+
+        if (top < list.scrollTop) {
+          list.scrollTop = top;
+        } else if (bottom > list.scrollTop + list.clientHeight) {
+          list.scrollTop = bottom - list.clientHeight;
+        }
+      },
       { injector: this.injector },
     );
   }

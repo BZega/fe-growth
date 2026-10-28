@@ -24,7 +24,7 @@ main {
   &::after {
     content: '';
     flex: none;
-    height: var(--keyboard-inset, 0px);
+    height: calc(var(--keyboard-inset, 0px) + var(--scroll-extra, 0px));
   }
 }
 

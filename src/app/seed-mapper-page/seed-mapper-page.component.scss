@@ -347,6 +347,21 @@
     letter-spacing: 0;
     opacity: 0.8;
   }
+
+  &__select {
+    background: #1d222c;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.5rem;
+
+    &:hover,
+    &:focus {
+      border-color: var(--accent);
+    }
+  }
 }
 
 .grid {
@@ -410,12 +425,6 @@
   white-space: nowrap;
 }
 
-.exam-cell--pass {
-  background: #1d6f3a;
-  border: 1px solid #2f9e4f;
-  color: #e8fff0;
-}
-
 .exam-cell--fail {
   background: #9c2b2b;
   border: 1px solid #c04545;
@@ -425,6 +434,16 @@
 .blank-cell {
   border-radius: 4px;
   border: 1px dashed rgb(255 255 255 / 8%);
+}
+
+.floor-cell {
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  border: 1px solid rgb(240 192 74 / 45%);
+  background: rgb(240 192 74 / 14%);
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .grid__corner {

@@ -2,7 +2,7 @@ import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, Injector, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ExamDialogComponent } from '../exam-dialog/exam-dialog.component';
-import { CLASS_RANK_ORDER, ClassRank, GrowthRates, Mount, STAT_KEYS, STAT_LABELS, StatKey, sumGrowth, toGrowth, Unit, UnitClass, ZERO_GROWTH } from '../models/growth.models';
+import { bondLevelOf, CLASS_RANK_ORDER, ClassRank, GrowthRates, Mount, MountBondLevel, mountBonusAt, mountGrowthAt, STAT_KEYS, STAT_LABELS, StatKey, sumGrowth, toGrowth, Unit, UnitClass, ZERO_GROWTH } from '../models/growth.models';
 import { estimateRoll, RollBounds, rollBounds, RollEstimate, RollObservation } from '../models/seed-roll';
 import { CURRENT_SAVE_VERSION, migrateSave, newSaveId, SeedSave } from '../models/seed-save';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
@@ -30,6 +30,8 @@ export interface SectionView {
   title: string;
   classId: number | null;
   mount: Mount | null;
+  /** Pair bond level with `mount`; null when the mount has none. */
+  mountLevel: number | null;
   growth: GrowthRates;
   parentTitle: string | null;
   exam: { slot: number; level: number } | null;
@@ -49,11 +51,24 @@ interface TaggedObservation extends RollObservation {
 export interface StatTotal {
   value: number | null;
   gained: number;
-  /** Class stat bonus relative to the seed's class, whose bonus is already in the entered stats. */
   classBonus: number;
-  /** Name of the seed's class when `classBonus` is non-zero, for the tooltip. */
   versus: string | null;
+  mountBonus: number;
+  mountSource: string | null;
+  floorBoost: number;
 }
+
+interface SectionStart {
+  gains: GrowthRates;
+  floorBoosts: GrowthRates;
+  examBoost: GrowthRates;
+}
+
+const NO_START: SectionStart = {
+  gains: ZERO_GROWTH,
+  floorBoosts: ZERO_GROWTH,
+  examBoost: ZERO_GROWTH,
+};
 
 interface ExamDialogState {
   title: string;
@@ -128,11 +143,19 @@ export class SeedMapperPageComponent {
       title: view.title,
       rows: [
         ...(view.exam
-          ? [{ label: this.examLabel(view), exam: true, rolls: this.rollsAt(view.exam.slot) }]
+          ? [
+              {
+                label: this.examLabel(view),
+                exam: true,
+                passChance: view.section.exam?.passed ? view.section.exam.chance : null,
+                rolls: this.rollsAt(view.exam.slot),
+              },
+            ]
           : []),
         ...view.section.rows.map((_, index) => ({
           label: `Lv ${this.levelOf(view, index)}`,
           exam: false,
+          passChance: null,
           rolls: this.rollsAt(view.firstSlot + index),
         })),
       ],
@@ -182,6 +205,8 @@ export class SeedMapperPageComponent {
     for (const section of map.sections) {
       const classId = effectiveClassId(map.sections, section);
       const mount = this.resolveMount(classId, section.mountId);
+      const mountLevel = bondLevelOf(mount, section.mountLevel)?.level ?? null;
+      const growth = this.combine(map.unitId, classId, mount, mountLevel);
       let view: SectionView;
 
       if (section.exam) {
@@ -198,7 +223,8 @@ export class SeedMapperPageComponent {
           title: `Exam ${++examNumber}`,
           classId,
           mount,
-          growth: this.combine(map.unitId, classId, mount),
+          mountLevel,
+          growth,
           parentTitle: parent.title,
           exam: { slot: from.slot + 1, level: from.level },
           firstSlot: from.slot + 2,
@@ -210,7 +236,8 @@ export class SeedMapperPageComponent {
           title: 'Seed',
           classId,
           mount,
-          growth: this.combine(map.unitId, classId, mount),
+          mountLevel,
+          growth,
           parentTitle: null,
           exam: null,
           firstSlot: 0,
@@ -294,6 +321,10 @@ export class SeedMapperPageComponent {
     const options = this.mountsForClass(classId);
 
     return options.find((m) => m.id === mountId) ?? options.at(0) ?? null;
+  }
+
+  bondLevelsOf(mount: Mount | null): readonly MountBondLevel[] {
+    return mount?.bondLevels ?? [];
   }
 
   levelOf(view: SectionView, index: number): number {
@@ -423,11 +454,16 @@ export class SeedMapperPageComponent {
     return this.resolveMount(comparator.classId, comparator.mountId);
   }
 
+  comparatorMountLevel(comparator: SeedComparator): number | null {
+    return bondLevelOf(this.comparatorMountOf(comparator), comparator.mountLevel)?.level ?? null;
+  }
+
   comparatorGrowth(comparator: SeedComparator): GrowthRates {
     return this.combine(
       this.seedMap().unitId,
       comparator.classId,
       this.comparatorMountOf(comparator),
+      comparator.mountLevel,
     );
   }
 
@@ -587,44 +623,94 @@ export class SeedMapperPageComponent {
     return gains;
   }
 
-  private readonly startGains = computed(() => {
-    const starts = new Map<number, GrowthRates>();
+  private readonly sectionStarts = computed(() => {
+    const starts = new Map<number, SectionStart>();
     const views = this.sectionViews();
 
     for (const view of views) {
       const exam = view.section.exam;
 
       if (!exam) {
-        starts.set(view.section.id, { ...ZERO_GROWTH });
+        starts.set(view.section.id, NO_START);
         continue;
       }
 
       const parent = views.find((candidate) => candidate.section.id === exam.parentId);
-      const parentStart = starts.get(exam.parentId) ?? { ...ZERO_GROWTH };
+      const parentStart = starts.get(exam.parentId) ?? NO_START;
+      let carried = parentStart.gains;
 
-      if (!parent || exam.afterRowId === null) {
-        starts.set(view.section.id, parentStart);
-        continue;
+      if (parent && exam.afterRowId !== null) {
+        const until = parent.section.rows.findIndex((row) => row.id === exam.afterRowId);
+        const growth = parent.classId === null ? null : parent.growth;
+
+        carried = sumGrowth(carried, this.gainsOf(parent, growth, parent.section.rows, until));
       }
 
-      const until = parent.section.rows.findIndex((row) => row.id === exam.afterRowId);
-      const growth = parent.classId === null ? null : parent.growth;
+      const examBoost = exam.passed ? this.floorBoost(exam.classId, carried) : ZERO_GROWTH;
 
-      starts.set(
-        view.section.id,
-        sumGrowth(parentStart, this.gainsOf(parent, growth, parent.section.rows, until)),
-      );
+      starts.set(view.section.id, {
+        gains: sumGrowth(carried, examBoost),
+        floorBoosts: sumGrowth(parentStart.floorBoosts, examBoost),
+        examBoost,
+      });
     }
 
     return starts;
   });
 
+  private floorBoost(classId: number | null, gains: GrowthRates): GrowthRates {
+    const unitClass = this.classes().find((c) => c.id === classId);
+    const boost = { ...ZERO_GROWTH };
+
+    if (!unitClass) {
+      return boost;
+    }
+
+    const base = this.seedMap().startStats;
+    const seedClassId = this.sectionViews()[0]?.classId ?? null;
+    const seedClass = this.classes().find((c) => c.id === seedClassId) ?? null;
+
+    for (const stat of this.statKeys) {
+      const start = base[stat];
+
+      if (start !== null) {
+        const own = start - (seedClass?.bonusStats[stat] ?? 0) + gains[stat];
+        boost[stat] = Math.max(0, unitClass.classFloorStats[stat] - own);
+      }
+    }
+
+    return boost;
+  }
+
+  examBoostOf(view: SectionView): GrowthRates {
+    return this.sectionStart(view).examBoost;
+  }
+
+  examBoostTitle(view: SectionView, stat: StatKey): string {
+    const unitClass = this.classes().find((c) => c.id === view.section.exam?.classId);
+    const floor = unitClass?.classFloorStats[stat] ?? 0;
+
+    return `+${this.examBoostOf(view)[stat]} to reach ${unitClass?.name ?? 'the class'}'s base ${this.statLabels[stat]} of ${floor}`;
+  }
+
+  private sectionStart(view: SectionView): SectionStart {
+    return this.sectionStarts().get(view.section.id) ?? NO_START;
+  }
+
   startStatsOf(view: SectionView): StatTotal[] {
-    return this.totals(this.startGains().get(view.section.id) ?? ZERO_GROWTH, view.classId);
+    const start = this.sectionStart(view);
+
+    return this.totals(
+      start.gains,
+      start.floorBoosts,
+      view.classId,
+      view.classId === null ? null : ridden(view.mount, view.mountLevel),
+    );
   }
 
   endStatsOf(view: SectionView, comparator: SeedComparator | null = null): StatTotal[] {
     const rows = comparator ? comparator.rows : view.section.rows;
+    const classId = comparator ? comparator.classId : view.classId;
     const growth = comparator
       ? comparator.classId === null
         ? null
@@ -632,12 +718,16 @@ export class SeedMapperPageComponent {
       : view.classId === null
         ? null
         : view.growth;
-    const gains = sumGrowth(
-      this.startGains().get(view.section.id) ?? ZERO_GROWTH,
-      this.gainsOf(view, growth, rows, rows.length - 1),
-    );
+    const mount =
+      classId === null
+        ? null
+        : comparator
+          ? ridden(this.comparatorMountOf(comparator), this.comparatorMountLevel(comparator))
+          : ridden(view.mount, view.mountLevel);
+    const start = this.sectionStart(view);
+    const gains = sumGrowth(start.gains, this.gainsOf(view, growth, rows, rows.length - 1));
 
-    return this.totals(gains, comparator ? comparator.classId : view.classId);
+    return this.totals(gains, start.floorBoosts, classId, mount);
   }
 
   startLevelOf(view: SectionView): number {
@@ -648,23 +738,34 @@ export class SeedMapperPageComponent {
     return this.levelOf(view, view.section.rows.length - 1);
   }
 
-  private totals(gains: GrowthRates, classId: number | null): StatTotal[] {
+  private totals(
+    gains: GrowthRates,
+    floorBoosts: GrowthRates,
+    classId: number | null,
+    mount: RiddenMount | null,
+  ): StatTotal[] {
     const base = this.seedMap().startStats;
-    const seedClassId = this.sectionViews()[0]?.classId ?? null;
+    const seed = this.sectionViews()[0];
+    const seedClassId = seed?.classId ?? null;
     const seedClass = this.classes().find((c) => c.id === seedClassId) ?? null;
     const shownClass =
       classId === null ? seedClass : (this.classes().find((c) => c.id === classId) ?? null);
+    const shownMount = mount ?? ridden(seed?.mount ?? null, seed?.mountLevel ?? null);
 
     return this.statKeys.map((stat) => {
       const start = base[stat];
       const classBonus =
         (shownClass?.bonusStats[stat] ?? 0) - (seedClass?.bonusStats[stat] ?? 0);
+      const mountBonus = shownMount.bonus[stat];
 
       return {
-        value: start === null ? null : start + gains[stat] + classBonus,
-        gained: gains[stat],
+        value: start === null ? null : start + gains[stat] + classBonus + mountBonus,
+        gained: gains[stat] - floorBoosts[stat],
         classBonus,
         versus: classBonus === 0 ? null : (seedClass?.name ?? null),
+        mountBonus,
+        mountSource: mountBonus === 0 ? null : shownMount.label,
+        floorBoost: floorBoosts[stat],
       };
     });
   }
@@ -672,11 +773,22 @@ export class SeedMapperPageComponent {
   statTotalTitle(total: StatTotal): string {
     const parts = [total.gained === 0 ? 'No gains yet' : `+${total.gained} from level ups`];
 
+    if (total.floorBoost > 0) {
+      parts.push(`+${total.floorBoost} from class base stats`);
+    }
+
     if (total.classBonus !== 0) {
       const sign = total.classBonus > 0 ? '+' : '−';
       parts.push(
         `${sign}${Math.abs(total.classBonus)} class stat bonus` +
           (total.versus ? ` compared with ${total.versus}` : ''),
+      );
+    }
+
+    if (total.mountBonus !== 0) {
+      parts.push(
+        `+${total.mountBonus} mount stat bonus` +
+          (total.mountSource ? ` from ${total.mountSource}` : ''),
       );
     }
 
@@ -729,6 +841,10 @@ export class SeedMapperPageComponent {
     this.state.setMount(view.section.id, id);
   }
 
+  onMountLevelChange(view: SectionView, value: string): void {
+    this.state.setMountLevel(view.section.id, Number(value));
+  }
+
   onStatsLevelChange(event: Event): void {
     const input = event.target as HTMLInputElement;
 
@@ -751,6 +867,14 @@ export class SeedMapperPageComponent {
     id: number | null,
   ): void {
     this.state.setComparatorMount(view.section.id, comparator.id, id);
+  }
+
+  onComparatorMountLevelChange(
+    view: SectionView,
+    comparator: SeedComparator,
+    value: string,
+  ): void {
+    this.state.setComparatorMountLevel(view.section.id, comparator.id, Number(value));
   }
 
   toggleStat(view: SectionView, row: SeedRow, stat: StatKey): void {
@@ -1252,11 +1376,12 @@ export class SeedMapperPageComponent {
     unitId: number | null,
     classId: number | null,
     mount: Mount | null,
+    mountLevel: number | null,
   ): GrowthRates {
     const unit = this.units().find((u) => u.id === unitId) ?? null;
     const unitClass = this.classes().find((c) => c.id === classId) ?? null;
 
-    return sumGrowth(toGrowth(unit), toGrowth(unitClass), toGrowth(mount));
+    return sumGrowth(toGrowth(unit), toGrowth(unitClass), mountGrowthAt(mount, mountLevel));
   }
 
   private loadMounts(classId: number | null): void {
@@ -1278,6 +1403,18 @@ export class SeedMapperPageComponent {
 
 function branchKey(sectionId: number, rowId: number | null): string {
   return `${sectionId}:${rowId ?? 'exam'}`;
+}
+
+interface RiddenMount {
+  bonus: GrowthRates;
+  label: string | null;
+}
+
+function ridden(mount: Mount | null, level: number | null): RiddenMount {
+  return {
+    bonus: mountBonusAt(mount, level),
+    label: mount && level !== null ? `${mount.name} (Bond Lv ${level})` : null,
+  };
 }
 
 function sectionAnchor(sectionId: number): string {

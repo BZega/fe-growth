@@ -4,6 +4,7 @@ export interface CalculatorSelection {
   unitId: number | null;
   classId: number | null;
   mountId: number | null;
+  mountLevel: number | null;
   classLevel: number | null;
 }
 
@@ -11,6 +12,7 @@ const EMPTY: CalculatorSelection = {
   unitId: null,
   classId: null,
   mountId: null,
+  mountLevel: null,
   classLevel: null,
 };
 

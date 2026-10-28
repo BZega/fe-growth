@@ -73,6 +73,23 @@
           (valueChange)="onMountChange($event)"
         />
       </div>
+
+      @if (bondLevels().length > 0) {
+        <label class="picker picker--level">
+          <span class="picker__label">Bond Level</span>
+          <select
+            class="picker__select"
+            [value]="mountLevel()"
+            (change)="onMountLevelChange($any($event.target).value)"
+          >
+            @for (bond of bondLevels(); track bond.level) {
+              <option [value]="bond.level" [selected]="bond.level === mountLevel()">
+                Level {{ bond.level }}
+              </option>
+            }
+          </select>
+        </label>
+      }
     }
   </div>
 
@@ -129,6 +146,9 @@
           </th>
           <td class="band__caption" [attr.colspan]="statKeys.length">
             {{ isMounted() ? 'Growths From Mounts' : 'No Mount Growth' }}
+            @if (current.mountLevel !== null) {
+              (Bond Level {{ current.mountLevel }})
+            }
             @if (levelConfig(); as config) {
               @if (isMounted() && config.mountMultiplier !== 1) {
                 (x{{ config.mountMultiplier }})

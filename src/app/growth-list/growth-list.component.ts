@@ -30,8 +30,8 @@ export class GrowthListComponent {
   readonly groups = input.required<GrowthListGroup[]>();
   readonly nameHeader = input('Name');
   readonly colorScale = input<GrowthColorScale>('sign');
-  /** When set, each row name links to `[linkBase, row.id]`. */
   readonly linkBase = input<string | null>(null);
+  readonly valueSuffix = input('%');
 
   readonly statKeys = STAT_KEYS;
   readonly statLabels = STAT_LABELS;

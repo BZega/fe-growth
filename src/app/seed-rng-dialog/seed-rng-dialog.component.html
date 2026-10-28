@@ -74,7 +74,14 @@
       }
 
       @for (row of section.rows; track $index) {
-        <div class="grid__label" [class.grid__label--exam]="row.exam">{{ row.label }}</div>
+        <div class="grid__label" [class.grid__label--exam]="row.exam">
+          {{ row.label }}
+          @if (row.passChance !== null) {
+            <span class="grid__pass" [title]="'Exam passed at ' + row.passChance + '%'">
+              ✓ {{ row.passChance }}%
+            </span>
+          }
+        </div>
 
         @for (roll of row.rolls; track $index) {
           <div [class]="'roll roll--' + roll.state">{{ roll.text }}</div>

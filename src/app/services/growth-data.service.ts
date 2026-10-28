@@ -1,10 +1,17 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
-import { ClassAbility, FEMALE_ONLY_CLASS_NAMES, Mount, MountType, Unit, UnitClass } from '../models/growth.models';
+import { ClassAbility, FEMALE_ONLY_CLASS_NAMES, GrowthRates, Mount, MountType, toGrowth, Unit, UnitClass } from '../models/growth.models';
 import classAbilityData from '../data/class-abilities.json';
 import classMountTypes from '../data/class-mount-types.json';
+import mountBondLevelData from '../data/mount-bond-levels.json';
 import mountData from '../data/mounts.json';
+
+interface MountBondLevelData {
+  level: number;
+  growth: Partial<GrowthRates>;
+  bonusStats: Partial<GrowthRates>;
+}
 import unitClassData from '../data/unit-classes.json';
 import unitData from '../data/units.json';
 
@@ -19,7 +26,20 @@ export class GrowthDataService {
 
   private readonly classAbilities = classAbilityData as ClassAbility[];
 
-  private readonly allMounts = mountData as Mount[];
+  private readonly allMounts: Mount[] = (
+    mountData as Omit<Mount, 'bondLevels'>[]
+  ).map((mount) => ({
+    ...mount,
+    bondLevels: (
+      (mountBondLevelData as Record<string, MountBondLevelData[]>)[mount.name] ?? []
+    )
+      .map((entry) => ({
+        level: entry.level,
+        growth: toGrowth(entry.growth),
+        bonusStats: toGrowth(entry.bonusStats),
+      }))
+      .sort((a, b) => a.level - b.level),
+  }));
 
   private readonly mounts = this.allMounts.filter(
     (mount) => mount.type !== 'None',
@@ -54,7 +74,6 @@ export class GrowthDataService {
     return this.mountTypesByClassName[className] ?? 'None';
   }
 
-  /** Whether `unit` may take `unitClass`; every class is allowed when no unit is chosen. */
   canUseClass(unit: Unit | null | undefined, unitClass: UnitClass): boolean {
     if (!unit) {
       return true;

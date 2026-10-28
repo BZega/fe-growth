@@ -55,7 +55,11 @@ export class ComparisonDialogComponent {
     const parts = [build.unitClass?.name ?? 'No class'];
 
     if (build.mount) {
-      parts.push(build.mount.name);
+      parts.push(
+        build.mountLevel === null
+          ? build.mount.name
+          : `${build.mount.name} (Bond Lv ${build.mountLevel})`,
+      );
     } else if (build.mountType !== 'None') {
       parts.push('no mount picked');
     } else {

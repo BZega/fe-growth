@@ -1,0 +1,142 @@
+{
+  "Wild Ornius": [
+    { "level": 1, "bonusStats": { "dex": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "spd": 1, "dex": 1 }, "growth": { "spd": 5, "dex": 5 } },
+    { "level": 3, "bonusStats": { "spd": 1, "dex": 2 }, "growth": { "spd": 5, "dex": 10 } },
+    { "level": 4, "bonusStats": { "spd": 2, "dex": 2 }, "growth": { "spd": 10, "dex": 10 } },
+    { "level": 5, "bonusStats": { "spd": 2, "dex": 3 }, "growth": { "spd": 10, "dex": 15 } }
+  ],
+  "White Ornius": [
+    { "level": 1, "bonusStats": { "dex": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "dex": 1, "res": 1 }, "growth": { "dex": 5, "res": 5 } },
+    { "level": 3, "bonusStats": { "dex": 1, "res": 2 }, "growth": { "dex": 5, "res": 10 } },
+    { "level": 4, "bonusStats": { "spd": 1, "dex": 1, "res": 2 }, "growth": { "spd": 5, "dex": 5, "res": 10 } },
+    { "level": 5, "bonusStats": { "spd": 1, "dex": 1, "res": 3 }, "growth": { "spd": 5, "dex": 5, "res": 15 } }
+  ],
+  "Meganius": [
+    { "level": 1, "bonusStats": { "dex": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "dex": 1, "def": 1 }, "growth": { "dex": 5, "def": 5 } },
+    { "level": 3, "bonusStats": { "dex": 1, "def": 2 }, "growth": { "dex": 5, "def": 10 } },
+    { "level": 4, "bonusStats": { "dex": 1, "def": 3 }, "growth": { "dex": 5, "def": 15 } },
+    { "level": 5, "bonusStats": { "str": 1, "dex": 1, "def": 3 }, "growth": { "str": 5, "dex": 5, "def": 15 } }
+  ],
+  "Red Meganius": [
+    { "level": 1, "bonusStats": { "dex": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "str": 1, "dex": 1 }, "growth": { "str": 5, "dex": 5 } },
+    { "level": 3, "bonusStats": { "str": 1, "dex": 1, "def": 1 }, "growth": { "str": 5, "dex": 5, "def": 5 } },
+    { "level": 4, "bonusStats": { "str": 2, "dex": 1, "def": 1 }, "growth": { "str": 10, "dex": 5, "def": 5 } },
+    { "level": 5, "bonusStats": { "str": 3, "dex": 1, "def": 1 }, "growth": { "str": 15, "dex": 5, "def": 5 } }
+  ],
+  "Magonius": [
+    { "level": 1, "bonusStats": { "dex": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "mag": 1, "dex": 1 }, "growth": { "mag": 5, "dex": 5 } },
+    { "level": 3, "bonusStats": { "mag": 2, "dex": 1 }, "growth": { "mag": 10, "dex": 5 } },
+    { "level": 4, "bonusStats": { "mag": 2, "dex": 2 }, "growth": { "mag": 10, "dex": 10 } },
+    { "level": 5, "bonusStats": { "mag": 3, "dex": 2 }, "growth": { "mag": 15, "dex": 10 } }
+  ],
+  "Black Magonius": [
+    { "level": 1, "bonusStats": { "dex": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "mag": 1, "dex": 1 }, "growth": { "mag": 5, "dex": 5 } },
+    { "level": 3, "bonusStats": { "mag": 2, "dex": 1 }, "growth": { "mag": 5, "spd": 5, "dex": 5 } },
+    { "level": 4, "bonusStats": { "mag": 2, "spd": 1, "dex": 1 }, "growth": { "mag": 10, "spd": 5, "dex": 5 } },
+    { "level": 5, "bonusStats": { "mag": 2, "spd": 2, "dex": 1 }, "growth": { "mag": 10, "spd": 10, "dex": 5 } }
+  ],
+  "Wild Horse": [
+    { "level": 1, "bonusStats": { "dex": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "dex": 1, "def": 1 }, "growth": { "dex": 5, "def": 5 } },
+    { "level": 3, "bonusStats": { "dex": 2, "def": 1 }, "growth": { "spd": 5, "dex": 5, "def": 5 } },
+    { "level": 4, "bonusStats": { "spd": 1, "dex": 2, "def": 1 }, "growth": { "hp": 5, "spd": 5, "dex": 5, "def": 5 } },
+    { "level": 5, "bonusStats": { "spd": 1, "dex": 3, "def": 1 }, "growth": { "hp": 5, "spd": 5, "dex": 5, "def": 5, "res": 5 } }
+  ],
+  "Monoceros": [
+    { "level": 1, "bonusStats": { "dex": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "dex": 1, "lck": 1 }, "growth": { "dex": 5, "res": 5 } },
+    { "level": 3, "bonusStats": { "dex": 1, "lck": 2 }, "growth": { "dex": 5, "res": 10 } },
+    { "level": 4, "bonusStats": { "spd": 1, "dex": 1, "lck": 2 }, "growth": { "spd": 5, "dex": 5, "res": 10 } },
+    { "level": 5, "bonusStats": { "spd": 1, "dex": 1, "lck": 3 }, "growth": { "hp": 5, "spd": 5, "dex": 5, "res": 10 } }
+  ],
+  "Ferghanan Horse": [
+    { "level": 1, "bonusStats": { "dex": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "str": 1, "dex": 1 }, "growth": { "str": 5, "dex": 5 } },
+    { "level": 3, "bonusStats": { "str": 1, "dex": 1, "def": 1 }, "growth": { "str": 5, "dex": 5, "def": 5 } },
+    { "level": 4, "bonusStats": { "str": 2, "dex": 1, "def": 1 }, "growth": { "hp": 5, "str": 5, "dex": 5, "def": 5 } },
+    { "level": 5, "bonusStats": { "str": 2, "dex": 1, "def": 2 }, "growth": { "hp": 5, "str": 5, "dex": 5, "def": 10 } }
+  ],
+  "Rocinan": [
+    { "level": 1, "bonusStats": { "dex": 1, "def": 1 }, "growth": { "dex": 5, "def": 5 } },
+    { "level": 2, "bonusStats": { "dex": 1, "def": 2 }, "growth": { "spd": 5, "dex": 5, "def": 5 } },
+    { "level": 3, "bonusStats": { "dex": 2, "def": 2 }, "growth": { "spd": 5, "dex": 5, "def": 5, "res": 5 } },
+    { "level": 4, "bonusStats": { "spd": 1, "dex": 2, "def": 2 }, "growth": { "hp": 5, "spd": 5, "dex": 5, "def": 5, "res": 5 } },
+    { "level": 5, "bonusStats": { "spd": 1, "dex": 3, "def": 2 }, "growth": { "hp": 5, "spd": 5, "dex": 5, "def": 10, "res": 5 } }
+  ],
+  "Black Horse": [
+    { "level": 1, "bonusStats": { "dex": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "spd": 1, "dex": 1 }, "growth": { "spd": 5, "dex": 5 } },
+    { "level": 3, "bonusStats": { "str": 1, "spd": 1, "dex": 1 }, "growth": { "str": 5, "spd": 5, "dex": 5 } },
+    { "level": 4, "bonusStats": { "str": 1, "spd": 2, "dex": 1 }, "growth": { "hp": 5, "str": 5, "spd": 5, "dex": 5 } },
+    { "level": 5, "bonusStats": { "str": 1, "spd": 3, "dex": 1 }, "growth": { "hp": 5, "str": 5, "spd": 10, "dex": 5 } }
+  ],
+  "Wild Pegasus": [
+    { "level": 1, "bonusStats": { "spd": 1 }, "growth": { "spd": 5 } },
+    { "level": 2, "bonusStats": { "spd": 1, "res": 1 }, "growth": { "spd": 5, "res": 5 } },
+    { "level": 3, "bonusStats": { "spd": 2, "res": 1 }, "growth": { "spd": 10, "res": 5 } },
+    { "level": 4, "bonusStats": { "spd": 2, "res": 2 }, "growth": { "spd": 10, "res": 10 } },
+    { "level": 5, "bonusStats": { "spd": 3, "res": 2 }, "growth": { "spd": 15, "res": 10 } }
+  ],
+  "Falicorn": [
+    { "level": 1, "bonusStats": { "spd": 1 }, "growth": { "spd": 5 } },
+    { "level": 2, "bonusStats": { "spd": 2 }, "growth": { "spd": 10 } },
+    { "level": 3, "bonusStats": { "spd": 2, "dex": 1 }, "growth": { "spd": 10, "dex": 5 } },
+    { "level": 4, "bonusStats": { "spd": 3, "dex": 1 }, "growth": { "spd": 15, "dex": 5 } },
+    { "level": 5, "bonusStats": { "str": 1, "spd": 3, "dex": 1 }, "growth": { "str": 5, "spd": 15, "dex": 5 } }
+  ],
+  "Dark Pegasus": [
+    { "level": 1, "bonusStats": { "spd": 1 }, "growth": { "spd": 5 } },
+    { "level": 2, "bonusStats": { "mag": 1, "spd": 1 }, "growth": { "mag": 5, "spd": 5 } },
+    { "level": 3, "bonusStats": { "mag": 2, "spd": 1 }, "growth": { "mag": 10, "spd": 5 } },
+    { "level": 4, "bonusStats": { "mag": 2, "spd": 2 }, "growth": { "mag": 10, "spd": 10 } },
+    { "level": 5, "bonusStats": { "mag": 3, "spd": 2 }, "growth": { "mag": 15, "spd": 10 } }
+  ],
+  "Red Falicorn": [
+    { "level": 1, "bonusStats": { "spd": 1 }, "growth": { "spd": 5 } },
+    { "level": 2, "bonusStats": { "str": 1, "spd": 1 }, "growth": { "str": 5, "spd": 5 } },
+    { "level": 3, "bonusStats": { "str": 2, "spd": 1 }, "growth": { "str": 5, "spd": 5, "dex": 5 } },
+    { "level": 4, "bonusStats": { "str": 2, "spd": 1, "dex": 1 }, "growth": { "str": 10, "spd": 5, "dex": 5 } },
+    { "level": 5, "bonusStats": { "str": 2, "spd": 2, "dex": 1 }, "growth": { "str": 10, "spd": 10, "dex": 5 } }
+  ],
+  "Bucephalus": [
+    { "level": 1, "bonusStats": { "str": 1, "spd": 1 }, "growth": { "str": 5, "spd": 5 } },
+    { "level": 2, "bonusStats": { "str": 1, "spd": 1, "res": 1 }, "growth": { "str": 5, "spd": 5, "res": 5 } },
+    { "level": 3, "bonusStats": { "str": 1, "spd": 2, "res": 1 }, "growth": { "str": 5, "spd": 10, "res": 5 } },
+    { "level": 4, "bonusStats": { "str": 1, "spd": 3, "res": 1 }, "growth": { "str": 5, "spd": 15, "res": 5 } },
+    { "level": 5, "bonusStats": { "str": 1, "spd": 3, "res": 2 }, "growth": { "str": 5, "spd": 15, "res": 10 } }
+  ],
+  "Wild Bau": [
+    { "level": 1, "bonusStats": { "str": 1 }, "growth": { "str": 5 } },
+    { "level": 2, "bonusStats": { "str": 1, "spd": 1 }, "growth": { "str": 5, "spd": 5 } },
+    { "level": 3, "bonusStats": { "str": 1, "spd": 1, "dex": 1 }, "growth": { "str": 5, "spd": 5, "dex": 5 } },
+    { "level": 4, "bonusStats": { "str": 2, "spd": 1, "dex": 1 }, "growth": { "str": 10, "spd": 5, "dex": 5 } },
+    { "level": 5, "bonusStats": { "str": 2, "spd": 1, "dex": 2 }, "growth": { "str": 10, "spd": 5, "dex": 10 } }
+  ],
+  "Red Bau": [
+    { "level": 1, "bonusStats": { "str": 1 }, "growth": { "str": 5 } },
+    { "level": 2, "bonusStats": { "str": 2 }, "growth": { "str": 10 } },
+    { "level": 3, "bonusStats": { "str": 2, "dex": 1 }, "growth": { "str": 10, "dex": 5 } },
+    { "level": 4, "bonusStats": { "str": 2, "dex": 2 }, "growth": { "str": 10, "dex": 10 } },
+    { "level": 5, "bonusStats": { "str": 3, "dex": 2 }, "growth": { "str": 15, "dex": 10 } }
+  ],
+  "Black Bau": [
+    { "level": 1, "bonusStats": { "str": 1 }, "growth": { "str": 5 } },
+    { "level": 2, "bonusStats": { "str": 1, "spd": 1 }, "growth": { "str": 5, "spd": 5 } },
+    { "level": 3, "bonusStats": { "str": 2, "spd": 1 }, "growth": { "str": 5, "spd": 10 } },
+    { "level": 4, "bonusStats": { "str": 2, "spd": 2 }, "growth": { "str": 10, "spd": 10 } },
+    { "level": 5, "bonusStats": { "str": 2, "spd": 3 }, "growth": { "str": 10, "spd": 15 } }
+  ],
+  "Saramis War Elephant": [
+    { "level": 1, "bonusStats": { "str": 1, "dex": 1, "def": 1, "lck": 1 }, "growth": { "dex": 5 } },
+    { "level": 2, "bonusStats": { "str": 2, "dex": 2, "def": 2, "lck": 2 }, "growth": { "dex": 5, "def": 5 } },
+    { "level": 3, "bonusStats": { "str": 3, "dex": 3, "def": 3, "lck": 3 }, "growth": { "hp": 5, "dex": 5, "def": 5 } },
+    { "level": 4, "bonusStats": { "str": 4, "dex": 4, "def": 4, "lck": 4 }, "growth": { "hp": 5, "dex": 5, "def": 5, "lck": 5 } },
+    { "level": 5, "bonusStats": { "str": 5, "dex": 5, "def": 5, "lck": 5 }, "growth": { "hp": 5, "str": 5, "dex": 5, "def": 5, "lck": 5 } }
+  ]
+}

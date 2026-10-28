@@ -5,6 +5,7 @@ import { RollEstimate } from '../models/seed-roll';
 export interface RngRow {
   label: string;
   exam: boolean;
+  passChance: number | null;
   rolls: RollEstimate[];
 }
 

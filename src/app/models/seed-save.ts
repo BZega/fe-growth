@@ -1,4 +1,4 @@
-import { GrowthRates, STAT_KEYS, StatKey, ZERO_GROWTH } from './growth.models';
+import { DEFAULT_MOUNT_BOND_LEVEL, GrowthRates, STAT_KEYS, StatKey, ZERO_GROWTH } from './growth.models';
 
 export type StatValues = Record<StatKey, number | null>;
 
@@ -17,6 +17,7 @@ export const EMPTY_STATS: StatValues = {
 export interface ComparatorSnapshot {
   classId: number | null;
   mountId: number | null;
+  mountLevel: number;
   rows: GrowthRates[];
 }
 
@@ -32,6 +33,7 @@ export interface SectionSnapshot {
   exam: ExamSnapshot | null;
   classId: number | null;
   mountId: number | null;
+  mountLevel: number;
   rows: GrowthRates[];
   comparators: ComparatorSnapshot[];
 }
@@ -47,6 +49,7 @@ export interface SeedMapSnapshot {
 export interface ComparatorDto {
   unitClass: string | null;
   mount: string | null;
+  mountLevel: number;
   rows: GrowthRates[];
 }
 
@@ -62,6 +65,7 @@ export interface SectionDto {
   exam: ExamDto | null;
   unitClass: string | null;
   mount: string | null;
+  mountLevel: number;
   rows: GrowthRates[];
   comparators: ComparatorDto[];
 }
@@ -152,6 +156,7 @@ function fromVersion1(seeds: unknown): SeedMapDto {
         exam: null,
         unitClass: readName(seed['unitClass']),
         mount: readName(seed['mount']),
+        mountLevel: readMountLevel(seed['mountLevel']),
         rows: readRows(seed['rows']),
         comparators: readComparators(seed['comparators']),
       },
@@ -184,6 +189,7 @@ function readSeedMap(raw: unknown): SeedMapDto {
       exam,
       unitClass: readName(section['unitClass']),
       mount: readName(section['mount']),
+      mountLevel: readMountLevel(section['mountLevel']),
       rows: readRows(section['rows']),
       comparators: readComparators(section['comparators']),
     });
@@ -281,8 +287,15 @@ function readComparator(raw: unknown): ComparatorDto {
   return {
     unitClass: readName(comparator['unitClass']),
     mount: readName(comparator['mount']),
+    mountLevel: readMountLevel(comparator['mountLevel']),
     rows: readRows(comparator['rows']),
   };
+}
+
+function readMountLevel(value: unknown): number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1
+    ? value
+    : DEFAULT_MOUNT_BOND_LEVEL;
 }
 
 function readRows(raw: unknown): GrowthRates[] {

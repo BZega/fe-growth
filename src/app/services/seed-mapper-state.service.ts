@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 
-import { GrowthRates, StatKey, ZERO_GROWTH } from '../models/growth.models';
+import { DEFAULT_MOUNT_BOND_LEVEL, GrowthRates, StatKey, ZERO_GROWTH } from '../models/growth.models';
 import { EMPTY_STATS, SeedMapSnapshot, StatValues } from '../models/seed-save';
 import { GrowthDataService } from './growth-data.service';
 
@@ -13,6 +13,7 @@ export interface SeedComparator {
   id: number;
   classId: number | null;
   mountId: number | null;
+  mountLevel: number;
   rows: SeedRow[];
 }
 
@@ -29,6 +30,7 @@ export interface SeedSection {
   exam: SeedExam | null;
   classId: number | null;
   mountId: number | null;
+  mountLevel: number;
   rows: SeedRow[];
   comparators: SeedComparator[];
 }
@@ -66,7 +68,7 @@ export function effectiveClassId(
     return null;
   }
 
-  return current.exam ? current.exam.classId : current.classId;
+  return current.exam ? (current.classId ?? current.exam.classId) : current.classId;
 }
 
 export function availableClassIds(
@@ -154,10 +156,12 @@ export class SeedMapperStateService {
               : null,
           classId: section.classId,
           mountId: section.mountId,
+          mountLevel: section.mountLevel,
           rows: section.rows.map((row) => ({ ...row.marks })),
           comparators: section.comparators.map((comparator) => ({
             classId: comparator.classId,
             mountId: comparator.mountId,
+            mountLevel: comparator.mountLevel,
             rows: comparator.rows.map((row) => ({ ...row.marks })),
           })),
         };
@@ -192,11 +196,13 @@ export class SeedMapperStateService {
             : null,
         classId: entry.classId,
         mountId: entry.mountId,
+        mountLevel: entry.mountLevel,
         rows,
         comparators: entry.comparators.map((comparator) => ({
           id: this.nextComparatorId++,
           classId: comparator.classId,
           mountId: comparator.mountId,
+          mountLevel: comparator.mountLevel,
           rows: rows.map((row, index) => ({
             id: row.id,
             marks: { ...(comparator.rows[index] ?? ZERO_GROWTH) },
@@ -289,11 +295,23 @@ export class SeedMapperStateService {
   }
 
   setClass(sectionId: number, classId: number | null): void {
-    this.patch(sectionId, (section) => ({ ...section, classId }));
+    this.patch(sectionId, (section) => {
+      if (!section.exam) {
+        return { ...section, classId };
+      }
+
+      return section.exam.passed
+        ? { ...section, classId: passedExamClass(classId, section.exam.classId) }
+        : section;
+    });
   }
 
   setMount(sectionId: number, mountId: number | null): void {
     this.patch(sectionId, (section) => ({ ...section, mountId }));
+  }
+
+  setMountLevel(sectionId: number, mountLevel: number): void {
+    this.patch(sectionId, (section) => ({ ...section, mountLevel }));
   }
 
   addLevel(sectionId: number): void {
@@ -346,6 +364,7 @@ export class SeedMapperStateService {
           id: this.nextComparatorId++,
           classId: null,
           mountId: null,
+          mountLevel: DEFAULT_MOUNT_BOND_LEVEL,
           rows: section.rows.map((row) => ({
             id: row.id,
             marks: { ...ZERO_GROWTH },
@@ -371,6 +390,7 @@ export class SeedMapperStateService {
       ...comparator,
       classId,
       mountId: null,
+      mountLevel: DEFAULT_MOUNT_BOND_LEVEL,
     }));
   }
 
@@ -382,6 +402,13 @@ export class SeedMapperStateService {
     this.patchComparator(sectionId, comparatorId, (comparator) => ({
       ...comparator,
       mountId,
+    }));
+  }
+
+  setComparatorMountLevel(sectionId: number, comparatorId: number, mountLevel: number): void {
+    this.patchComparator(sectionId, comparatorId, (comparator) => ({
+      ...comparator,
+      mountLevel,
     }));
   }
 
@@ -409,6 +436,7 @@ export class SeedMapperStateService {
       exam: { parentId, afterRowId, ...draft },
       classId: null,
       mountId: draft.passed ? null : parent.mountId,
+      mountLevel: draft.passed ? DEFAULT_MOUNT_BOND_LEVEL : parent.mountLevel,
       rows: [this.createRow()],
       comparators: [],
     };
@@ -420,7 +448,13 @@ export class SeedMapperStateService {
 
   updateExam(sectionId: number, draft: ExamDraft): void {
     this.patch(sectionId, (section) =>
-      section.exam ? { ...section, exam: { ...section.exam, ...draft } } : section,
+      section.exam
+        ? {
+            ...section,
+            exam: { ...section.exam, ...draft },
+            classId: draft.passed ? passedExamClass(section.classId, draft.classId) : null,
+          }
+        : section,
     );
   }
 
@@ -475,7 +509,7 @@ export class SeedMapperStateService {
     for (const section of map.sections) {
       const available = availableClassIds(map, section, this.alwaysAvailable);
       const used = [
-        section.exam ? null : section.classId,
+        section.classId,
         ...section.comparators.map((comparator) => comparator.classId),
       ];
 
@@ -526,6 +560,7 @@ export class SeedMapperStateService {
             exam: null,
             classId: null,
             mountId: null,
+            mountLevel: DEFAULT_MOUNT_BOND_LEVEL,
             rows: [this.createRow()],
             comparators: [],
           },
@@ -556,9 +591,10 @@ function resetChangedClasses(before: SeedMap, after: SeedMap): SeedMap {
     return {
       ...section,
       mountId: null,
+      mountLevel: DEFAULT_MOUNT_BOND_LEVEL,
       comparators: section.comparators.map((comparator) =>
         comparator.classId === classId
-          ? { ...comparator, classId: null, mountId: null }
+          ? { ...comparator, classId: null, mountId: null, mountLevel: DEFAULT_MOUNT_BOND_LEVEL }
           : comparator,
       ),
     };
@@ -589,7 +625,7 @@ function clearUnavailableClasses(map: SeedMap, always: readonly number[]): SeedM
   const sections = map.sections.map((section) => {
     const available = availableClassIds(map, section, always);
     const keep = (classId: number | null) => classId === null || available.has(classId);
-    const baseClassValid = section.exam !== null || keep(section.classId);
+    const baseClassValid = keep(section.classId);
     const comparatorsValid = section.comparators.every((comparator) => keep(comparator.classId));
 
     if (baseClassValid && comparatorsValid) {
@@ -602,13 +638,20 @@ function clearUnavailableClasses(map: SeedMap, always: readonly number[]): SeedM
       ...section,
       classId: baseClassValid ? section.classId : null,
       mountId: baseClassValid ? section.mountId : null,
+      mountLevel: baseClassValid ? section.mountLevel : DEFAULT_MOUNT_BOND_LEVEL,
       comparators: section.comparators.map((comparator) =>
-        keep(comparator.classId) ? comparator : { ...comparator, classId: null, mountId: null },
+        keep(comparator.classId)
+          ? comparator
+          : { ...comparator, classId: null, mountId: null, mountLevel: DEFAULT_MOUNT_BOND_LEVEL },
       ),
     };
   });
 
   return changed ? { ...map, sections } : map;
+}
+
+function passedExamClass(chosen: number | null, examClassId: number | null): number | null {
+  return chosen === examClassId ? null : chosen;
 }
 
 function toggle(rows: SeedRow[], rowId: number, stat: StatKey): SeedRow[] {

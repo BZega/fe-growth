@@ -90,6 +90,7 @@ export class CharacterPageComponent {
       unitId: this.unitId(),
       classId: this.defaultClassId(),
       mountId: null,
+      mountLevel: null,
       classLevel: null,
     });
     this.comparing.set(true);

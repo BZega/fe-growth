@@ -11,8 +11,6 @@
       </div>
 
       <div class="hero__body">
-        <p class="eyebrow">Class profile</p>
-
         <div class="switcher" #switcher>
           <h1>
             <button
@@ -68,13 +66,15 @@
 
         <div class="badges">
           <span class="badge badge--rank" [attr.data-rank]="current.rank">
-            <span class="badge__label">Specialty</span>
+            <span class="badge__label">Tier </span>
             {{ current.rank }}
           </span>
-          <span class="badge" [class.badge--muted]="mountType() === 'None'">
-            <span class="badge__label">Mount</span>
-            {{ mountType() }}
-          </span>
+          @if (mountType() !== 'None') {
+            <span class="badge" [class.badge--muted]="mountType() === 'None'">
+              <span class="badge__label">Mount Type </span>
+              {{ mountType() }}
+            </span>
+          }
         </div>
 
         @for (line of descriptionLines(); track $index) {
@@ -87,8 +87,7 @@
     <section class="card growth" aria-labelledby="growth-title">
       <div class="growth__feature" [attr.data-tone]="tone(current.total)">
         <span class="growth__feature-label">Total growth</span>
-        <span class="growth__feature-value">{{ signed(current.total) }}<small>%</small></span>
-        <span class="growth__feature-caption">Combined modifier across all stats</span>
+        <span class="growth__feature-value">{{ signed(current.total) }}%</span>
       </div>
 
       <div class="growth__body">
@@ -107,24 +106,57 @@
     <!-- Second row: bonuses + skills stacked on the left, abilities on the right -->
     <div class="split">
       <div class="stack">
-        <section class="card" aria-labelledby="bonus-title">
-          <h2 class="section-title" id="bonus-title">Stat bonuses</h2>
-          <ul class="pills pills--compact">
-            @for (stat of bonusStatKeys; track stat) {
-              <li class="pill" [attr.data-tone]="tone(current.bonusStats[stat])">
-                <span class="pill__label">{{ bonusStatLabels[stat] }}</span>
-                <span class="pill__value">{{ signed(current.bonusStats[stat]) }}</span>
-              </li>
+        <section class="card">
+          <div class="stat-tabs" role="tablist" aria-label="Class stats">
+            @for (tab of statTabs; track tab.key) {
+              <button
+                type="button"
+                role="tab"
+                class="stat-tabs__tab section-title"
+                [id]="'stat-tab-' + tab.key"
+                [class.stat-tabs__tab--active]="statTab() === tab.key"
+                [attr.aria-selected]="statTab() === tab.key"
+                [attr.aria-controls]="'stat-panel-' + tab.key"
+                [attr.tabindex]="statTab() === tab.key ? 0 : -1"
+                (click)="statTab.set(tab.key)"
+                (keydown.arrowLeft)="cycleStatTab()"
+                (keydown.arrowRight)="cycleStatTab()"
+              >
+                {{ tab.label }}
+              </button>
             }
-          </ul>
+          </div>
+
+          <div role="tabpanel" [id]="'stat-panel-' + statTab()" [attr.aria-labelledby]="'stat-tab-' + statTab()">
+            @switch (statTab()) {
+              @case ('bonus') {
+                <ul class="pills pills--compact">
+                  @for (stat of bonusStatKeys; track stat) {
+                    <li class="pill" [attr.data-tone]="tone(current.bonusStats[stat])">
+                      <span class="pill__label">{{ bonusStatLabels[stat] }}</span>
+                      <span class="pill__value">{{ signed(current.bonusStats[stat]) }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+              @case ('base') {
+                <ul class="pills pills--compact">
+                  @for (stat of statKeys; track stat) {
+                    @let floor = current.classFloorStats[stat];
+                    <li class="pill" [attr.data-tone]="floor > 0 ? 'base' : 'zero'">
+                      <span class="pill__label">{{ statLabels[stat] }}</span>
+                      <span class="pill__value">{{ floor > 0 ? floor : '—' }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            }
+          </div>
         </section>
 
         <section class="card" aria-labelledby="skill-title">
           <div class="section-head">
-            <h2 class="section-title" id="skill-title">Skill training</h2>
-            @if (usableSkills().length) {
-              <span class="section-hint">EXP bonus</span>
-            }
+            <h2 class="section-title" id="skill-title">Usable Skills</h2>
           </div>
 
           @if (usableSkills().length === 0) {
@@ -168,7 +200,6 @@
           <div class="ability-group">
             <h3 class="ability-group__title">
               Class abilities
-              <span class="ability-group__count">{{ classAbilities().length }}</span>
             </h3>
             <ng-container
               [ngTemplateOutlet]="abilityList"
@@ -179,7 +210,6 @@
           <div class="ability-group">
             <h3 class="ability-group__title">
               Master abilities
-              <span class="ability-group__count">{{ masterAbilities().length }}</span>
             </h3>
             <ng-container
               [ngTemplateOutlet]="abilityList"

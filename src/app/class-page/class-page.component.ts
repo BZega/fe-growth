@@ -6,6 +6,8 @@ import { map } from 'rxjs/operators';
 import { BONUS_STAT_KEYS, BONUS_STAT_LABELS, CLASS_RANK_ORDER, ClassAbility, SKILL_KEYS, SKILL_LABELS, SkillKey, STAT_KEYS, STAT_LABELS, UnitClass } from '../models/growth.models';
 import { GrowthDataService } from '../services/growth-data.service';
 
+type StatTab = 'bonus' | 'base';
+
 @Component({
   selector: 'app-class-page',
   imports: [NgTemplateOutlet, RouterLink],
@@ -24,6 +26,12 @@ export class ClassPageComponent {
   readonly switcherOpen = signal(false);
   readonly filter = signal('');
   readonly activeSkill = signal<SkillKey | null>(null);
+
+  readonly statTabs: readonly { key: StatTab; label: string }[] = [
+    { key: 'bonus', label: 'Stat bonuses' },
+    { key: 'base', label: 'Base stats' },
+  ];
+  readonly statTab = signal<StatTab>('bonus');
 
   readonly statKeys = STAT_KEYS;
   readonly statLabels = STAT_LABELS;
@@ -112,6 +120,14 @@ export class ClassPageComponent {
     return words.length > 1
       ? (words[0][0] + words[1][0]).toUpperCase()
       : name.slice(0, 2).toUpperCase();
+  }
+
+  cycleStatTab(): void {
+    const next = this.statTab() === 'bonus' ? 'base' : 'bonus';
+    this.statTab.set(next);
+    afterNextRender(() => document.getElementById(`stat-tab-${next}`)?.focus(), {
+      injector: this.injector,
+    });
   }
 
   toggleSkillTip(skill: SkillKey): void {

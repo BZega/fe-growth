@@ -7,7 +7,9 @@
       <strong>Available classes</strong>; Noble/Commoner is defaulted and always available. 
       Comparators replay the same levels in another available class. 
       Press the <strong>+</strong> beside a level to take an exam in place of that level up, or
-      click <strong>Take Exam</strong> to take one after the last level up.
+      click <strong>Take Exam</strong> to take one after the last level up. Passing an exam raises
+      any stat below the new class's base stat up to it; the added points show on the exam line and
+      the pass chance moves to <strong>Seed RNG</strong>.
     </p>
   </div>
 
@@ -166,6 +168,7 @@
                   (keydown.enter)="focusNextStartField($event)"
                 />
               </label>
+              <span class="grid__caption-note">Enter without mount bonuses; each block adds its mount's bonus at its bond level.</span>
             </div>
 
             <div class="grid" [style.--stat-count]="statKeys.length">
@@ -203,8 +206,10 @@
               <div class="picker">
                 <span class="picker__label">
                   Class
-                  @if (exam) {
-                    <span class="picker__note">{{ exam.passed ? '(from exam)' : '(unchanged)' }}</span>
+                  @if (exam && !exam.passed) {
+                    <span class="picker__note">(unchanged)</span>
+                  } @else if (exam && section.classId === null) {
+                    <span class="picker__note">(from exam)</span>
                   }
                 </span>
                 <app-searchable-select
@@ -212,7 +217,7 @@
                   placeholder="— Select a class —"
                   [groups]="availableClassGroups(view)"
                   [clearable]="false"
-                  [disabled]="!!exam"
+                  [disabled]="!!exam && !exam.passed"
                   [value]="view.classId"
                   (valueChange)="onClassChange(view, $event)"
                 />
@@ -229,6 +234,23 @@
                     (valueChange)="onMountChange(view, $event)"
                   />
                 </div>
+
+                @if (bondLevelsOf(view.mount).length > 0) {
+                  <label class="picker">
+                    <span class="picker__label">Bond Level</span>
+                    <select
+                      class="picker__select"
+                      [value]="view.mountLevel"
+                      (change)="onMountLevelChange(view, $any($event.target).value)"
+                    >
+                      @for (bond of bondLevelsOf(view.mount); track bond.level) {
+                        <option [value]="bond.level" [selected]="bond.level === view.mountLevel">
+                          Level {{ bond.level }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+                }
               }
             </div>
 
@@ -386,6 +408,27 @@
                       (valueChange)="onComparatorMountChange(view, comparator, $event)"
                     />
                   </div>
+
+                  @let comparatorBonds = bondLevelsOf(comparatorMountOf(comparator));
+                  @if (comparatorBonds.length > 0) {
+                    @let comparatorLevel = comparatorMountLevel(comparator);
+                    <label class="picker">
+                      <span class="picker__label">Bond Level</span>
+                      <select
+                        class="picker__select"
+                        [value]="comparatorLevel"
+                        (change)="
+                          onComparatorMountLevelChange(view, comparator, $any($event.target).value)
+                        "
+                      >
+                        @for (bond of comparatorBonds; track bond.level) {
+                          <option [value]="bond.level" [selected]="bond.level === comparatorLevel">
+                            Level {{ bond.level }}
+                          </option>
+                        }
+                      </select>
+                    </label>
+                  }
                 }
               </div>
 
@@ -629,11 +672,12 @@
 </div>
 
 <ng-template #statTotal let-total="total">
-  @let delta = total.gained + total.classBonus;
+  @let delta = total.gained + total.floorBoost + total.classBonus + total.mountBonus;
+  @let bonus = total.classBonus + total.mountBonus;
   <div
     class="stat-value"
-    [class.stat-value--bonus-up]="total.classBonus > 0"
-    [class.stat-value--bonus-down]="total.classBonus < 0"
+    [class.stat-value--bonus-up]="bonus > 0"
+    [class.stat-value--bonus-down]="bonus < 0"
     [title]="statTotalTitle(total)"
   >
     @if (total.value !== null) {
@@ -659,27 +703,21 @@
 </ng-template>
 
 <ng-template #examRow let-view="view" let-exam="exam">
+  @let boost = examBoostOf(view);
   <div class="grid__label" [title]="'Used the Lv ' + (view.exam.level + 1) + ' roll'">
     <span class="level level--exam">{{ examLabel(view) }}</span>
   </div>
 
   @for (stat of statKeys; track stat) {
-    @if (stat === 'str') {
+    @if (stat === 'str' && !exam.passed) {
       <div
-        class="exam-cell"
-        [class.exam-cell--pass]="exam.passed"
-        [class.exam-cell--fail]="!exam.passed"
-        [title]="
-          className(exam.classId) +
-          ' exam ' +
-          (exam.passed ? 'passed' : 'failed') +
-          ' at ' +
-          exam.chance +
-          '%'
-        "
+        class="exam-cell exam-cell--fail"
+        [title]="className(exam.classId) + ' exam failed at ' + exam.chance + '%'"
       >
-        {{ exam.passed ? '✓' : '✗' }} {{ exam.chance }}%
+        ✗ {{ exam.chance }}%
       </div>
+    } @else if (boost[stat] > 0) {
+      <div class="floor-cell" [title]="examBoostTitle(view, stat)">+{{ boost[stat] }}</div>
     } @else {
       <div class="blank-cell" aria-hidden="true"></div>
     }

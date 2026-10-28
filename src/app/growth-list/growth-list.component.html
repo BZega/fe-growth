@@ -52,10 +52,10 @@
               </th>
               @for (stat of statKeys; track stat) {
                 <td [class]="cellClass(row.growth[stat])">
-                  {{ row.growth[stat] }}<span class="unit">%</span>
+                  {{ row.growth[stat] }}<span class="unit">{{ valueSuffix() }}</span>
                 </td>
               }
-              <td class="list__total">{{ row.total }}<span class="unit">%</span></td>
+              <td class="list__total">{{ row.total }}<span class="unit">{{ valueSuffix() }}</span></td>
             </tr>
           }
         </tbody>

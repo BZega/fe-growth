@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy,  Component, computed, inject, input, OnInit, o
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { CLASS_LEVEL_CONFIGS, CLASS_RANK_ORDER, ClassRank, GrowthBuild, growthTotal, Mount, MountType, scaleGrowth, STAT_KEYS, STAT_LABELS, sumGrowth, toGrowth, Unit, UnitClass } from '../models/growth.models';
+import { bondLevelOf, CLASS_LEVEL_CONFIGS, CLASS_RANK_ORDER, ClassRank, GrowthBuild, growthTotal, Mount, mountGrowthAt, MountType, scaleGrowth, STAT_KEYS, STAT_LABELS, sumGrowth, toGrowth, Unit, UnitClass } from '../models/growth.models';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
 import { CalculatorStateService } from '../services/calculator-state.service';
 import { GrowthDataService } from '../services/growth-data.service';
@@ -42,12 +42,12 @@ export class GrowthCalculatorComponent implements OnInit {
 
   readonly units = computed(() => this.spoilers.filter(this.allUnits()));
 
-  /** The selected unit even when spoilers hide it, so class rules still apply. */
   private readonly ruleUnit = computed(() => this.api.unitById(this.selectedUnitId()));
 
   readonly selectedUnitId = signal<number | null>(null);
   readonly selectedClassId = signal<number | null>(null);
   readonly selectedMountId = signal<number | null>(null);
+  readonly selectedMountLevel = signal<number | null>(null);
   readonly selectedLevel = signal<number | null>(null);
 
   readonly classGroups = computed<SelectItemGroup[]>(() => {
@@ -93,6 +93,12 @@ export class GrowthCalculatorComponent implements OnInit {
 
   readonly isMounted = computed(() => this.mountOptions().length > 0);
 
+  readonly bondLevels = computed(() => (this.isMounted() ? (this.mount()?.bondLevels ?? []) : []));
+
+  readonly mountLevel = computed(
+    () => bondLevelOf(this.isMounted() ? this.mount() : null, this.selectedMountLevel())?.level ?? null,
+  );
+
   readonly levelConfig = computed(() => {
     const name = this.unitClass()?.name;
     return name ? (CLASS_LEVEL_CONFIGS[name] ?? null) : null;
@@ -114,7 +120,9 @@ export class GrowthCalculatorComponent implements OnInit {
     const unitGrowth = toGrowth(this.unit());
     const levelBonus = toGrowth(config && level !== null ? config.bonuses[level] : null);
     const classGrowth = sumGrowth(toGrowth(this.unitClass()), levelBonus);
-    const baseMountGrowth = this.isMounted() ? toGrowth(this.mount()) : toGrowth(null);
+    const baseMountGrowth = this.isMounted()
+      ? mountGrowthAt(this.mount(), this.mountLevel())
+      : toGrowth(null);
     const mountGrowth = scaleGrowth(baseMountGrowth, config?.mountMultiplier ?? 1);
 
     return {
@@ -122,6 +130,7 @@ export class GrowthCalculatorComponent implements OnInit {
       unitClass: this.unitClass(),
       classLevel: level,
       mount: this.isMounted() ? this.mount() : null,
+      mountLevel: this.mountLevel(),
       mountType: this.mountType(),
       unitGrowth,
       classGrowth,
@@ -139,6 +148,7 @@ export class GrowthCalculatorComponent implements OnInit {
   onClassChange(id: number | null): void {
     this.selectedClassId.set(id);
     this.selectedMountId.set(null);
+    this.selectedMountLevel.set(null);
     this.selectedLevel.set(null);
     this.persist();
   }
@@ -153,10 +163,16 @@ export class GrowthCalculatorComponent implements OnInit {
     this.persist();
   }
 
+  onMountLevelChange(value: string): void {
+    this.selectedMountLevel.set(Number(value));
+    this.persist();
+  }
+
   reset(): void {
     this.selectedUnitId.set(this.defaultUnitId());
     this.selectedClassId.set(this.defaultClassId());
     this.selectedMountId.set(null);
+    this.selectedMountLevel.set(null);
     this.selectedLevel.set(null);
     this.persist();
   }
@@ -170,6 +186,7 @@ export class GrowthCalculatorComponent implements OnInit {
       this.state.has(this.slotKey()) ? saved.classId : this.defaultClassId(),
     );
     this.selectedMountId.set(saved.mountId);
+    this.selectedMountLevel.set(saved.mountLevel);
     this.selectedLevel.set(saved.classLevel);
     this.dropUnusableClass();
   }
@@ -180,6 +197,7 @@ export class GrowthCalculatorComponent implements OnInit {
     if (unitClass && !this.api.canUseClass(this.ruleUnit(), unitClass)) {
       this.selectedClassId.set(null);
       this.selectedMountId.set(null);
+      this.selectedMountLevel.set(null);
       this.selectedLevel.set(null);
     }
   }
@@ -189,6 +207,7 @@ export class GrowthCalculatorComponent implements OnInit {
       unitId: this.selectedUnitId(),
       classId: this.selectedClassId(),
       mountId: this.selectedMountId(),
+      mountLevel: this.selectedMountLevel(),
       classLevel: this.selectedLevel(),
     });
   }

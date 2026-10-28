@@ -91,6 +91,7 @@ export interface UnitClass extends GrowthRates {
   rank: ClassRank;
   description: string;
   bonusStats: StatBonuses;
+  classFloorStats: ClassFloorStats;
   skills: Record<SkillKey, boolean>;
   skillExpBonus: Record<SkillKey, number>;
   classAbilities: number[];
@@ -101,6 +102,8 @@ export interface UnitClass extends GrowthRates {
 export type BonusStatKey = StatKey | 'mov';
 
 export type StatBonuses = Record<BonusStatKey, number>;
+
+export type ClassFloorStats = Record<StatKey, number>;
 
 export const BONUS_STAT_KEYS = [...STAT_KEYS, 'mov'] as const satisfies readonly BonusStatKey[];
 
@@ -160,11 +163,49 @@ export interface ClassAbility {
   isCombatArt: boolean;
 }
 
+export interface MountBondLevel {
+  level: number;
+  growth: GrowthRates;
+  bonusStats: GrowthRates;
+}
+
 export interface Mount extends GrowthRates {
   id: number;
   name: string;
   type: MountType;
   total: number;
+  bondLevels: readonly MountBondLevel[];
+}
+
+export const DEFAULT_MOUNT_BOND_LEVEL = 1;
+
+export function hasBondLevels(mount: Mount | null | undefined): mount is Mount {
+  return (mount?.bondLevels.length ?? 0) > 0;
+}
+
+export function bondLevelOf(
+  mount: Mount | null | undefined,
+  level: number | null | undefined,
+): MountBondLevel | null {
+  if (!hasBondLevels(mount)) {
+    return null;
+  }
+
+  return mount.bondLevels.find((entry) => entry.level === level) ?? mount.bondLevels[0];
+}
+
+export function mountGrowthAt(
+  mount: Mount | null | undefined,
+  level: number | null | undefined,
+): GrowthRates {
+  return bondLevelOf(mount, level)?.growth ?? toGrowth(mount);
+}
+
+export function mountBonusAt(
+  mount: Mount | null | undefined,
+  level: number | null | undefined,
+): GrowthRates {
+  return bondLevelOf(mount, level)?.bonusStats ?? { ...ZERO_GROWTH };
 }
 
 export interface ClassLevelConfig {
@@ -201,6 +242,7 @@ export interface GrowthBuild {
   unitClass: UnitClass | null;
   classLevel: number | null;
   mount: Mount | null;
+  mountLevel: number | null;
   mountType: MountType;
   unitGrowth: GrowthRates;
   classGrowth: GrowthRates;

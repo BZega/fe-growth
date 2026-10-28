@@ -652,5 +652,17 @@
     "name": "Protective Wings",
     "description": "Grants Res+3.",
     "isCombatArt": false
+  },
+  {
+    "id": 110,
+    "name": "All-Magic Seeker",
+    "description": "Multiplies black and white magic uses by 2.",
+    "isCombatArt": false
+  },
+  {
+    "id": 111,
+    "name": "Flying Avo +5",
+    "description": "[Flying] Grants Avo +5.",
+    "isCombatArt": false
   }
 ]

@@ -5,6 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs/operators';
 import { BONUS_STAT_KEYS, BONUS_STAT_LABELS, CLASS_RANK_ORDER, ClassAbility, SKILL_KEYS, SKILL_LABELS, SkillKey, STAT_KEYS, STAT_LABELS, UnitClass } from '../models/growth.models';
 import { GrowthDataService } from '../services/growth-data.service';
+import { SpoilerService } from '../services/spoiler.service';
 
 type StatTab = 'bonus' | 'base';
 
@@ -17,6 +18,7 @@ type StatTab = 'bonus' | 'base';
 })
 export class ClassPageComponent {
   private readonly api = inject(GrowthDataService);
+  private readonly spoilers = inject(SpoilerService);
   private readonly route = inject(ActivatedRoute);
   private readonly injector = inject(Injector);
 
@@ -139,7 +141,7 @@ export class ClassPageComponent {
 
     return CLASS_RANK_ORDER.map((rank) => ({
       rank,
-      classes: this.classes().filter(
+      classes: this.spoilers.filter(this.classes()).filter(
         (unitClass) =>
           unitClass.rank === rank &&
           (needle === '' || unitClass.name.toLowerCase().includes(needle)),

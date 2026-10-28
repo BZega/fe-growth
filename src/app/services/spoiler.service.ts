@@ -13,6 +13,23 @@ const SPOILER_UNIT_NAMES: ReadonlySet<string> = new Set([
   'Aswan',
   'Tahonia',
   'Klapka',
+  'Jurah',
+  'Mars',
+  'Smyrnos',
+  'Credna',
+  'Kalla',
+  'Aurora',
+  'Cleobulus',
+  'Myson',
+  'Anna',
+  'Gladius',
+]);
+
+const SPOILER_CLASS_NAMES: ReadonlySet<string> = new Set([
+  'Trickster',
+  'Awakened',
+  'Seere',
+  'Badhbh Cath',
 ]);
 
 @Injectable({ providedIn: 'root' })
@@ -34,7 +51,7 @@ export class SpoilerService {
   }
 
   isSpoiler(name: string): boolean {
-    return SPOILER_UNIT_NAMES.has(name);
+    return SPOILER_UNIT_NAMES.has(name) || SPOILER_CLASS_NAMES.has(name);
   }
 
   filter<T extends { name: string }>(items: readonly T[]): T[] {

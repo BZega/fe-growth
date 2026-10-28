@@ -81,6 +81,16 @@ interface ExamDialogState {
   sectionId: number | null;
 }
 
+const HELP_STORAGE_KEY = 'fe-growth.seed-mapper-help-open';
+
+function readHelpOpen(): boolean {
+  try {
+    return localStorage.getItem(HELP_STORAGE_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
 const STR_INDEX = STAT_KEYS.indexOf('str');
 const NO_ROLLS: RollEstimate[] = STAT_KEYS.map(() => estimateRoll([]));
 
@@ -111,6 +121,13 @@ export class SeedMapperPageComponent {
   readonly changeCount = this.state.changeCount;
   readonly loadedSave = this.state.loadedSave;
   readonly status = signal<string | null>(null);
+  readonly helpOpen = signal(readHelpOpen());
+  private readonly persistHelpOpen = effect(() => {
+    try {
+      localStorage.setItem(HELP_STORAGE_KEY, String(this.helpOpen()));
+    } catch {
+    }
+  });
   readonly statKeys = STAT_KEYS;
   readonly statLabels = STAT_LABELS;
   readonly minLevel = MIN_LEVEL;
@@ -124,7 +141,9 @@ export class SeedMapperPageComponent {
 
   readonly units = computed(() => this.spoilers.filter(this.allUnits()));
 
-  readonly classGroups = computed<SelectItemGroup[]>(() => this.groupClasses(this.usableClasses()));
+  readonly classGroups = computed<SelectItemGroup[]>(() =>
+    this.groupClasses(this.spoilers.filter(this.usableClasses())),
+  );
 
   /** Classes the chosen unit may take (gender and mount restrictions applied). */
   private readonly usableClasses = computed(() =>
@@ -172,6 +191,10 @@ export class SeedMapperPageComponent {
 
   closeRng(): void {
     this.rngSectionId.set(null);
+  }
+
+  toggleHelp(): void {
+    this.helpOpen.update((open) => !open);
   }
 
   constructor() {
@@ -280,7 +303,9 @@ export class SeedMapperPageComponent {
     const map = this.seedMap();
     const taken = new Set([...this.state.alwaysAvailableClassIds, ...map.availableClassIds]);
 
-    return this.groupClasses(this.usableClasses().filter((unitClass) => !taken.has(unitClass.id)));
+    return this.groupClasses(
+      this.spoilers.filter(this.usableClasses()).filter((unitClass) => !taken.has(unitClass.id)),
+    );
   });
 
   isAlwaysAvailable(unitClass: UnitClass): boolean {
@@ -1012,7 +1037,9 @@ export class SeedMapperPageComponent {
   private examClassGroups(view: SectionView): SelectItemGroup[] {
     const owned = new Set(this.availableClasses(view).map((unitClass) => unitClass.id));
 
-    return this.groupClasses(this.usableClasses().filter((c) => !owned.has(c.id)));
+    return this.groupClasses(
+      this.spoilers.filter(this.usableClasses()).filter((c) => !owned.has(c.id)),
+    );
   }
 
   private groupClasses(classes: UnitClass[]): SelectItemGroup[] {

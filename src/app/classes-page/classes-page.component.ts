@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { GrowthListComponent, GrowthListGroup,} from '../growth-list/growth-list.component';
 import { CLASS_RANK_ORDER, toGrowth, UnitClass } from '../models/growth.models';
 import { GrowthDataService } from '../services/growth-data.service';
+import { SpoilerService } from '../services/spoiler.service';
 
 @Component({
   selector: 'app-classes-page',
@@ -20,10 +21,13 @@ import { GrowthDataService } from '../services/growth-data.service';
 })
 export class ClassesPageComponent {
   private readonly api = inject(GrowthDataService);
+  private readonly spoilers = inject(SpoilerService);
 
-  private readonly classes = toSignal(this.api.getClasses(), {
+  private readonly allClasses = toSignal(this.api.getClasses(), {
     initialValue: [] as UnitClass[],
   });
+
+  private readonly classes = computed(() => this.spoilers.filter(this.allClasses()));
 
   readonly groups = computed<GrowthListGroup[]>(() =>
     CLASS_RANK_ORDER.map((rank) => ({

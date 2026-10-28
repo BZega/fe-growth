@@ -52,7 +52,9 @@ export class GrowthCalculatorComponent implements OnInit {
 
   readonly classGroups = computed<SelectItemGroup[]>(() => {
     const unit = this.ruleUnit();
-    const usable = this.classes().filter((unitClass) => this.api.canUseClass(unit, unitClass));
+    const usable = this.spoilers
+      .filter(this.classes())
+      .filter((unitClass) => this.api.canUseClass(unit, unitClass));
 
     return CLASS_RANK_ORDER.map((rank: ClassRank) => ({
       label: rank,

@@ -23,3 +23,11 @@ body {
   color: var(--text);
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

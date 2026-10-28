@@ -1,8 +1,19 @@
 <header class="page-header">
   <div>
-    <h1>Seed Mapper</h1>
-    <p>
-      Enter the unit's stats and change the starting level if it isn't 1. Mark which stats rose on each level up. 
+    <div class="page-header__title">
+      <h1>Seed Mapper</h1>
+      <button
+        type="button"
+        class="help-toggle"
+        aria-controls="seed-mapper-help"
+        [attr.aria-expanded]="helpOpen()"
+        (click)="toggleHelp()"
+      >
+        {{ helpOpen() ? 'Hide help' : 'Show help' }}
+      </button>
+    </div>
+    <p id="seed-mapper-help" class="page-header__help" [class.is-collapsed]="!helpOpen()">
+      Enter the unit's stats and change the starting level if it isn't 1. Mark which stats rose on each level up.
       Add classes the unit already has available
       <strong>Available classes</strong>; Noble/Commoner is defaulted and always available. 
       Comparators replay the same levels in another available class. 

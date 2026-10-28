@@ -1,7 +1,8 @@
 :host {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: var(--app-height, 100dvh);
+  transform: var(--app-shift, none);
   overflow: hidden;
 }
 

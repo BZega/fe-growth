@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef1f6"/>
+      <stop offset="0.55" stop-color="#b9c0cc"/>
+      <stop offset="1" stop-color="#7f8899"/>
+    </linearGradient>
+    <mask id="glyph" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <g>
+      <path fill="#fff" d="M38 6 L40 13 C49 17 53 28 52 40 L52 58 L24 58 L28 45 C26 42 22 42 17 41 C11 40 9 35 12 31 L26 18 C28 13 32 9 38 6 Z"/></g>
+      <g fill="#000">
+      <circle cx="29" cy="24" r="2"/>
+      <circle cx="15.5" cy="35" r="1.4"/>
+      <path d="M40 14 C46 20 48 30 47 44" fill="none" stroke="#000" stroke-width="1.4"/>
+      <path d="M43 18 C47 24 49 32 49 44" fill="none" stroke="#000" stroke-width="1.1"/>
+      <path d="M22 41 C24 38 26 36 28 36" fill="none" stroke="#000" stroke-width="1.2"/></g>
+    </mask>
+  </defs>
+  <rect x="1" y="1" width="62" height="62" rx="12" fill="url(#bg)"/>
+  <rect x="2" y="2" width="60" height="60" rx="11" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="1.5"/>
+  <rect width="64" height="64" fill="#1b1f2a" mask="url(#glyph)"/>
+</svg>

@@ -62,7 +62,7 @@
   </div>
 </header>
 
-<div class="seeds">
+<div class="seeds" (focusin)="hideHelp()">
   @for (view of sectionViews(); track view.section.id) {
     @let section = view.section;
     @let exam = section.exam;

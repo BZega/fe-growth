@@ -43,47 +43,46 @@ export class AppComponent {
         cancelAnimationFrame(frame);
         frame = requestAnimationFrame(() => this.fitToVisualViewport(viewport));
       };
+      const host = this.host.nativeElement;
 
       viewport.addEventListener('resize', schedule);
-      viewport.addEventListener('scroll', schedule);
+      host.addEventListener('focusin', schedule);
       destroyRef.onDestroy(() => {
         cancelAnimationFrame(frame);
         viewport.removeEventListener('resize', schedule);
-        viewport.removeEventListener('scroll', schedule);
+        host.removeEventListener('focusin', schedule);
       });
     });
   }
 
+  // iOS overlays the keyboard without resizing the layout, so pad the scroller by the covered height.
   private fitToVisualViewport(viewport: VisualViewport): void {
-    const style = this.host.nativeElement.style;
-    const keyboardOpen =
-      Math.abs(viewport.scale - 1) < 0.01 &&
-      Math.round(viewport.height) < window.innerHeight;
+    const host = this.host.nativeElement;
+    const zoomed = Math.abs(viewport.scale - 1) >= 0.01;
+    const inset = zoomed ? 0 : Math.max(0, Math.round(window.innerHeight - viewport.height));
 
-    if (!keyboardOpen) {
-      style.removeProperty('--app-height');
-      style.removeProperty('--app-shift');
-      return;
-    }
-
-    const previousHeight = this.host.nativeElement.offsetHeight;
-
-    style.setProperty('--app-height', `${viewport.height}px`);
-
-    if (viewport.offsetTop > 0) {
-      style.setProperty('--app-shift', `translateY(${viewport.offsetTop}px)`);
+    if (inset > 0) {
+      host.style.setProperty('--keyboard-inset', `${inset}px`);
     } else {
-      style.removeProperty('--app-shift');
+      host.style.removeProperty('--keyboard-inset');
     }
 
     const field = document.activeElement;
+    const scroller = host.querySelector('main');
 
-    if (
-      field instanceof HTMLElement &&
-      field.matches(TEXT_FIELD) &&
-      this.host.nativeElement.offsetHeight !== previousHeight
-    ) {
-      field.scrollIntoView({ block: 'nearest' });
+    if (!inset || !scroller || !(field instanceof HTMLElement) || !field.matches(TEXT_FIELD)) {
+      return;
+    }
+
+    const margin = 12;
+    const rect = field.getBoundingClientRect();
+    const visibleTop = Math.max(viewport.offsetTop, scroller.getBoundingClientRect().top);
+    const visibleBottom = viewport.offsetTop + viewport.height;
+
+    if (rect.bottom > visibleBottom - margin) {
+      scroller.scrollTop += rect.bottom - visibleBottom + margin;
+    } else if (rect.top < visibleTop + margin) {
+      scroller.scrollTop -= visibleTop + margin - rect.top;
     }
   }
 

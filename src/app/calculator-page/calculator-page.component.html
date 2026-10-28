@@ -32,7 +32,7 @@
   @for (slot of slots(); track slot; let i = $index) {
     <div class="panel" [class.panel--picked]="isPicked(slot)">
       <app-growth-calculator
-        [heading]="'Calculator ' + (i + 1)"
+        [heading]="headings()[i]"
         [slotKey]="slot"
         [canRemove]="slots().length > 1"
         (removeRequested)="remove(slot)"

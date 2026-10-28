@@ -122,12 +122,6 @@ export class SeedMapperPageComponent {
   readonly loadedSave = this.state.loadedSave;
   readonly status = signal<string | null>(null);
   readonly helpOpen = signal(readHelpOpen());
-  private readonly persistHelpOpen = effect(() => {
-    try {
-      localStorage.setItem(HELP_STORAGE_KEY, String(this.helpOpen()));
-    } catch {
-    }
-  });
   readonly statKeys = STAT_KEYS;
   readonly statLabels = STAT_LABELS;
   readonly minLevel = MIN_LEVEL;
@@ -195,6 +189,16 @@ export class SeedMapperPageComponent {
 
   toggleHelp(): void {
     this.helpOpen.update((open) => !open);
+
+    try {
+      localStorage.setItem(HELP_STORAGE_KEY, String(this.helpOpen()));
+    } catch {
+    }
+  }
+
+  // Not persisted, so help still shows by default on the next visit.
+  hideHelp(): void {
+    this.helpOpen.set(false);
   }
 
   constructor() {

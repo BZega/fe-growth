@@ -31,6 +31,41 @@ export class CalculatorPageComponent {
   readonly canCompare = computed(() => this.slots().length >= 2);
   readonly remainingPicks = computed(() => 2 - this.picked().length);
 
+  // "Unit (Class)" once both are picked, numbering repeats of the same unit; otherwise "Calculator N".
+  readonly headings = computed(() => {
+    const panels = this.panels();
+    const picks = this.slots().map((_, i) => {
+      const unit = panels[i]?.unit();
+      const unitClass = panels[i]?.unitClass();
+
+      return unit && unitClass ? { unitId: unit.id, unit: unit.name, unitClass: unitClass.name } : null;
+    });
+    const totals = new Map<number, number>();
+
+    for (const pick of picks) {
+      if (pick) {
+        totals.set(pick.unitId, (totals.get(pick.unitId) ?? 0) + 1);
+      }
+    }
+
+    const seen = new Map<number, number>();
+
+    return picks.map((pick, i) => {
+      if (!pick) {
+        return `Calculator ${i + 1}`;
+      }
+
+      if (totals.get(pick.unitId)! < 2) {
+        return `${pick.unit} (${pick.unitClass})`;
+      }
+
+      const n = (seen.get(pick.unitId) ?? 0) + 1;
+      seen.set(pick.unitId, n);
+
+      return `${pick.unit} ${n} (${pick.unitClass})`;
+    });
+  });
+
   readonly comparison = computed<Comparison | null>(() => {
     if (!this.comparisonOpen()) {
       return null;
@@ -53,7 +88,7 @@ export class CalculatorPageComponent {
   });
 
   labelOf(slotKey: string): string {
-    return `Calculator ${this.slots().indexOf(slotKey) + 1}`;
+    return this.headings()[this.slots().indexOf(slotKey)] ?? 'Calculator';
   }
 
   isPicked(slotKey: string): boolean {
@@ -79,6 +114,15 @@ export class CalculatorPageComponent {
   }
 
   startCompare(): void {
+    const slots = this.slots();
+
+    if (slots.length === 2) {
+      this.picked.set([...slots]);
+      this.selectionMode.set(false);
+      this.comparisonOpen.set(true);
+      return;
+    }
+
     this.picked.set([]);
     this.comparisonOpen.set(false);
     this.selectionMode.set(true);

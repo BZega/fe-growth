@@ -23,7 +23,7 @@ export class ComparisonDialogComponent {
     const a = this.buildA().unit?.name ?? 'No unit';
     const b = this.buildB().unit?.name ?? 'No unit';
 
-    return a === b ? `${a} — build comparison` : `${a} vs ${b}`;
+    return a === b ? `${a}: build comparison` : `${a} vs ${b}`;
   });
 
   readonly delta = computed(() =>
@@ -62,9 +62,7 @@ export class ComparisonDialogComponent {
       );
     } else if (build.mountType !== 'None') {
       parts.push('no mount picked');
-    } else {
-      parts.push('unmounted');
-    }
+    } 
 
     return parts.join(' • ');
   }

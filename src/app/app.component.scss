@@ -1,8 +1,7 @@
 :host {
   display: flex;
   flex-direction: column;
-  height: var(--app-height, 100dvh);
-  transform: var(--app-shift, none);
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -19,6 +18,13 @@ main {
   &::-webkit-scrollbar {
     width: 0;
     height: 0;
+  }
+
+  // Room to scroll fields at the bottom of the page above the on-screen keyboard.
+  &::after {
+    content: '';
+    flex: none;
+    height: var(--keyboard-inset, 0px);
   }
 }
 

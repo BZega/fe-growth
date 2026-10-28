@@ -48,15 +48,38 @@ export class AppComponent {
         settle = window.setTimeout(() => this.revealFocusedField(viewport), 300);
       };
       const host = this.host.nativeElement;
-      const clearExtra = () => host.style.removeProperty('--scroll-extra');
+      const clearExtra = (event?: FocusEvent) => {
+        const select = event?.target instanceof Element
+          ? event.target.closest('app-searchable-select')
+          : null;
+        if (event?.relatedTarget instanceof Node && select?.contains(event.relatedTarget)) {
+          return;
+        }
+
+        host.style.removeProperty('--scroll-extra');
+        host.querySelectorAll<HTMLElement>('app-searchable-select').forEach((select) =>
+          select.style.removeProperty('--dropdown-max-height'),
+        );
+      };
+      const contentObserver = new MutationObserver(() => {
+        if (document.activeElement?.matches(TEXT_FIELD)) {
+          schedule();
+        } else {
+          clearExtra();
+        }
+      });
+      contentObserver.observe(host, { childList: true, subtree: true, characterData: true });
 
       viewport.addEventListener('resize', schedule);
+      viewport.addEventListener('scroll', schedule);
       host.addEventListener('focusin', schedule);
       host.addEventListener('focusout', clearExtra);
       destroyRef.onDestroy(() => {
         cancelAnimationFrame(frame);
         clearTimeout(settle);
+        contentObserver.disconnect();
         viewport.removeEventListener('resize', schedule);
+        viewport.removeEventListener('scroll', schedule);
         host.removeEventListener('focusin', schedule);
         host.removeEventListener('focusout', clearExtra);
       });
@@ -85,6 +108,7 @@ export class AppComponent {
 
     if (
       !matchMedia('(pointer: coarse)').matches ||
+      Math.abs(viewport.scale - 1) >= 0.01 ||
       !scroller ||
       !(field instanceof HTMLElement) ||
       !field.matches(TEXT_FIELD)
@@ -93,24 +117,27 @@ export class AppComponent {
     }
 
     const margin = 12;
-    const visibleTop = Math.max(viewport.offsetTop, scroller.getBoundingClientRect().top) + margin;
-    const visibleBottom = viewport.offsetTop + viewport.height - margin;
+    const bounds = scroller.getBoundingClientRect();
+    const visibleTop = Math.max(viewport.offsetTop, bounds.top) + margin;
+    const visibleBottom = Math.min(viewport.offsetTop + viewport.height, bounds.bottom) - margin;
     const top = field.getBoundingClientRect().top;
-    const panel = field.closest('app-searchable-select')?.querySelector('.panel');
+    const select = field.closest<HTMLElement>('app-searchable-select');
+    const panel = select?.querySelector<HTMLElement>('.panel');
     let delta: number;
 
     if (panel) {
+      const available = Math.max(0, visibleBottom - visibleTop - (panel.getBoundingClientRect().top - top));
+      select?.style.setProperty('--dropdown-max-height', `${available}px`);
       // Rest the open dropdown right above the keyboard, but never push the field itself out of view.
       delta = Math.min(panel.getBoundingClientRect().bottom - visibleBottom, top - visibleTop);
     } else {
       const bottom = field.getBoundingClientRect().bottom;
-      delta = bottom > visibleBottom ? bottom - visibleBottom : 0;
+      delta = top < visibleTop ? top - visibleTop : Math.max(0, bottom - visibleBottom);
     }
 
     if (Math.abs(delta) > 1) {
-      // The dropdown can overhang the end of the page; add just enough room to scroll it clear.
       const room = () => scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop;
-      let extra = 0;
+      let extra = parseFloat(this.host.nativeElement.style.getPropertyValue('--scroll-extra')) || 0;
 
       for (let tries = 0; tries < 3 && delta > room() + 1; tries++) {
         extra += Math.ceil(delta - room());

@@ -167,8 +167,9 @@ export class AppComponent {
     const select = field.closest<HTMLElement>('app-searchable-select');
     const panel = select?.querySelector<HTMLElement>('.panel');
 
-    // Only a list that can't fit above the keyboard at all is shortened, so every option stays reachable.
-    if (select && panel && !predicted) {
+    // The list's size is fixed once, at the tap: only a list too tall to fit between the top of the
+    // page and the keyboard is shortened, and it never changes again while open.
+    if (select && panel && beforeKeyboard) {
       const room = visibleBottom - visibleTop - (panel.getBoundingClientRect().top - top);
       select.style.setProperty('--dropdown-max-height', `${Math.max(0, Math.floor(room))}px`);
     }
@@ -178,11 +179,12 @@ export class AppComponent {
 
     if (bottom > visibleBottom) {
       delta = Math.min(bottom - visibleBottom, top - visibleTop);
-    } else if (top < visibleTop) {
+    } else if (top < visibleTop && beforeKeyboard) {
       delta = top - visibleTop;
     }
 
-    if (Math.abs(delta) <= 2) {
+    // Once the keyboard is up, only ever nudge up to uncover the list, never pull the page back down.
+    if (Math.abs(delta) <= 2 || (!beforeKeyboard && delta < 0)) {
       return;
     }
 
@@ -243,7 +245,7 @@ export class AppComponent {
 }
 
 // The last measured keyboard height, so the very first tap can already place the field above it.
-// Until one is measured, assume a phone keyboard covering half the screen.
+// Until one is measured, guess a little high: a list resting slightly higher needs no second move.
 function readKeyboardInset(): number {
   try {
     const stored = Number(localStorage.getItem(KEYBOARD_KEY));
@@ -255,7 +257,7 @@ function readKeyboardInset(): number {
     // Storage can be unavailable (private mode); fall back to the estimate.
   }
 
-  return Math.round(window.innerHeight / 2);
+  return Math.round(window.innerHeight * 0.6);
 }
 
 function writeKeyboardInset(inset: number): void {

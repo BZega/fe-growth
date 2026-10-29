@@ -161,13 +161,29 @@ describe('AppComponent mobile field visibility', () => {
     expect(scrollTop).toBe(550);
   });
 
-  it('only shortens a list that cannot fit above the keyboard at all', async () => {
+  it('sizes a list that cannot fit above the keyboard once, at the tap, and keeps that size', async () => {
+    fixture.componentInstance['keyboardInset'] = 594;
     await tap();
+
+    expect(panel.getBoundingClientRect().height).toBe(144);
+    expect(scroll).toHaveBeenCalledOnceWith({ top: 636, behavior: 'auto' });
+
     await openKeyboard(250);
 
+    expect(scroll).toHaveBeenCalledTimes(1);
     expect(panel.getBoundingClientRect().height).toBe(144);
     expect(fieldTop()).toBe(64);
     expect(panelBottom()).toBe(242);
+  });
+
+  it('never shrinks the list after the keyboard opens, even when the keyboard is taller than expected', async () => {
+    await tap();
+    await openKeyboard(344);
+
+    expect(panel.getBoundingClientRect().height).toBe(208);
+    expect(scroll).toHaveBeenCalledTimes(2);
+    expect(scroll.calls.mostRecent().args[0]).toEqual({ top: 606, behavior: 'smooth' });
+    expect(panelBottom()).toBe(336);
   });
 
   it('adds room below the last calculator so its dropdown can reach the keyboard too', async () => {
@@ -201,14 +217,15 @@ describe('AppComponent mobile field visibility', () => {
     expect(host.style.getPropertyValue('--scroll-extra')).toBe('');
   });
 
-  it('recalculates when iOS pans the visual viewport', async () => {
+  it('does not pull the page back down when iOS pans the screen while the keyboard is open', async () => {
     await tap();
     await openKeyboard();
     viewport.offsetTop = 200;
     viewport.dispatchEvent(new Event('scroll'));
     await wait(300);
 
-    expect(scroll.calls.mostRecent().args[0]).toEqual({ top: 492, behavior: 'smooth' });
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(panel.getBoundingClientRect().height).toBe(208);
   });
 
   it('keeps the option list stationary while focus moves to an option for selection', async () => {

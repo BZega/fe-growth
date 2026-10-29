@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, HostListener, inject, signal, viewChildren } from '@angular/core';
 import { ComparisonDialogComponent } from '../comparison-dialog/comparison-dialog.component';
 import { GrowthCalculatorComponent } from '../growth-calculator/growth-calculator.component';
 import { GrowthBuild } from '../models/growth.models';
@@ -11,6 +11,15 @@ interface Comparison {
   labelB: string;
 }
 
+interface Pin {
+  calculator: HTMLElement;
+  scroller: HTMLElement;
+  restoreTop: number;
+  observer: MutationObserver;
+}
+
+const PIN_FIELD = 'input:not([type=checkbox]):not([type=radio]):not([type=button]), select';
+
 @Component({
   selector: 'app-calculator-page',
   imports: [GrowthCalculatorComponent, ComparisonDialogComponent],
@@ -21,6 +30,12 @@ interface Comparison {
 export class CalculatorPageComponent {
   private readonly state = inject(CalculatorStateService);
   private readonly panels = viewChildren(GrowthCalculatorComponent);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private pin: Pin | null = null;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.unpin());
+  }
 
   readonly slots = this.state.slots;
 
@@ -149,6 +164,69 @@ export class CalculatorPageComponent {
   closeComparison(): void {
     this.comparisonOpen.set(false);
     this.picked.set([]);
+  }
+
+  // On touch screens, editing a calculator snaps it to Calculator 1's unscrolled spot and locks the page,
+  // so its dropdowns and the keyboard always lay out exactly as they do for Calculator 1.
+  @HostListener('focusin', ['$event'])
+  onFocusIn(event: FocusEvent): void {
+    const field = event.target;
+
+    if (!(field instanceof HTMLElement) || !field.matches(PIN_FIELD) || !matchMedia('(pointer: coarse)').matches) {
+      return;
+    }
+
+    const calculator = field.closest<HTMLElement>('app-growth-calculator');
+    const first = this.host.nativeElement.querySelector<HTMLElement>('app-growth-calculator');
+    const scroller = this.host.nativeElement.closest<HTMLElement>('main');
+
+    if (!calculator || !first || !scroller || this.pin?.calculator === calculator) {
+      return;
+    }
+
+    this.unpin();
+
+    const restoreTop = scroller.scrollTop;
+    const target = calculator.getBoundingClientRect().top - first.getBoundingClientRect().top;
+    const room = Math.ceil(target - (scroller.scrollHeight - scroller.clientHeight));
+
+    if (room > 0) {
+      scroller.style.setProperty('--pin-room', `${room}px`);
+    }
+
+    scroller.scrollTop = target;
+    scroller.setAttribute('data-scroll-pinned', '');
+
+    // Focus can vanish without a focusout (e.g. a tapped option is removed), so also check on DOM changes.
+    const observer = new MutationObserver(() => {
+      if (!calculator.contains(document.activeElement)) {
+        this.unpin();
+      }
+    });
+    observer.observe(calculator, { childList: true, subtree: true });
+    this.pin = { calculator, scroller, restoreTop, observer };
+  }
+
+  @HostListener('focusout', ['$event'])
+  onFocusOut(event: FocusEvent): void {
+    const next = event.relatedTarget;
+
+    if (this.pin && !(next instanceof Node && this.pin.calculator.contains(next))) {
+      this.unpin();
+    }
+  }
+
+  private unpin(): void {
+    if (!this.pin) {
+      return;
+    }
+
+    const { scroller, restoreTop, observer } = this.pin;
+    this.pin = null;
+    observer.disconnect();
+    scroller.removeAttribute('data-scroll-pinned');
+    scroller.style.removeProperty('--pin-room');
+    scroller.scrollTop = restoreTop;
   }
 
   private buildOf(slotKey: string): GrowthBuild | null {

@@ -20,11 +20,16 @@ main {
     height: 0;
   }
 
-  // Room to scroll fields at the bottom of the page above the on-screen keyboard.
+  // Room to scroll fields at the bottom of the page above the on-screen keyboard,
+  // and to pin the last calculator to the top while it's being edited.
   &::after {
     content: '';
     flex: none;
-    height: calc(var(--keyboard-inset, 0px) + var(--scroll-extra, 0px));
+    height: calc(var(--keyboard-inset, 0px) + var(--scroll-extra, 0px) + var(--pin-room, 0px));
+  }
+
+  &[data-scroll-pinned] {
+    overflow: hidden;
   }
 }
 

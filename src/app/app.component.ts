@@ -155,6 +155,8 @@ export class AppComponent {
       !matchMedia('(pointer: coarse)').matches ||
       Math.abs(viewport.scale - 1) >= 0.01 ||
       !scroller ||
+      // A pinned calculator page is already laid out for the keyboard and must not move.
+      scroller.hasAttribute('data-scroll-pinned') ||
       !(field instanceof HTMLElement) ||
       !field.matches(TEXT_FIELD)
     ) {

@@ -79,6 +79,29 @@ export class AppComponent {
           this.trimScrollExtra();
         }
       };
+      // iOS scrolls the page itself the moment a field it will cover gets focus, which fights any later
+      // move. So a tap on a dropdown is caught as the finger lifts: the page is moved first, and only then
+      // is the field focused (still within the tap, so the keyboard opens). iOS finds it already in view.
+      let touch: { x: number; y: number } | null = null;
+      const onTouchStart = (event: TouchEvent) => {
+        const point = event.touches.length === 1 ? event.touches[0] : undefined;
+        touch = point ? { x: point.clientX, y: point.clientY } : null;
+      };
+      const onTouchEnd = (event: TouchEvent) => {
+        const start = touch;
+        const point = event.changedTouches[0];
+        touch = null;
+
+        if (!start || !point || Math.hypot(point.clientX - start.x, point.clientY - start.y) > 10) {
+          return;
+        }
+
+        const input = dropdownInputAt(event.target);
+
+        if (input && this.openDropdownAboveKeyboard(viewport, input)) {
+          event.preventDefault();
+        }
+      };
       const contentObserver = new MutationObserver(() => {
         if (isEditing()) {
           schedule();
@@ -93,6 +116,8 @@ export class AppComponent {
       viewport.addEventListener('scroll', schedule);
       host.addEventListener('focusin', onFocusIn);
       host.addEventListener('focusout', onFocusOut);
+      host.addEventListener('touchstart', onTouchStart, { passive: true });
+      host.addEventListener('touchend', onTouchEnd, { passive: false });
       scroller.addEventListener('scroll', onScroll, { passive: true });
       destroyRef.onDestroy(() => {
         cancelAnimationFrame(frame);
@@ -103,6 +128,8 @@ export class AppComponent {
         viewport.removeEventListener('scroll', schedule);
         host.removeEventListener('focusin', onFocusIn);
         host.removeEventListener('focusout', onFocusOut);
+        host.removeEventListener('touchstart', onTouchStart);
+        host.removeEventListener('touchend', onTouchEnd);
         scroller.removeEventListener('scroll', onScroll);
       });
     });
@@ -157,12 +184,7 @@ export class AppComponent {
       writeKeyboardInset(inset);
     }
 
-    const bounds = scroller.getBoundingClientRect();
-    const keyboardTop = predicted
-      ? window.innerHeight - this.keyboardInset
-      : viewport.offsetTop + viewport.height;
-    const visibleTop = Math.max(viewport.offsetTop, bounds.top) + MARGIN;
-    const visibleBottom = Math.min(keyboardTop, bounds.bottom) - MARGIN;
+    const visible = this.visibleArea(viewport, scroller, predicted);
     const top = field.getBoundingClientRect().top;
     const select = field.closest<HTMLElement>('app-searchable-select');
     const panel = select?.querySelector<HTMLElement>('.panel');
@@ -170,21 +192,75 @@ export class AppComponent {
     // The list's size is fixed once, at the tap: only a list too tall to fit between the top of the
     // page and the keyboard is shortened, and it never changes again while open.
     if (select && panel && beforeKeyboard) {
-      const room = visibleBottom - visibleTop - (panel.getBoundingClientRect().top - top);
-      select.style.setProperty('--dropdown-max-height', `${Math.max(0, Math.floor(room))}px`);
+      capDropdown(select, visible, panel.getBoundingClientRect().top - top);
     }
 
     const bottom = (panel ?? field).getBoundingClientRect().bottom;
     let delta = 0;
 
-    if (bottom > visibleBottom) {
-      delta = Math.min(bottom - visibleBottom, top - visibleTop);
-    } else if (top < visibleTop && beforeKeyboard) {
-      delta = top - visibleTop;
+    if (bottom > visible.bottom) {
+      delta = Math.min(bottom - visible.bottom, top - visible.top);
+    } else if (top < visible.top && beforeKeyboard) {
+      delta = top - visible.top;
     }
 
     // Once the keyboard is up, only ever nudge up to uncover the list, never pull the page back down.
-    if (Math.abs(delta) <= 2 || (!beforeKeyboard && delta < 0)) {
+    if (!beforeKeyboard && delta < 0) {
+      return;
+    }
+
+    this.scrollBy(scroller, delta, predicted ? 'auto' : 'smooth');
+  }
+
+  // Before a tapped dropdown gets focus: size its list, move the page so the list will rest just above
+  // the keyboard, then focus it. Returns false (leaving the tap alone) when it doesn't apply.
+  private openDropdownAboveKeyboard(viewport: VisualViewport, input: HTMLInputElement): boolean {
+    const scroller = this.host.nativeElement.querySelector('main');
+    const select = input.closest<HTMLElement>('app-searchable-select');
+
+    if (!scroller || !select || Math.abs(viewport.scale - 1) >= 0.01) {
+      return false;
+    }
+
+    const inset = this.updateKeyboardInset(viewport);
+    const visible = this.visibleArea(viewport, scroller, inset === 0);
+    const top = input.getBoundingClientRect().top;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    // The list opens 0.25rem below the field, at most --dropdown-height tall (see searchable-select).
+    const panelTop = select.getBoundingClientRect().bottom + 0.25 * rem;
+    const listHeight = (parseFloat(getComputedStyle(select).getPropertyValue('--dropdown-height')) || 13) * rem;
+    const height = Math.min(listHeight, capDropdown(select, visible, panelTop - top));
+    const bottom = panelTop + height;
+    let delta = 0;
+
+    if (bottom > visible.bottom) {
+      delta = Math.min(bottom - visible.bottom, top - visible.top);
+    } else if (top < visible.top) {
+      delta = top - visible.top;
+    }
+
+    this.scrollBy(scroller, delta, 'auto');
+    input.focus({ preventScroll: true });
+
+    return true;
+  }
+
+  // The part of the scroller the user can see above the keyboard; before the keyboard opens, the
+  // remembered keyboard height stands in for it.
+  private visibleArea(viewport: VisualViewport, scroller: HTMLElement, predicted: boolean): VisibleArea {
+    const bounds = scroller.getBoundingClientRect();
+    const keyboardTop = predicted
+      ? window.innerHeight - this.keyboardInset
+      : viewport.offsetTop + viewport.height;
+
+    return {
+      top: Math.max(viewport.offsetTop, bounds.top) + MARGIN,
+      bottom: Math.min(keyboardTop, bounds.bottom) - MARGIN,
+    };
+  }
+
+  private scrollBy(scroller: HTMLElement, delta: number, behavior: ScrollBehavior): void {
+    if (Math.abs(delta) <= 2) {
       return;
     }
 
@@ -195,9 +271,8 @@ export class AppComponent {
       this.setScrollExtra(this.cssPixels('--scroll-extra') + shortfall);
     }
 
-    scroller.scrollTo({ top: target, behavior: predicted ? 'auto' : 'smooth' });
+    scroller.scrollTo({ top: target, behavior });
   }
-
   private clearDropdownCaps(): void {
     this.host.nativeElement
       .querySelectorAll<HTMLElement>('app-searchable-select')
@@ -250,7 +325,8 @@ function readKeyboardInset(): number {
   try {
     const stored = Number(localStorage.getItem(KEYBOARD_KEY));
 
-    if (stored > 0) {
+    // Ignore a height that can't be a keyboard (e.g. saved in another orientation).
+    if (stored > 0 && stored < window.innerHeight * 0.8) {
       return stored;
     }
   } catch {
@@ -266,4 +342,29 @@ function writeKeyboardInset(inset: number): void {
   } catch {
     // Not remembering it only costs one extra correction next time.
   }
+}
+
+interface VisibleArea {
+  top: number;
+  bottom: number;
+}
+
+// Limits a dropdown's list to the room between the top of the visible area and the keyboard, given
+// how far below the field's top the list starts. Returns that room.
+function capDropdown(select: HTMLElement, visible: VisibleArea, listOffset: number): number {
+  const room = Math.max(0, Math.floor(visible.bottom - visible.top - listOffset));
+  select.style.setProperty('--dropdown-max-height', `${room}px`);
+
+  return room;
+}
+
+// The search box of a not-yet-focused, enabled dropdown field under the tap, if any.
+function dropdownInputAt(target: EventTarget | null): HTMLInputElement | null {
+  const input = target instanceof Element
+    ? target.closest('app-searchable-select .field')?.querySelector('input')
+    : null;
+
+  return input instanceof HTMLInputElement && !input.disabled && document.activeElement !== input
+    ? input
+    : null;
 }

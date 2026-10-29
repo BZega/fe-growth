@@ -240,6 +240,87 @@ describe('AppComponent mobile field visibility', () => {
     expect(host.style.getPropertyValue('--scroll-extra')).toBe('100px');
   });
 
+  describe('tapping a dropdown', () => {
+    let dropdown: HTMLElement;
+    let input: HTMLInputElement;
+
+    const touch = (type: string, target: Element, y: number) => {
+      const point = new Touch({ identifier: 1, target, clientX: 10, clientY: y });
+      const event = new TouchEvent(type, {
+        touches: type === 'touchend' ? [] : [point],
+        changedTouches: [point],
+        bubbles: true,
+        cancelable: true,
+      });
+      target.dispatchEvent(event);
+      return event;
+    };
+    const tapOn = (target: Element, from = 300, to = from) => {
+      touch('touchstart', target, from);
+      return touch('touchend', target, to);
+    };
+
+    beforeEach(() => {
+      dropdown = document.createElement('app-searchable-select');
+      dropdown.style.setProperty('--dropdown-height', '13rem');
+      const box = document.createElement('div');
+      box.className = 'field';
+      input = document.createElement('input');
+      box.append(input);
+      dropdown.append(box);
+      scroller.append(dropdown);
+      // The field box is 30px tall around an 18px search box; the list opens 4px below it.
+      spyOn(dropdown, 'getBoundingClientRect').and.callFake(() => new DOMRect(0, fieldTop() - 6, 300, 30));
+      spyOn(input, 'getBoundingClientRect').and.callFake(() => new DOMRect(0, fieldTop(), 300, 18));
+    });
+
+    it('moves the page so the list will rest above the keyboard before the field gets focus', async () => {
+      const focusedWhenMoved: (Element | null)[] = [];
+      scroll.and.callFake(((options: ScrollToOptions) => {
+        focusedWhenMoved.push(document.activeElement);
+        scrollTop = Math.min(options.top ?? 0, maxScroll());
+      }) as unknown as typeof scroller.scrollTo);
+
+      const event = tapOn(input);
+
+      expect(event.defaultPrevented).toBeTrue();
+      expect(scroll).toHaveBeenCalledOnceWith({ top: 544, behavior: 'auto' });
+      expect(focusedWhenMoved).toEqual([document.body]);
+      expect(document.activeElement).toBe(input);
+      expect(dropdown.style.getPropertyValue('--dropdown-max-height')).toBe('300px');
+      expect(fieldTop() + 28 + 208).toBe(392);
+
+      await wait(0);
+      await openKeyboard();
+      expect(scroll).toHaveBeenCalledTimes(1);
+    });
+
+    it('works the same from the arrow part of the field', () => {
+      const event = tapOn(dropdown.querySelector('.field')!);
+
+      expect(event.defaultPrevented).toBeTrue();
+      expect(document.activeElement).toBe(input);
+    });
+
+    it('leaves a scrolling drag alone', () => {
+      const event = tapOn(input, 300, 360);
+
+      expect(event.defaultPrevented).toBeFalse();
+      expect(scroll).not.toHaveBeenCalled();
+      expect(document.activeElement).not.toBe(input);
+    });
+
+    it('leaves a tap on the already open dropdown alone, so it can close as usual', async () => {
+      input.focus();
+      await wait(0);
+      scroll.calls.reset();
+
+      const event = tapOn(input);
+
+      expect(event.defaultPrevented).toBeFalse();
+      expect(scroll).not.toHaveBeenCalled();
+    });
+  });
   it('leaves the page alone with a mouse', async () => {
     coarse = false;
     await tap();

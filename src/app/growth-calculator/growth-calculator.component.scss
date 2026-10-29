@@ -296,9 +296,9 @@
   }
 }
 
-// Phones lay the pickers out two per line in a fixed two-row grid: Unit | Class, then Mount | Bond Level.
-// A class Level picker shares the right half of row 2 with Bond Level. Row 2 always keeps its height,
-// even when the class is unmounted, so a calculator never changes size.
+// Phones always lay the pickers out in two rows, so a calculator never changes height. Unmounted
+// classes stack Unit over Class; mounted ones put Unit | Class on row 1 and Mount | Bond Level on
+// row 2, with a class Level sharing the right half of row 2.
 .pickers__reserve {
   display: none;
 }
@@ -310,8 +310,25 @@
   }
 
   .picker {
+    grid-column: 1 / -1;
+  }
+
+  .picker--unit {
     grid-row: 1;
-    grid-column: span 2;
+  }
+
+  .picker--class {
+    grid-row: 2;
+  }
+
+  .pickers--split {
+    .picker--unit {
+      grid-area: 1 / 1 / auto / span 2;
+    }
+
+    .picker--class {
+      grid-area: 1 / 3 / auto / span 2;
+    }
   }
 
   .picker--mount {

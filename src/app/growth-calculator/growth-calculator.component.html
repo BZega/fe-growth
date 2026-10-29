@@ -22,7 +22,7 @@
     </div>
   </header>
 
-  <div class="pickers">
+  <div class="pickers" [class.pickers--split]="isMounted() || !!levelConfig()">
     <div class="picker picker--unit">
       <span class="picker__label">Unit</span>
       <app-searchable-select
@@ -56,7 +56,10 @@
           (change)="onLevelChange($any($event.target).value)"
         >
           @for (level of config.levels; track level) {
-            <option [value]="level" [selected]="level === classLevel()">Level {{ level }}</option>
+            <!-- Just the number when sharing a half cell with Bond Level; the label already says "Level". -->
+            <option [value]="level" [selected]="level === classLevel()">
+              {{ bondLevels().length > 0 ? level : 'Level ' + level }}
+            </option>
           }
         </select>
       </label>
@@ -85,14 +88,14 @@
         >
           @for (bond of bondLevels(); track bond.level) {
             <option [value]="bond.level" [selected]="bond.level === mountLevel()">
-              Level {{ bond.level }}
+              {{ levelConfig() ? bond.level : 'Level ' + bond.level }}
             </option>
           }
         </select>
       </label>
     }
 
-    <!-- Phones only: an invisible copy of a Mount and a Bond Level picker that holds row 2's height. -->
+    <!-- Phones only: an invisible Mount and Bond Level picker that keep row 2 the same height in every layout. -->
     <div class="pickers__reserve" aria-hidden="true" inert>
       <div class="picker">
         <span class="picker__label">Mount</span>

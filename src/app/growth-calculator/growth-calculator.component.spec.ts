@@ -33,6 +33,23 @@ describe('GrowthCalculatorComponent', () => {
     expect(rows[0].textContent).toContain('No Mount Growth');
   });
 
+  it('puts Unit and Class side by side on phones only once the class has a mount', async () => {
+    const pickers = (fixture.nativeElement as HTMLElement).querySelector('.pickers')!;
+    expect(pickers.classList.contains('pickers--split')).toBeFalse();
+
+    calculator.onClassChange(await classId('Soldier'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(pickers.classList.contains('pickers--split')).toBeFalse();
+
+    calculator.onClassChange(await classId('Light Cavalry'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(pickers.classList.contains('pickers--split')).toBeTrue();
+  });
+
   it('splits the right half of row 2 between Level and Bond Level only when both are shown', async () => {
     const element = fixture.nativeElement as HTMLElement;
     const half = (selector: string) =>

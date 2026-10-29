@@ -7,18 +7,11 @@
 }
 
 .page-header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  // Bleed over the page padding so the header sits at the same spot stuck or not, and its
-  // background ends exactly where Calculator 1 starts, hiding whatever scrolls above that spot.
-  margin: -1.5rem -1.25rem 0;
-  padding: 1.5rem 1.25rem;
-  background: var(--bg);
+  margin-bottom: 1.5rem;
 
   h1 {
     margin: 0;
@@ -129,6 +122,19 @@
   }
 }
 
+// Mobile only: one calculator's worth of empty space after the last one, so it can be scrolled
+// up the screen like any other instead of being stuck at the bottom.
+.overscroll {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .overscroll {
+    display: block;
+    height: var(--calculator-height, 0px);
+  }
+}
+
 @media (max-width: 720px) {
   :host {
     padding: 1rem 0.75rem;
@@ -138,8 +144,7 @@
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
-    margin: -1rem -0.75rem 0;
-    padding: 1rem 0.75rem;
+    margin-bottom: 1rem;
 
     h1 {
       font-size: 1.35rem;

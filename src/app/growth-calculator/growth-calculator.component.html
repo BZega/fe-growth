@@ -36,7 +36,7 @@
       />
     </div>
 
-    <div class="picker">
+    <div class="picker picker--class">
       <span class="picker__label">Class</span>
       <app-searchable-select
         label="Class"
@@ -48,7 +48,7 @@
     </div>
 
     @if (levelConfig(); as config) {
-      <label class="picker picker--level">
+      <label class="picker picker--level picker--class-level" [class.picker--half]="bondLevels().length > 0">
         <span class="picker__label">Level</span>
         <select
           class="picker__select"
@@ -73,24 +73,36 @@
           (valueChange)="onMountChange($event)"
         />
       </div>
-
-      @if (bondLevels().length > 0) {
-        <label class="picker picker--level">
-          <span class="picker__label">Bond Level</span>
-          <select
-            class="picker__select"
-            [value]="mountLevel()"
-            (change)="onMountLevelChange($any($event.target).value)"
-          >
-            @for (bond of bondLevels(); track bond.level) {
-              <option [value]="bond.level" [selected]="bond.level === mountLevel()">
-                Level {{ bond.level }}
-              </option>
-            }
-          </select>
-        </label>
-      }
     }
+
+    @if (bondLevels().length > 0) {
+      <label class="picker picker--level picker--bond" [class.picker--half]="!!levelConfig()">
+        <span class="picker__label">Bond Level</span>
+        <select
+          class="picker__select"
+          [value]="mountLevel()"
+          (change)="onMountLevelChange($any($event.target).value)"
+        >
+          @for (bond of bondLevels(); track bond.level) {
+            <option [value]="bond.level" [selected]="bond.level === mountLevel()">
+              Level {{ bond.level }}
+            </option>
+          }
+        </select>
+      </label>
+    }
+
+    <!-- Phones only: an invisible copy of a Mount and a Bond Level picker that holds row 2's height. -->
+    <div class="pickers__reserve" aria-hidden="true" inert>
+      <div class="picker">
+        <span class="picker__label">Mount</span>
+        <app-searchable-select [disabled]="true" />
+      </div>
+      <div class="picker">
+        <span class="picker__label">Bond Level</span>
+        <select class="picker__select" disabled tabindex="-1"><option>Level 1</option></select>
+      </div>
+    </div>
   </div>
 
   <table class="growth">
@@ -139,32 +151,30 @@
           </td>
         }
       </tr>
-      @if (isMounted()) {
-        <tr class="band band--mount">
-          <th scope="rowgroup" rowspan="2" class="band__name">
-            {{ current.mount?.name ?? 'None' }}
-          </th>
-          <td class="band__caption" [attr.colspan]="statKeys.length">
-            {{ isMounted() ? 'Growths From Mounts' : 'No Mount Growth' }}
-            @if (current.mountLevel !== null) {
-              (Bond Level {{ current.mountLevel }})
-            }
-            @if (levelConfig(); as config) {
-              @if (isMounted() && config.mountMultiplier !== 1) {
-                (x{{ config.mountMultiplier }})
-              }
-            }
-          </td>
-          <td rowspan="2" class="band__total">{{ totalOf(current.mountGrowth) }}%</td>
-        </tr>
-        <tr class="band band--mount">
-          @for (stat of statKeys; track stat) {
-            <td [class.negative]="current.mountGrowth[stat] < 0">
-              {{ current.mountGrowth[stat] }}%
-            </td>
+      <tr class="band band--mount">
+        <th scope="rowgroup" rowspan="2" class="band__name">
+          {{ current.mount?.name ?? 'None' }}
+        </th>
+        <td class="band__caption" [attr.colspan]="statKeys.length">
+          {{ isMounted() ? 'Growths From Mounts' : 'No Mount Growth' }}
+          @if (current.mountLevel !== null) {
+            (Bond Level {{ current.mountLevel }})
           }
-        </tr>
-      }
+          @if (levelConfig(); as config) {
+            @if (isMounted() && config.mountMultiplier !== 1) {
+              (x{{ config.mountMultiplier }})
+            }
+          }
+        </td>
+        <td rowspan="2" class="band__total">{{ totalOf(current.mountGrowth) }}%</td>
+      </tr>
+      <tr class="band band--mount">
+        @for (stat of statKeys; track stat) {
+          <td [class.negative]="current.mountGrowth[stat] < 0">
+            {{ current.mountGrowth[stat] }}%
+          </td>
+        }
+      </tr>
 
       <tr class="band band--grand">
         <th scope="rowgroup" rowspan="2" class="band__name">Total</th>

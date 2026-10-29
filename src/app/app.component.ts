@@ -57,9 +57,6 @@ export class AppComponent {
         }
 
         host.style.removeProperty('--scroll-extra');
-        host.querySelectorAll<HTMLElement>('app-searchable-select').forEach((select) =>
-          select.style.removeProperty('--dropdown-max-height'),
-        );
       };
       const contentObserver = new MutationObserver(() => {
         if (document.activeElement?.matches(TEXT_FIELD)) {
@@ -126,9 +123,7 @@ export class AppComponent {
     let delta: number;
 
     if (panel) {
-      const available = Math.max(0, visibleBottom - visibleTop - (panel.getBoundingClientRect().top - top));
-      select?.style.setProperty('--dropdown-max-height', `${available}px`);
-      // Rest the open dropdown right above the keyboard, but never push the field itself out of view.
+      // Scroll the full-height dropdown above the keyboard, keeping its field reachable on short screens.
       delta = Math.min(panel.getBoundingClientRect().bottom - visibleBottom, top - visibleTop);
     } else {
       const bottom = field.getBoundingClientRect().bottom;

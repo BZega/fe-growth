@@ -55,7 +55,7 @@ describe('AppComponent mobile field visibility', () => {
     const media = window.matchMedia('(pointer: coarse)');
     spyOnProperty(media, 'matches', 'get').and.returnValue(true);
     spyOn(window, 'matchMedia').and.returnValue(media);
-    viewport.height = 300;
+    viewport.height = 400;
     viewport.offsetTop = 0;
     fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
@@ -73,22 +73,42 @@ describe('AppComponent mobile field visibility', () => {
     scroller.append(select);
     fieldTop = 600;
     spyOn(field, 'getBoundingClientRect').and.callFake(() => new DOMRect(0, fieldTop, 300, 24));
-    spyOn(panel, 'getBoundingClientRect').and.callFake(() => {
-      const max = parseFloat(select.style.getPropertyValue('--dropdown-max-height'));
-      return new DOMRect(0, fieldTop + 40, 300, Math.min(208, Number.isNaN(max) ? 208 : max));
-    });
+    spyOn(panel, 'getBoundingClientRect').and.callFake(() =>
+      new DOMRect(0, fieldTop + 40, 300, 208),
+    );
   });
 
   afterEach(() => fixture.destroy());
 
-  it('fits a bottom dropdown and its field into the keyboard-visible area', async () => {
+  it('scrolls a full-height bottom dropdown above the keyboard without shrinking it', async () => {
     field.focus();
     await settle();
-    expect(select.style.getPropertyValue('--dropdown-max-height')).toBe('176px');
-    expect(scroll).toHaveBeenCalledWith({ top: 528, behavior: 'smooth' });
+    expect(select.style.getPropertyValue('--dropdown-max-height')).toBe('');
+    expect(panel.getBoundingClientRect().height).toBe(208);
+    expect(scroll).toHaveBeenCalledWith({ top: 460, behavior: 'smooth' });
     const delta = scroll.calls.mostRecent().args[0].top;
     expect(fieldTop - delta).toBeGreaterThanOrEqual(72);
-    expect(panel.getBoundingClientRect().bottom - delta).toBeLessThanOrEqual(288);
+    expect(panel.getBoundingClientRect().bottom - delta).toBe(388);
+    expect(host.style.getPropertyValue('--keyboard-inset')).toBe(`${Math.max(0, window.innerHeight - viewport.height)}px`);
+  });
+
+  it('adds scroll room when the last calculator is already at the bottom of the page', async () => {
+    spyOnProperty(scroller, 'scrollTop', 'get').and.returnValue(1216);
+    field.focus();
+    await settle();
+    expect(host.style.getPropertyValue('--scroll-extra')).not.toBe('');
+    expect(parseFloat(host.style.getPropertyValue('--scroll-extra'))).toBeGreaterThanOrEqual(460);
+    expect(scroll).toHaveBeenCalledWith({ top: 460, behavior: 'smooth' });
+  });
+
+  it('keeps the normal dropdown height and the field reachable on short screens', async () => {
+    viewport.height = 300;
+    field.focus();
+    await settle();
+    expect(select.style.getPropertyValue('--dropdown-max-height')).toBe('');
+    expect(panel.getBoundingClientRect().height).toBe(208);
+    expect(scroll).toHaveBeenCalledWith({ top: 528, behavior: 'smooth' });
+    expect(fieldTop - scroll.calls.mostRecent().args[0].top).toBe(72);
   });
 
   it('recalculates when conditional mount or bond fields change the layout', async () => {
@@ -99,7 +119,7 @@ describe('AppComponent mobile field visibility', () => {
     const bond = document.createElement('select');
     scroller.insertBefore(bond, select);
     await settle();
-    expect(scroll).toHaveBeenCalledWith({ top: 608, behavior: 'smooth' });
+    expect(scroll).toHaveBeenCalledWith({ top: 540, behavior: 'smooth' });
   });
 
   it('recalculates when iOS pans the visual viewport without resizing it', async () => {
@@ -109,10 +129,10 @@ describe('AppComponent mobile field visibility', () => {
     viewport.offsetTop = 40;
     viewport.dispatchEvent(new Event('scroll'));
     await settle();
-    expect(scroll).toHaveBeenCalledWith({ top: 520, behavior: 'smooth' });
+    expect(scroll).toHaveBeenCalledWith({ top: 420, behavior: 'smooth' });
   });
 
-  it('clears temporary dropdown sizing and extra scroll room on blur', async () => {
+  it('clears extra scroll room on blur', async () => {
     field.focus();
     await settle();
     host.style.setProperty('--scroll-extra', '100px');
@@ -128,7 +148,7 @@ describe('AppComponent mobile field visibility', () => {
     await settle();
     host.style.setProperty('--scroll-extra', '100px');
     option.focus();
-    expect(select.style.getPropertyValue('--dropdown-max-height')).toBe('176px');
+    expect(panel.getBoundingClientRect().height).toBe(208);
     expect(host.style.getPropertyValue('--scroll-extra')).toBe('100px');
     panel.remove();
     await settle();

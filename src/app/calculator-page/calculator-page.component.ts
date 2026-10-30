@@ -9,6 +9,8 @@ interface Comparison {
   b: GrowthBuild;
   labelA: string;
   labelB: string;
+  editorA: GrowthCalculatorComponent;
+  editorB: GrowthCalculatorComponent;
 }
 
 @Component({
@@ -99,14 +101,21 @@ export class CalculatorPageComponent {
       return null;
     }
 
-    const a = this.buildOf(keyA);
-    const b = this.buildOf(keyB);
+    const editorA = this.calculatorOf(keyA);
+    const editorB = this.calculatorOf(keyB);
 
-    if (!a || !b) {
+    if (!editorA || !editorB) {
       return null;
     }
 
-    return { a, b, labelA: this.labelOf(keyA), labelB: this.labelOf(keyB) };
+    return {
+      a: editorA.build(),
+      b: editorB.build(),
+      labelA: this.labelOf(keyA),
+      labelB: this.labelOf(keyB),
+      editorA,
+      editorB,
+    };
   });
 
   labelOf(slotKey: string): string {
@@ -173,9 +182,9 @@ export class CalculatorPageComponent {
     this.picked.set([]);
   }
 
-  private buildOf(slotKey: string): GrowthBuild | null {
+  private calculatorOf(slotKey: string): GrowthCalculatorComponent | null {
     const index = this.slots().indexOf(slotKey);
 
-    return index < 0 ? null : (this.panels()[index]?.build() ?? null);
+    return index < 0 ? null : (this.panels()[index] ?? null);
   }
 }

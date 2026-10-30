@@ -165,7 +165,7 @@ export class AppComponent {
   private placeFocusedField(viewport: VisualViewport, beforeKeyboard: boolean): void {
     const inset = this.updateKeyboardInset(viewport);
     const field = document.activeElement;
-    const scroller = this.host.nativeElement.querySelector('main');
+    const scroller = field instanceof HTMLElement ? this.scrollerFor(field) : null;
 
     if (
       !matchMedia('(pointer: coarse)').matches ||
@@ -215,7 +215,7 @@ export class AppComponent {
   // Before a tapped dropdown gets focus: size its list, move the page so the list will rest just above
   // the keyboard, then focus it. Returns false (leaving the tap alone) when it doesn't apply.
   private openDropdownAboveKeyboard(viewport: VisualViewport, input: HTMLInputElement): boolean {
-    const scroller = this.host.nativeElement.querySelector('main');
+    const scroller = this.scrollerFor(input);
     const select = input.closest<HTMLElement>('app-searchable-select');
 
     if (!scroller || !select || Math.abs(viewport.scale - 1) >= 0.01) {
@@ -267,11 +267,20 @@ export class AppComponent {
     const target = Math.max(0, Math.round(scroller.scrollTop + delta));
     const shortfall = target - (scroller.scrollHeight - scroller.clientHeight);
 
-    if (shortfall > 0) {
+    // Only the page has spare room to add; a dialog scrolls as far as its own content allows.
+    if (shortfall > 0 && scroller.matches('main')) {
       this.setScrollExtra(this.cssPixels('--scroll-extra') + shortfall);
     }
 
     scroller.scrollTo({ top: target, behavior });
+  }
+
+  // A field in a dialog scrolls with the dialog, which floats above the page; anything else, with the page.
+  private scrollerFor(field: HTMLElement): HTMLElement | null {
+    return (
+      field.closest<HTMLElement>('[aria-modal="true"]') ??
+      this.host.nativeElement.querySelector('main')
+    );
   }
   private clearDropdownCaps(): void {
     this.host.nativeElement

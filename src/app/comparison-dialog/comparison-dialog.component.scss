@@ -58,7 +58,7 @@
 
 .summary {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
   margin: 1rem 0 0.75rem;
 }
@@ -88,6 +88,81 @@
   opacity: 0.7;
 }
 
+// Editing a box: two rows of the usual compact dropdowns (Unit | Class | Level, then Mount | Bond Level).
+.summary__row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.summary__pick {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+// Just a unit and a class: one above the other, at a comfortable width rather than the full box.
+.summary__row--stacked {
+  flex-direction: column;
+  align-items: flex-start;
+
+  .summary__pick {
+    flex: none;
+    width: min(100%, 13rem);
+  }
+}
+
+// Matches the dark, compact look of the searchable dropdowns beside it.
+.summary__select {
+  flex: none;
+  height: 1.9rem;
+  background: #1d222c;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0 0.35rem;
+
+  &:hover,
+  &:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+}
+
+.summary__side--editing {
+  gap: 0.4rem;
+}
+
+.summary__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.summary__change {
+  flex: none;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+
+  &[aria-expanded='true'] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #10141c;
+    font-weight: 600;
+  }
+}
 .summary__build {
   font-size: 0.95rem;
   font-weight: 600;
@@ -189,7 +264,7 @@
   }
 
   .summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .compare {

@@ -302,6 +302,24 @@ describe('AppComponent mobile field visibility', () => {
       expect(document.activeElement).toBe(input);
     });
 
+    it('scrolls the dialog, not the page behind it, for a dropdown inside a dialog', () => {
+      const modal = document.createElement('div');
+      modal.setAttribute('aria-modal', 'true');
+      scroller.append(modal);
+      modal.append(dropdown);
+      spyOn(modal, 'getBoundingClientRect').and.returnValue(new DOMRect(0, 12, 390, 640));
+      spyOnProperty(modal, 'scrollHeight', 'get').and.returnValue(2000);
+      spyOnProperty(modal, 'clientHeight', 'get').and.returnValue(640);
+      const modalScroll: jasmine.Spy = spyOn(modal, 'scrollTo');
+
+      const event = tapOn(input);
+
+      expect(event.defaultPrevented).toBeTrue();
+      expect(modalScroll).toHaveBeenCalledOnceWith({ top: 544, behavior: 'auto' });
+      expect(scroll).not.toHaveBeenCalled();
+      expect(host.style.getPropertyValue('--scroll-extra')).toBe('');
+      expect(document.activeElement).toBe(input);
+    });
     it('leaves a scrolling drag alone', () => {
       const event = tapOn(input, 300, 360);
 

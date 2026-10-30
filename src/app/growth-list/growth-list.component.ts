@@ -48,17 +48,21 @@ export class GrowthListComponent {
   readonly linkBase = input<string | null>(null);
   readonly valueSuffix = input('%');
   readonly tagHeader = input<string | null>(null);
+  /** Shown after Total on wider screens; phones leave it out to keep the stats readable. */
   readonly detailHeader = input<string | null>(null);
+  /** Stats that never apply to this list's rows (e.g. HP for battalions), left out of the table. */
+  readonly omitStats = input<readonly StatKey[]>([]);
 
-  readonly statKeys = STAT_KEYS;
   readonly statLabels = STAT_LABELS;
+
+  readonly visibleStats = computed(() => STAT_KEYS.filter((stat) => !this.omitStats().includes(stat)));
 
   readonly sortKey = signal<GrowthSortKey | null>(null);
   readonly sortDirection = signal<SortDirection>('asc');
 
   // Name, the stats and Total, plus whichever optional columns are shown.
   readonly columnCount = computed(
-    () => this.statKeys.length + 2 + (this.tagHeader() ? 1 : 0) + (this.detailHeader() ? 1 : 0),
+    () => this.visibleStats().length + 2 + (this.tagHeader() ? 1 : 0) + (this.detailHeader() ? 1 : 0),
   );
   readonly rowCount = computed(() =>
     this.groups().reduce((count, group) => count + group.rows.length, 0),

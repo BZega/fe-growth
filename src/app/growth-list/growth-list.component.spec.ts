@@ -44,6 +44,16 @@ describe('GrowthListComponent tag column', () => {
     expect(names()).toEqual(['Bravo', 'Alpha', 'Charlie', 'Delta']);
   });
 
+  it('leaves out omitted stats, keeping group rows spanning every column', () => {
+    fixture.componentRef.setInput('groups', [{ key: 'Group', rows: [row(1, 'Bravo', 'E', 0)] }]);
+    fixture.componentRef.setInput('omitStats', ['hp']);
+    fixture.detectChanges();
+
+    const headers = Array.from(host.querySelectorAll('thead th')).map((cell) => cell.textContent!.trim());
+    expect(headers).not.toContain('HP');
+    expect(host.querySelector('tr.group th')!.getAttribute('colspan')).toBe(String(headers.length));
+  });
+
   it('leaves the column out when there is no tag header', () => {
     fixture.componentRef.setInput('tagHeader', null);
     fixture.detectChanges();

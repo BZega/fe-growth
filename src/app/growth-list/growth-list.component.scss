@@ -173,26 +173,6 @@ thead .list__total {
   opacity: 0.7;
 }
 
-.detail-row {
-  display: none;
-}
-
-.detail__head {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.detail__tag {
-  flex: none;
-  padding: 0 0.35rem;
-  border: 1px solid var(--panel-border);
-  border-radius: 4px;
-  font-size: 0.85em;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
 
 .group th {
   text-align: left;
@@ -271,24 +251,9 @@ thead .list__total {
     overflow-wrap: anywhere;
   }
 
-  // The detail moves out of its column onto a full-width line under its row, taking the tag with it.
-  .list .list__detail,
-  .list--detailed .list__tag {
+  // Free text doesn't fit beside the stats on a phone.
+  .list .list__detail {
     display: none;
-  }
-
-  .detail-row {
-    display: table-row;
-  }
-
-  .list .detail-row td {
-    padding: 0 0.4rem 0.4rem;
-    text-align: left;
-    white-space: normal;
-  }
-
-  .list tr:has(+ .detail-row) > * {
-    border-bottom: none;
   }
 
   // Stacking the arrow keeps each column as narrow as its label.

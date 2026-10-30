@@ -2,7 +2,7 @@
   <p class="empty">Loading…</p>
 } @else {
   <div class="scroller">
-    <table class="list" [class.list--detailed]="!!detailHeader()">
+    <table class="list">
       <thead>
         <tr>
           <th scope="col" class="list__name" [attr.aria-sort]="ariaSort('name')">
@@ -19,7 +19,7 @@
               </button>
             </th>
           }
-          @for (stat of statKeys; track stat) {
+          @for (stat of visibleStats(); track stat) {
             <th scope="col" [attr.aria-sort]="ariaSort(stat)">
               <button type="button" class="sort" (click)="sortBy(stat)">
                 {{ statLabels[stat] }}
@@ -69,7 +69,7 @@
               @if (tagHeader()) {
                 <td class="list__tag">{{ row.tag?.label }}</td>
               }
-              @for (stat of statKeys; track stat) {
+              @for (stat of visibleStats(); track stat) {
                 <td [class]="cellClass(row.growth[stat])">
                   {{ row.growth[stat] }}<span class="unit">{{ valueSuffix() }}</span>
                 </td>
@@ -84,23 +84,6 @@
                 </td>
               }
             </tr>
-            <!-- Phones show the detail on its own full-width line instead of in the narrow column. -->
-            @if (detailHeader()) {
-              @if (row.detail; as detail) {
-                <!-- Spans the name, stats and Total: the tag and detail columns are hidden on phones. -->
-                <tr class="detail-row">
-                  <td [attr.colspan]="statKeys.length + 2">
-                    <span class="detail__head">
-                      @if (tagHeader() && row.tag) {
-                        <span class="detail__tag">{{ tagHeader() }} {{ row.tag.label }}</span>
-                      }
-                      <span class="detail__title">{{ detail.title }}</span>
-                    </span>
-                    <span class="detail__text">{{ detail.text }}</span>
-                  </td>
-                </tr>
-              }
-            }
           }
         </tbody>
       }

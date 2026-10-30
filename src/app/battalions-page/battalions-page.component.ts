@@ -23,6 +23,7 @@ import { SpoilerService } from '../services/spoiler.service';
       tagHeader="Rank"
       valueSuffix=""
       detailHeader="Skill"
+      [omitStats]="['hp']"
     />
   `,
   styleUrl: '../styles/browse-page.scss',

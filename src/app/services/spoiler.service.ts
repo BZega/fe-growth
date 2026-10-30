@@ -54,6 +54,11 @@ export class SpoilerService {
     return SPOILER_UNIT_NAMES.has(name) || SPOILER_CLASS_NAMES.has(name);
   }
 
+  // Named after a spoiler character, e.g. "Kalla's Divas".
+  isNamedAfterSpoiler(name: string): boolean {
+    return [...SPOILER_UNIT_NAMES].some((unit) => name.startsWith(`${unit}'s `));
+  }
+
   filter<T extends { name: string }>(items: readonly T[]): T[] {
     return this.hidden()
       ? items.filter((item) => !this.isSpoiler(item.name))

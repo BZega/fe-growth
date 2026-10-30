@@ -25,6 +25,7 @@ export class AppComponent {
     { path: '/characters', label: 'Characters' },
     { path: '/classes', label: 'Classes' },
     { path: '/mounts', label: 'Mounts' },
+    { path: '/battalions', label: 'Battalions' },
   ];
 
   readonly menuOpen = signal(false);

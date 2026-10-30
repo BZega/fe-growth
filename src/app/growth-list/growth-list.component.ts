@@ -7,6 +7,21 @@ export interface GrowthListRow {
   name: string;
   growth: GrowthRates;
   total: number;
+  /** Shown in an extra column after the name when the list has a tagHeader. */
+  tag?: GrowthListTag;
+  /** Shown in an extra column after Total when the list has a detailHeader. */
+  detail?: GrowthListDetail;
+}
+
+export interface GrowthListTag {
+  label: string;
+  /** Sort position; higher sorts first. */
+  order: number;
+}
+
+export interface GrowthListDetail {
+  title: string;
+  text: string;
 }
 
 export interface GrowthListGroup {
@@ -14,7 +29,7 @@ export interface GrowthListGroup {
   rows: GrowthListRow[];
 }
 
-export type GrowthSortKey = 'name' | StatKey | 'total';
+export type GrowthSortKey = 'name' | 'tag' | StatKey | 'total' | 'detail';
 export type GrowthColorScale = 'sign' | 'tier';
 
 type SortDirection = 'asc' | 'desc';
@@ -32,6 +47,8 @@ export class GrowthListComponent {
   readonly colorScale = input<GrowthColorScale>('sign');
   readonly linkBase = input<string | null>(null);
   readonly valueSuffix = input('%');
+  readonly tagHeader = input<string | null>(null);
+  readonly detailHeader = input<string | null>(null);
 
   readonly statKeys = STAT_KEYS;
   readonly statLabels = STAT_LABELS;
@@ -39,7 +56,10 @@ export class GrowthListComponent {
   readonly sortKey = signal<GrowthSortKey | null>(null);
   readonly sortDirection = signal<SortDirection>('asc');
 
-  readonly columnCount = computed(() => this.statKeys.length + 2);
+  // Name, the stats and Total, plus whichever optional columns are shown.
+  readonly columnCount = computed(
+    () => this.statKeys.length + 2 + (this.tagHeader() ? 1 : 0) + (this.detailHeader() ? 1 : 0),
+  );
   readonly rowCount = computed(() =>
     this.groups().reduce((count, group) => count + group.rows.length, 0),
   );
@@ -122,11 +142,15 @@ export class GrowthListComponent {
 }
 
 function valueOf(row: GrowthListRow, key: GrowthSortKey): number {
+  if (key === 'tag') {
+    return row.tag?.order ?? -1;
+  }
+
   return key === 'total' ? row.total : row.growth[key as StatKey];
 }
 
 function defaultDirection(key: GrowthSortKey): SortDirection {
-  return key === 'name' ? 'asc' : 'desc';
+  return key === 'name' || key === 'detail' ? 'asc' : 'desc';
 }
 
 function compareRows(
@@ -136,6 +160,10 @@ function compareRows(
 ): number {
   if (key === 'name') {
     return a.name.localeCompare(b.name);
+  }
+
+  if (key === 'detail') {
+    return (a.detail?.title ?? '').localeCompare(b.detail?.title ?? '') || a.name.localeCompare(b.name);
   }
 
   return valueOf(a, key) - valueOf(b, key) || a.name.localeCompare(b.name);

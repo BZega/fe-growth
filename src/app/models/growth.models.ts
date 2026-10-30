@@ -68,6 +68,42 @@ export const MOUNT_TYPE_ORDER: readonly MountType[] = [
   'Elephant',
 ];
 
+export type BattalionType = 'Physical' | 'Magic' | 'Defense' | 'Recovery';
+
+/** Battalion ranks from lowest to highest; used to sort by rank. */
+export const BATTALION_RANK_ORDER: readonly string[] = [
+  'E',
+  'E+',
+  'D',
+  'D+',
+  'C',
+  'C+',
+  'B',
+  'B+',
+  'A',
+  'A+',
+  'S',
+  'S+',
+];
+
+export const BATTALION_TYPE_ORDER: readonly BattalionType[] = [
+  'Physical',
+  'Magic',
+  'Defense',
+  'Recovery',
+];
+
+/** A battalion's flat stat bonuses, plus the skill it lets its leader use. */
+export interface Battalion extends GrowthRates {
+  id: number;
+  name: string;
+  type: BattalionType;
+  rank: string;
+  total: number;
+  skillName: string;
+  skillDescription: string;
+}
+
 export type Gender = 'Male' | 'Female';
 
 /** Classes only female units may take. */

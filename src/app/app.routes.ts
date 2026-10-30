@@ -52,5 +52,13 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./mounts-page/mounts-page.component').then((m) => m.MountsPageComponent),
   },
+  {
+    path: 'battalions',
+    title: 'Battalions',
+    loadComponent: () =>
+      import('./battalions-page/battalions-page.component').then(
+        (m) => m.BattalionsPageComponent,
+      ),
+  },
   { path: '**', redirectTo: 'calculator' },
 ];

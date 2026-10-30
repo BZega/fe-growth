@@ -107,6 +107,17 @@
   &--left {
     justify-content: flex-start;
   }
+
+  &--center {
+    justify-content: center;
+  }
+}
+
+// A short label beside the name, e.g. a battalion's rank.
+.list .list__tag {
+  text-align: center;
+  font-weight: 600;
+  width: 1px;
 }
 
 .sort__arrow {
@@ -136,6 +147,51 @@
 thead .list__total {
   background: #000000;
   color: #ffffff;
+}
+
+// Free text (e.g. a battalion's skill): a bold title over a wrapped, quieter description.
+.list .list__detail {
+  text-align: left;
+  white-space: normal;
+  min-width: 14rem;
+  max-width: 26rem;
+}
+
+.list td.list__detail {
+  vertical-align: top;
+}
+
+.detail__title {
+  display: block;
+  font-weight: 600;
+}
+
+.detail__text {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.92em;
+  opacity: 0.7;
+}
+
+.detail-row {
+  display: none;
+}
+
+.detail__head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.detail__tag {
+  flex: none;
+  padding: 0 0.35rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .group th {
@@ -215,6 +271,26 @@ thead .list__total {
     overflow-wrap: anywhere;
   }
 
+  // The detail moves out of its column onto a full-width line under its row, taking the tag with it.
+  .list .list__detail,
+  .list--detailed .list__tag {
+    display: none;
+  }
+
+  .detail-row {
+    display: table-row;
+  }
+
+  .list .detail-row td {
+    padding: 0 0.4rem 0.4rem;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .list tr:has(+ .detail-row) > * {
+    border-bottom: none;
+  }
+
   // Stacking the arrow keeps each column as narrow as its label.
   .sort {
     flex-direction: column;
@@ -225,6 +301,10 @@ thead .list__total {
 
     &--left {
       align-items: flex-start;
+    }
+
+    &--center {
+      align-items: center;
     }
   }
 

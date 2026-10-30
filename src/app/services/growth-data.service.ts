@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
-import { ClassAbility, FEMALE_ONLY_CLASS_NAMES, GrowthRates, Mount, MountType, toGrowth, Unit, UnitClass } from '../models/growth.models';
+import { Battalion, ClassAbility, FEMALE_ONLY_CLASS_NAMES, GrowthRates, Mount, MountType, toGrowth, Unit, UnitClass } from '../models/growth.models';
+import battalionData from '../data/battalions.json';
 import classAbilityData from '../data/class-abilities.json';
 import classMountTypes from '../data/class-mount-types.json';
 import mountBondLevelData from '../data/mount-bond-levels.json';
@@ -25,6 +26,8 @@ export class GrowthDataService {
   private readonly classes = unitClassData as UnitClass[];
 
   private readonly classAbilities = classAbilityData as ClassAbility[];
+
+  private readonly battalions = battalionData as Battalion[];
 
   private readonly allMounts: Mount[] = (
     mountData as Omit<Mount, 'bondLevels'>[]
@@ -68,6 +71,10 @@ export class GrowthDataService {
 
   getMountsForClass(classId: number): Observable<Mount[]> {
     return of(this.mountsForClass(classId));
+  }
+
+  getBattalions(): Observable<Battalion[]> {
+    return of(this.battalions);
   }
 
   mountTypeOfClass(className: string): MountType {

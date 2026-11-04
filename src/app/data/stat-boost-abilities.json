@@ -1,0 +1,49 @@
+[
+  { "name": "Attack Basics", "description": "Grants Str+1.", "boosts": { "str": 1 } },
+  { "name": "Hunting Basics", "description": "Grants Dex/Spd+1.", "boosts": { "dex": 1, "spd": 1 } },
+  { "name": "Defense Basics", "description": "Grants Def+1.", "boosts": { "def": 1 } },
+  { "name": "Offense Basics", "description": "Grants Str/Mag+1.", "boosts": { "str": 1, "mag": 1 } },
+  { "name": "Magic Basics", "description": "Grants Mag/Res+1.", "boosts": { "mag": 1, "res": 1 } },
+  { "name": "Bolster Health", "description": "Grants max HP+3.", "boosts": { "hp": 3 } },
+  { "name": "Piety", "description": "Grants Lck+3.", "boosts": { "lck": 3 } },
+  { "name": "Protective Wings", "description": "Grants Res+3.", "boosts": { "res": 3 } },
+  { "name": "Divine Insight", "description": "Grants Spd+10.", "boosts": { "spd": 10 } },
+  { "name": "Divine Dance", "description": "Grants Cha+10.", "boosts": { "cha": 10 } },
+  { "name": "Divine Might", "description": "Grants Str+10.", "boosts": { "str": 10 } },
+  { "name": "Divine Adornment", "description": "Grants Res+10.", "boosts": { "res": 10 } },
+  { "name": "Divine Will", "description": "Grants Lck+10.", "boosts": { "lck": 10 } },
+  { "name": "Divine Wall", "description": "Grants Def+10.", "boosts": { "def": 10 } },
+  { "name": "Divine Dexterity", "description": "Grants Dex+10.", "boosts": { "dex": 10 } },
+  { "name": "Divine Law", "description": "Grants Mag+10.", "boosts": { "mag": 10 } },
+  {
+    "name": "Warrior's Blood",
+    "description": "Grants +2 to a stat that depends on the equipped weapon.",
+    "characters": ["Mu"],
+    "boosts": {},
+    "weaponBoosts": {
+      "gauntlet": { "str": 2 },
+      "sword": { "spd": 2 },
+      "spear": { "dex": 2 },
+      "axe": { "str": 2 },
+      "bow": { "dex": 2 },
+      "blackMagic": { "res": 2 },
+      "whiteMagic": { "mag": 2 }
+    }
+  },
+  {
+    "name": "Warrior's Blood+",
+    "description": "Grants +2 to two stats that depend on the equipped weapon.",
+    "upgradeOf": "Warrior's Blood",
+    "characters": ["Mu"],
+    "boosts": {},
+    "weaponBoosts": {
+      "gauntlet": { "str": 2, "spd": 2 },
+      "sword": { "spd": 2, "dex": 2 },
+      "spear": { "dex": 2, "def": 2 },
+      "axe": { "str": 2, "def": 2 },
+      "bow": { "str": 2, "dex": 2 },
+      "blackMagic": { "mag": 2, "res": 2 },
+      "whiteMagic": { "mag": 2, "res": 2 }
+    }
+  }
+]

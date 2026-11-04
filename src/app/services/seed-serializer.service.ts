@@ -39,7 +39,19 @@ export class SeedSerializerService {
         unitClass: this.nameOf(this.classes(), section.classId),
         mount: this.nameOf(this.mounts(), section.mountId),
         mountLevel: section.mountLevel,
+        abilities: [...section.abilities],
+        weapon: section.weapon,
         rows: section.rows,
+        reclasses: section.reclasses.flatMap((reclass) => {
+          const unitClass = this.nameOf(this.classes(), reclass.classId);
+          return unitClass === null ? [] : [{ row: reclass.rowIndex, unitClass }];
+        }),
+        exams: section.exams.map((exam) => ({
+          row: exam.rowIndex,
+          unitClass: this.nameOf(this.classes(), exam.classId),
+          chance: exam.chance,
+          passed: exam.passed,
+        })),
         comparators: section.comparators.map((comparator) => ({
           unitClass: this.nameOf(this.classes(), comparator.classId),
           mount: this.nameOf(this.mounts(), comparator.mountId),
@@ -70,7 +82,19 @@ export class SeedSerializerService {
         classId: this.idOf(this.classes(), section.unitClass),
         mountId: this.idOf(this.mounts(), section.mount),
         mountLevel: section.mountLevel,
+        abilities: [...section.abilities],
+        weapon: section.weapon,
         rows: section.rows,
+        reclasses: section.reclasses.flatMap((reclass) => {
+          const classId = this.idOf(this.classes(), reclass.unitClass);
+          return classId === null ? [] : [{ rowIndex: reclass.row, classId }];
+        }),
+        exams: section.exams.map((exam) => ({
+          rowIndex: exam.row,
+          classId: this.idOf(this.classes(), exam.unitClass),
+          chance: exam.chance,
+          passed: exam.passed,
+        })),
         comparators: section.comparators.map((comparator) => ({
           classId: this.idOf(this.classes(), comparator.unitClass),
           mountId: this.idOf(this.mounts(), comparator.mount),

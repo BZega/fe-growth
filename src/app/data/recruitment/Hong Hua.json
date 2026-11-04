@@ -1,0 +1,153 @@
+{
+  "UnitId": "Hong Hua",
+  "PersonalAbility": {
+    "Name": "Zhu Ming",
+    "Description": "When equipped with magic, grants Hit\u002B10."
+  },
+  "Bloodmark": null,
+  "LevelUpPersonalAbilities": [
+    {
+      "Name": "Amplify Magic",
+      "LevelAcquired": 50,
+      "Description": "After combat, grants Atk\u002B4 through unit\u0027s next combat. Trigger % = Mag \u00F7 2."
+    },
+    {
+      "Name": "Amplify Magic\u002B",
+      "LevelAcquired": 60,
+      "Description": "After combat, grants Atk\u002B7 through unit\u0027s next combat. Trigger % = Mag \u00F7 2."
+    }
+  ],
+  "Paths": [
+    {
+      "Path": "Prologue",
+      "IsRecruitable": true,
+      "Requirement": {
+        "SupportLv": 0,
+        "RenownLv": 0,
+        "RecruitmentNegotiation": "Automatic"
+      },
+      "Chapters": [
+        {
+          "Chapter": 1,
+          "Level": 40,
+          "ClassName": "Ovate",
+          "SkillRanks": {
+            "Sword": "E",
+            "Spear": "E",
+            "Axe": "E",
+            "Bow": "E",
+            "Gauntlet": "E",
+            "BlackMagic": "A",
+            "WhiteMagic": "C",
+            "Authority": "D",
+            "Infantry": "D",
+            "Riding": "E",
+            "HeavyArmor": "E",
+            "Flying": "E"
+          },
+          "Inventory": {
+            "Weapons": [],
+            "Items": [
+              {
+                "Name": "Vulnerary",
+                "Description": "Restores 20 HP.",
+                "Durability": "3",
+                "Mt": "--",
+                "Hit": "--",
+                "Crit": "--",
+                "Curse": "--",
+                "Wt": "--",
+                "Avo": "--",
+                "Range": "--",
+                "Skill": null
+              }
+            ],
+            "MagicTomes": [
+              {
+                "Name": "Bolganone",
+                "Description": "Advanced fire magic that incinerates an enemy.",
+                "MagicType": "Black",
+                "Uses": 0,
+                "Mt": 10,
+                "Hit": 85,
+                "Crit": 0,
+                "Curse": "--",
+                "Wt": 8,
+                "Avo": 0,
+                "Range": "1-2"
+              }
+            ],
+            "WhiteTomes": null,
+            "CombatArts": null
+          },
+          "GrowthRates": {
+            "Hp": 50,
+            "Str": 25,
+            "Mag": 65,
+            "Spd": 50,
+            "Dex": 60,
+            "Def": 20,
+            "Res": 60,
+            "Lck": 40,
+            "Cha": 40
+          },
+          "Stats": {
+            "Hp": 45,
+            "Str": 15,
+            "Mag": 34,
+            "Spd": 26,
+            "Dex": 30,
+            "Def": 21,
+            "Res": 30,
+            "Lck": 18,
+            "Cha": 22,
+            "Mov": 4,
+            "Bld": 3
+          },
+          "EquippedAbilities": [
+            {
+              "Name": "Black Magic Lv. 5",
+              "Description": "When equipped with black magic, grants Hit/Avo\u002B10."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "Cai",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Leda",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Dietrich",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Theodora",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "WarArc",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "SalvationArc",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    }
+  ]
+}

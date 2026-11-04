@@ -1,0 +1,111 @@
+.dialog--picker {
+  display: flex;
+  flex-direction: column;
+  width: min(520px, 100%);
+  max-height: min(80vh, 680px);
+}
+
+.picker-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.picker-search {
+  flex: 1;
+  min-width: 0;
+  background: #1d222c;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+
+  &:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+}
+
+.picker-count {
+  font-size: 0.78rem;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.picker-count--full {
+  color: var(--accent);
+  opacity: 1;
+}
+
+// Only the list scrolls, so search and the footer stay in view.
+.picker-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -0.5rem;
+  padding: 0 0.5rem;
+}
+
+.picker-group {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.picker-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgb(255 255 255 / 6%);
+  }
+
+  input {
+    margin-top: 0.2rem;
+    accent-color: var(--accent);
+  }
+}
+
+.picker-item--on {
+  background: rgb(240 192 74 / 8%);
+}
+
+.picker-item--disabled {
+  cursor: default;
+  opacity: 0.45;
+
+  &.picker-item--on {
+    opacity: 0.75;
+  }
+}
+
+.picker-item__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.picker-item__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.picker-item__description {
+  font-size: 0.78rem;
+  opacity: 0.65;
+}
+
+.picker-item__locked {
+  font-size: 0.74rem;
+  font-style: italic;
+  color: var(--accent);
+}

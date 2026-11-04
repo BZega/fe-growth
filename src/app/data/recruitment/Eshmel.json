@@ -1,0 +1,171 @@
+{
+  "UnitId": "Eshmel",
+  "PersonalAbility": {
+    "Name": "Light of Salvation",
+    "Description": "Neutralizes Underworld Boon on foes within 2 spaces."
+  },
+  "Bloodmark": {
+    "Name": "Diadem of the Augur",
+    "Description": "Grants Hit\u002B100 when attacking. Trigger % = 5."
+  },
+  "LevelUpPersonalAbilities": [
+    {
+      "Name": "Scorching Sun",
+      "LevelAcquired": 45,
+      "Description": "Reduces damage done by undead foes to 0. Trigger % = 5."
+    },
+    {
+      "Name": "Scorching Sun\u002B",
+      "LevelAcquired": 60,
+      "Description": "Reduces damage done by undead foes to 0. Trigger % = 10."
+    }
+  ],
+  "Paths": [
+    {
+      "Path": "Prologue",
+      "IsRecruitable": true,
+      "Requirement": {
+        "SupportLv": 0,
+        "RenownLv": 0,
+        "RecruitmentNegotiation": "Automatic"
+      },
+      "Chapters": [
+        {
+          "Chapter": 1,
+          "Level": 40,
+          "ClassName": "Guardian",
+          "SkillRanks": {
+            "Sword": "E",
+            "Spear": "A",
+            "Axe": "E",
+            "Bow": "E",
+            "Gauntlet": "E",
+            "BlackMagic": "D",
+            "WhiteMagic": "D",
+            "Authority": "C",
+            "Infantry": "C",
+            "Riding": "E",
+            "HeavyArmor": "E",
+            "Flying": "E"
+          },
+          "Inventory": {
+            "Weapons": [
+              {
+                "Name": "The Nameless",
+                "Description": "A spear that has lost its original power- and its name.",
+                "Durability": "20/20",
+                "EffectiveType": [],
+                "Mt": 13,
+                "Hit": 90,
+                "Crit": 0,
+                "Curse": "--",
+                "Wt": 7,
+                "Avo": 0,
+                "Range": "1",
+                "Skill": {
+                  "SkillType": "Spear",
+                  "SkillRank": "E"
+                }
+              }
+            ],
+            "Items": [
+              {
+                "Name": "Vulnerary",
+                "Description": "Restores 20 HP",
+                "Durability": "3",
+                "Mt": "--",
+                "Hit": "--",
+                "Crit": "--",
+                "Curse": "--",
+                "Wt": "--",
+                "Avo": "--",
+                "Range": "--",
+                "Skill": null
+              }
+            ],
+            "MagicTomes": null,
+            "WhiteTomes": null,
+            "CombatArts": [
+              {
+                "Name": "Tempest Spear",
+                "Description": "High Hit.",
+                "Cost": "2",
+                "SkillType": "Spear",
+                "Mt": 4,
+                "Hit": 10,
+                "Crit": 0,
+                "Rng": "1"
+              }
+            ]
+          },
+          "GrowthRates": {
+            "Hp": 60,
+            "Str": 55,
+            "Mag": 45,
+            "Spd": 45,
+            "Dex": 50,
+            "Def": 45,
+            "Res": 50,
+            "Lck": 45,
+            "Cha": 55
+          },
+          "Stats": {
+            "Hp": 50,
+            "Str": 33,
+            "Mag": 24,
+            "Spd": 26,
+            "Dex": 28,
+            "Def": 23,
+            "Res": 19,
+            "Lck": 23,
+            "Cha": 28,
+            "Mov": 4,
+            "Bld": 6
+          },
+          "EquippedAbilities": [
+            {
+              "Name": "Spears Lv. 5",
+              "Description": "When equipped with a spear, grants Hit/Avo\u002B10."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "Cai",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Leda",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Dietrich",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Theodora",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "WarArc",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "SalvationArc",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    }
+  ]
+}

@@ -112,12 +112,24 @@ export const FEMALE_ONLY_CLASS_NAMES: ReadonlySet<string> = new Set([
   'Celestial Trooper',
 ]);
 
+/** Unit names that are variants of one character, so per-character data is written once. */
+const CHARACTER_ALIASES: Readonly<Record<string, string>> = {
+  'Eshmel (M)': 'Eshmel',
+  'Eshmel (F)': 'Eshmel',
+  'Mu*': 'Mu',
+};
+
+export function characterKey(unitName: string): string {
+  return CHARACTER_ALIASES[unitName] ?? unitName;
+}
+
 export interface Unit extends GrowthRates {
   id: number;
   name: string;
   gender: Gender;
   /** False for units that cannot take any mounted class. */
   canUseMounts: boolean;
+  skillPreference: Record<SkillKey, SkillPreference>;
   total: number;
 }
 
@@ -162,6 +174,8 @@ export type SkillKey =
   | 'heavyArmor'
   | 'flying';
 
+export type SkillPreference = 'good' | 'neutral' | 'bad';
+
 export const SKILL_KEYS = [
   'sword',
   'spear',
@@ -198,6 +212,25 @@ export interface ClassAbility {
   description: string;
   isCombatArt: boolean;
 }
+
+/** An ability that raises the unit's own stats while equipped (data/stat-boost-abilities.json). */
+export interface StatBoostAbility {
+  name: string;
+  description: string;
+  boosts: Partial<Record<StatKey, number>>;
+  /** Only these characters can equip it; absent means anyone. */
+  characters?: string[];
+  /** Extra boosts that depend on the equipped weapon type. */
+  weaponBoosts?: Partial<Record<WeaponKey, Partial<Record<StatKey, number>>>>;
+  /** The ability this upgrades; the two can't be equipped together. */
+  upgradeOf?: string;
+}
+
+export const MAX_EQUIPPED_ABILITIES = 5;
+
+export type WeaponKey = Extract<SkillKey, 'sword' | 'spear' | 'axe' | 'bow' | 'gauntlet' | 'blackMagic' | 'whiteMagic'>;
+
+export const WEAPON_KEYS: readonly WeaponKey[] = ['sword', 'spear', 'axe', 'bow', 'gauntlet', 'blackMagic', 'whiteMagic'];
 
 export interface MountBondLevel {
   level: number;

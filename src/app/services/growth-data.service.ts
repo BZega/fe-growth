@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
-import { Battalion, ClassAbility, FEMALE_ONLY_CLASS_NAMES, GrowthRates, Mount, MountType, toGrowth, Unit, UnitClass } from '../models/growth.models';
+import { Battalion, characterKey, ClassAbility, FEMALE_ONLY_CLASS_NAMES, GrowthRates, Mount, MountType, SKILL_KEYS, SkillKey, SkillPreference, StatBoostAbility, toGrowth, Unit, UnitClass } from '../models/growth.models';
 import battalionData from '../data/battalions.json';
 import classAbilityData from '../data/class-abilities.json';
 import classMountTypes from '../data/class-mount-types.json';
@@ -15,12 +15,21 @@ interface MountBondLevelData {
 }
 import unitClassData from '../data/unit-classes.json';
 import unitData from '../data/units.json';
+import skillPreferenceData from '../data/unit-skill-preferences.json';
+import statBoostAbilityData from '../data/stat-boost-abilities.json';
 
 
 @Injectable({ providedIn: 'root' })
 export class GrowthDataService {
-  private readonly units: Unit[] = (unitData as Unit[])
-    .slice()
+  // Preferences live in their own file, keyed by name, so refresh-data.js can't overwrite them.
+  private readonly units: Unit[] = (unitData as Omit<Unit, 'skillPreference'>[])
+    .map((unit) => ({
+      ...unit,
+      skillPreference: {
+        ...(Object.fromEntries(SKILL_KEYS.map((skill) => [skill, 'neutral'])) as Record<SkillKey, SkillPreference>),
+        ...(skillPreferenceData as Record<string, Partial<Record<SkillKey, SkillPreference>>>)[characterKey(unit.name)],
+      },
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
   private readonly classes = unitClassData as UnitClass[];
@@ -63,6 +72,10 @@ export class GrowthDataService {
 
   getClassAbilities(): Observable<ClassAbility[]> {
     return of(this.classAbilities);
+  }
+
+  getStatBoostAbilities(): Observable<StatBoostAbility[]> {
+    return of(statBoostAbilityData as StatBoostAbility[]);
   }
 
   getMounts(): Observable<Mount[]> {

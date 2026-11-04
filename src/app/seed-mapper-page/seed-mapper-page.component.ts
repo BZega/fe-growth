@@ -1,8 +1,9 @@
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, Injector, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ExamDialogComponent } from '../exam-dialog/exam-dialog.component';
-import { bondLevelOf, CLASS_RANK_ORDER, ClassRank, GrowthRates, Mount, MountBondLevel, mountBonusAt, mountGrowthAt, STAT_KEYS, STAT_LABELS, StatKey, sumGrowth, toGrowth, Unit, UnitClass, ZERO_GROWTH } from '../models/growth.models';
+import { BranchMode, ExamDialogComponent } from '../exam-dialog/exam-dialog.component';
+import { PickerDialogComponent, PickerGroup } from '../picker-dialog/picker-dialog.component';
+import { bondLevelOf, characterKey, ClassAbility, CLASS_RANK_ORDER, ClassRank, GrowthRates, MAX_EQUIPPED_ABILITIES, Mount, MountBondLevel, mountBonusAt, mountGrowthAt, SKILL_LABELS, STAT_KEYS, STAT_LABELS, StatBoostAbility, StatKey, sumGrowth, toGrowth, Unit, UnitClass, WEAPON_KEYS, ZERO_GROWTH } from '../models/growth.models';
 import { estimateRoll, RollBounds, rollBounds, RollEstimate, RollObservation } from '../models/seed-roll';
 import { CURRENT_SAVE_VERSION, migrateSave, newSaveId, SeedSave } from '../models/seed-save';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
@@ -11,7 +12,7 @@ import { GrowthDataService } from '../services/growth-data.service';
 import { SeedSaveStorageService } from '../services/seed-save-storage.service';
 import { SeedSerializerService } from '../services/seed-serializer.service';
 import { SpoilerService } from '../services/spoiler.service';
-import { availableClassIds, effectiveClassId, ExamDraft, MAX_LEVEL, MIN_LEVEL, SeedComparator, SeedMapperStateService, SeedRow, SeedSection } from '../services/seed-mapper-state.service';
+import { ALWAYS_AVAILABLE_CLASS, availableClassIds, effectiveClassId, ExamDraft, InlineExam, MAX_LEVEL, MIN_LEVEL, rowSwitchesTo, SeedComparator, SeedMapperStateService, SeedRow, SeedSection } from '../services/seed-mapper-state.service';
 
 interface PendingAction {
   kind: 'load' | 'upload' | 'overwrite' | 'delete' | 'reset';
@@ -55,6 +56,8 @@ export interface StatTotal {
   versus: string | null;
   mountBonus: number;
   mountSource: string | null;
+  abilityBonus: number;
+  abilitySources: string[];
   floorBoost: number;
 }
 
@@ -64,21 +67,52 @@ interface SectionStart {
   examBoost: GrowthRates;
 }
 
+interface Progress {
+  gains: GrowthRates;
+  floorBoosts: GrowthRates;
+}
+
+interface SectionProgress {
+  start: SectionStart;
+  /** Totals after each level up. */
+  after: Progress[];
+  /** Class base-stat boost from the inline exam before each level up (zero when there's none). */
+  boosts: GrowthRates[];
+}
+
 const NO_START: SectionStart = {
   gains: ZERO_GROWTH,
   floorBoosts: ZERO_GROWTH,
   examBoost: ZERO_GROWTH,
 };
 
+type PickerDialogState = { kind: 'classes' } | { kind: 'abilities'; sectionId: number };
+
+interface PickerConfig {
+  title: string;
+  context: string;
+  groups: PickerGroup[];
+  selected: string[];
+  max: number | null;
+}
+
 interface ExamDialogState {
   title: string;
   context: string;
+  reclassContext: string;
   classGroups: SelectItemGroup[];
+  reclassGroups: SelectItemGroup[];
   initial: { classId: number | null; chance: number; passed: boolean } | null;
+  initialMode: BranchMode;
+  canSwitchMode: boolean;
   strBounds: RollBounds;
   parentId: number;
   afterRowId: number | null;
   sectionId: number | null;
+  /** The level up a reclass starts on; null adds a new level after the last one. */
+  reclassRowId: number | null;
+  /** From Exam / Reclass: an exam is added inline at the end of the section instead of branching. */
+  inline: boolean;
 }
 
 const HELP_STORAGE_KEY = 'fe-growth.seed-mapper-help-open';
@@ -100,6 +134,7 @@ const NO_ROLLS: RollEstimate[] = STAT_KEYS.map(() => estimateRoll([]));
     DatePipe,
     ExamDialogComponent,
     NgTemplateOutlet,
+    PickerDialogComponent,
     SearchableSelectComponent,
     SeedRngDialogComponent,
   ],
@@ -133,6 +168,56 @@ export class SeedMapperPageComponent {
     initialValue: [] as UnitClass[],
   });
 
+  // Starting stats are entered as the unit joins, in this class, so class bonuses are measured from it.
+  private readonly startingClass = computed(
+    () => this.classes().find((unitClass) => unitClass.name === ALWAYS_AVAILABLE_CLASS) ?? null,
+  );
+
+  readonly statBoostAbilities = toSignal(this.api.getStatBoostAbilities(), {
+    initialValue: [] as StatBoostAbility[],
+  });
+
+  // Character-only abilities (e.g. Mu's Warrior's Blood) are offered just to that character.
+  private readonly unitAbilities = computed(() => {
+    const unit = this.api.unitById(this.seedMap().unitId);
+    const key = unit ? characterKey(unit.name) : null;
+
+    return this.statBoostAbilities().filter(
+      (ability) => !ability.characters || (key !== null && ability.characters.includes(key)),
+    );
+  });
+
+  readonly maxAbilities = MAX_EQUIPPED_ABILITIES;
+  readonly weaponKeys = WEAPON_KEYS;
+  readonly weaponLabels = SKILL_LABELS;
+
+  private readonly classAbilities = toSignal(this.api.getClassAbilities(), {
+    initialValue: [] as ClassAbility[],
+  });
+
+  /** Classes whose mastery teaches each ability, by ability name; abilities no class teaches are absent. */
+  private readonly abilityClasses = computed(() => {
+    const result = new Map<string, UnitClass[]>();
+
+    for (const ability of this.classAbilities()) {
+      const teachers = this.classes().filter((unitClass) => unitClass.masterAbilities.includes(ability.id));
+
+      if (teachers.length > 0) {
+        result.set(ability.name, teachers);
+      }
+    }
+
+    return result;
+  });
+
+  // A class's mastery ability can only be equipped once that class is in the section's pool.
+  private missingClassesFor(ability: StatBoostAbility, sectionId: number): UnitClass[] {
+    const teachers = this.abilityClasses().get(ability.name);
+    const pool = new Set((this.availableBySection().get(sectionId) ?? []).map((unitClass) => unitClass.id));
+
+    return !teachers || teachers.some((unitClass) => pool.has(unitClass.id)) ? [] : teachers;
+  }
+
   readonly units = computed(() => this.spoilers.filter(this.allUnits()));
 
   readonly classGroups = computed<SelectItemGroup[]>(() =>
@@ -149,6 +234,59 @@ export class SeedMapperPageComponent {
 
   readonly examDialog = signal<ExamDialogState | null>(null);
   readonly rngSectionId = signal<number | null>(null);
+  readonly pickerDialog = signal<PickerDialogState | null>(null);
+
+  readonly pickerConfig = computed<PickerConfig | null>(() => {
+    const dialog = this.pickerDialog();
+
+    if (!dialog) {
+      return null;
+    }
+
+    if (dialog.kind === 'classes') {
+      const always = new Set(this.state.alwaysAvailableClassIds);
+
+      return {
+        title: 'Available classes',
+        context: `Classes the unit can take without an exam. ${ALWAYS_AVAILABLE_CLASS} is always available.`,
+        groups: this.groupClasses(this.spoilers.filter(this.usableClasses())).map((group) => ({
+          label: group.label,
+          items: group.items.map((unitClass) => ({
+            id: String(unitClass.id),
+            name: unitClass.name,
+            fixed: always.has(unitClass.id),
+          })),
+        })),
+        selected: this.seedMap().availableClassIds.map(String),
+        max: null,
+      };
+    }
+
+    const view = this.sectionViews().find((candidate) => candidate.section.id === dialog.sectionId);
+    const toItem = (ability: StatBoostAbility) => {
+      const missing = this.missingClassesFor(ability, dialog.sectionId);
+
+      return {
+        id: ability.name,
+        name: ability.name,
+        description: ability.description,
+        family: familyOf(ability),
+        locked: missing.length > 0 ? `Needs ${missing.map((unitClass) => unitClass.name).join(' or ')} in available classes` : undefined,
+      };
+    };
+    const abilities = this.unitAbilities();
+
+    return {
+      title: `Stat abilities${view ? ` · ${view.title}` : ''}`,
+      context: `Up to ${MAX_EQUIPPED_ABILITIES} can be equipped. A class's mastery ability needs that class in the available classes. Picking an upgrade replaces the ability it upgrades.`,
+      groups: [
+        { label: 'Class abilities', items: abilities.filter((ability) => !ability.characters).map(toItem) },
+        { label: 'Character abilities', items: abilities.filter((ability) => ability.characters).map(toItem) },
+      ].filter((group) => group.items.length > 0),
+      selected: view ? this.equippedAbilities(view).map((ability) => ability.name) : [],
+      max: MAX_EQUIPPED_ABILITIES,
+    };
+  });
 
   readonly rngSections = computed<RngSection[]>(() =>
     this.sectionViews().map((view) => ({
@@ -165,12 +303,24 @@ export class SeedMapperPageComponent {
               },
             ]
           : []),
-        ...view.section.rows.map((_, index) => ({
-          label: `Lv ${this.levelOf(view, index)}`,
-          exam: false,
-          passChance: null,
-          rolls: this.rollsAt(view.firstSlot + index),
-        })),
+        ...view.section.rows.flatMap((row, index) => [
+          ...(row.exam
+            ? [
+                {
+                  label: row.exam.passed ? 'Exam' : 'Skip',
+                  exam: true,
+                  passChance: row.exam.passed ? row.exam.chance : null,
+                  rolls: this.rollsAt(this.slotOf(view, index) - 1),
+                },
+              ]
+            : []),
+          {
+            label: `Lv ${this.levelOf(view, index)}`,
+            exam: false,
+            passChance: null,
+            rolls: this.rollsAt(this.slotOf(view, index)),
+          },
+        ]),
       ],
     })),
   );
@@ -205,6 +355,10 @@ export class SeedMapperPageComponent {
     effect(() => {
       for (const section of this.seedMap().sections) {
         this.loadMounts(effectiveClassId(this.seedMap().sections, section));
+
+        for (const row of section.rows) {
+          this.loadMounts(rowSwitchesTo(row));
+        }
 
         for (const comparator of section.comparators) {
           this.loadMounts(comparator.classId);
@@ -279,6 +433,61 @@ export class SeedMapperPageComponent {
     return views;
   });
 
+  // Each level up's class and growth, following reclasses within the section.
+  private readonly rowClasses = computed(() => {
+    const result = new Map<number, { classId: number | null; growth: GrowthRates }[]>();
+
+    for (const view of this.sectionViews()) {
+      let current = { classId: view.classId, growth: view.growth };
+
+      result.set(
+        view.section.id,
+        view.section.rows.map((row) => {
+          const switchesTo = rowSwitchesTo(row);
+
+          if (switchesTo !== null && switchesTo !== current.classId) {
+            const { mount, level } = this.mountFor(view, switchesTo);
+            current = {
+              classId: switchesTo,
+              growth: this.combine(this.seedMap().unitId, switchesTo, mount, level),
+            };
+          }
+
+          return current;
+        }),
+      );
+    }
+
+    return result;
+  });
+
+  /** The roll a level up uses: inline exams before it each use one roll of their own. */
+  slotOf(view: SectionView, rowIndex: number): number {
+    return levelSlot(view.firstSlot, view.section.rows, rowIndex);
+  }
+
+  /** The class used for a level up; `rowIndex` -1 means the section's starting class. */
+  rowClassId(view: SectionView, rowIndex: number): number | null {
+    return this.rowClasses().get(view.section.id)?.[rowIndex]?.classId ?? view.classId;
+  }
+
+  rowGrowth(view: SectionView, rowIndex: number): GrowthRates | null {
+    return view.classId === null
+      ? null
+      : (this.rowClasses().get(view.section.id)?.[rowIndex]?.growth ?? view.growth);
+  }
+
+  // The section's mount carries over to a reclass when the new class can ride it.
+  private mountFor(view: SectionView, classId: number | null): { mount: Mount | null; level: number | null } {
+    if (classId === view.classId) {
+      return { mount: view.mount, level: view.mountLevel };
+    }
+
+    const mount = this.resolveMount(classId, view.section.mountId);
+
+    return { mount, level: bondLevelOf(mount, view.section.mountLevel)?.level ?? null };
+  }
+
   private readonly availableBySection = computed(() => {
     const map = this.seedMap();
     const always = this.state.alwaysAvailableClassIds;
@@ -303,32 +512,47 @@ export class SeedMapperPageComponent {
     return this.groupClasses(this.availableClasses(view));
   }
 
-  readonly addableClassGroups = computed(() => {
-    const map = this.seedMap();
-    const taken = new Set([...this.state.alwaysAvailableClassIds, ...map.availableClassIds]);
-
-    return this.groupClasses(
-      this.spoilers.filter(this.usableClasses()).filter((unitClass) => !taken.has(unitClass.id)),
-    );
-  });
-
-  isAlwaysAvailable(unitClass: UnitClass): boolean {
-    return this.state.alwaysAvailableClassIds.includes(unitClass.id);
+  openClassPicker(): void {
+    this.pickerDialog.set({ kind: 'classes' });
   }
 
-  isRemovableClass(view: SectionView, unitClass: UnitClass): boolean {
-    return !view.section.exam && this.seedMap().availableClassIds.includes(unitClass.id);
+  openAbilityPicker(view: SectionView): void {
+    this.pickerDialog.set({ kind: 'abilities', sectionId: view.section.id });
   }
 
-  onAddAvailableClass(classId: number | null): void {
-    if (classId !== null) {
-      this.state.addAvailableClass(classId);
-      this.loadMounts(classId);
+  closePicker(): void {
+    this.pickerDialog.set(null);
+  }
+
+  onPickerConfirmed(ids: string[]): void {
+    const dialog = this.pickerDialog();
+
+    if (dialog?.kind === 'classes') {
+      const chosen = new Set(ids.map(Number));
+      const current = this.seedMap().availableClassIds;
+
+      current.filter((id) => !chosen.has(id)).forEach((id) => this.state.removeAvailableClass(id));
+      [...chosen].filter((id) => !current.includes(id)).forEach((id) => {
+        this.state.addAvailableClass(id);
+        this.loadMounts(id);
+      });
+    } else if (dialog?.kind === 'abilities') {
+      this.state.setAbilities(dialog.sectionId, ids);
     }
+
+    this.closePicker();
   }
 
-  removeAvailableClass(unitClass: UnitClass): void {
-    this.state.removeAvailableClass(unitClass.id);
+  pickerSummary(names: readonly string[]): string {
+    return names.length > 0 ? names.join(', ') : 'None';
+  }
+
+  availableClassNames(view: SectionView): string[] {
+    return this.availableClasses(view).map((unitClass) => unitClass.name);
+  }
+
+  equippedAbilityNames(view: SectionView): string[] {
+    return this.equippedAbilities(view).map((ability) => ability.name);
   }
 
   readonly latestView = computed(() => this.sectionViews().at(-1) ?? null);
@@ -387,11 +611,7 @@ export class SeedMapperPageComponent {
   canTakeLatestExam(): boolean {
     const view = this.latestView();
 
-    return (
-      view !== null &&
-      this.canTakeExamAt(view, this.endLevelOf(view)) &&
-      !this.hasExamAfter(view, view.section.rows.at(-1) ?? null)
-    );
+    return view !== null && this.canTakeExamAt(view, this.endLevelOf(view));
   }
 
   latestExamHint(): string {
@@ -407,9 +627,7 @@ export class SeedMapperPageComponent {
       return `There is no level after Lv ${MAX_LEVEL}`;
     }
 
-    return this.hasExamAfter(view, view.section.rows.at(-1) ?? null)
-      ? `Lv ${next} in ${view.title} was already skipped by an exam`
-      : `Take an exam in place of Lv ${next} in ${view.title}`;
+    return `Add a Lv ${next} to ${view.title} that starts with an exam or a reclass`;
   }
 
   hasExamAfter(view: SectionView, row: SeedRow | null): boolean {
@@ -498,16 +716,20 @@ export class SeedMapperPageComponent {
 
   // --- roll inference ----------------------------------------------------
 
-  private blocksOf(view: SectionView): { growth: GrowthRates; rows: SeedRow[] }[] {
-    const blocks: { growth: GrowthRates; rows: SeedRow[] }[] = [];
+  private blocksOf(view: SectionView): { growthOf: (rowIndex: number) => GrowthRates; rows: SeedRow[] }[] {
+    const blocks: { growthOf: (rowIndex: number) => GrowthRates; rows: SeedRow[] }[] = [];
 
     if (view.classId !== null) {
-      blocks.push({ growth: view.growth, rows: view.section.rows });
+      blocks.push({
+        growthOf: (rowIndex) => this.rowGrowth(view, rowIndex) ?? view.growth,
+        rows: view.section.rows,
+      });
     }
 
     for (const comparator of view.section.comparators) {
       if (comparator.classId !== null) {
-        blocks.push({ growth: this.comparatorGrowth(comparator), rows: comparator.rows });
+        const growth = this.comparatorGrowth(comparator);
+        blocks.push({ growthOf: () => growth, rows: comparator.rows });
       }
     }
 
@@ -534,11 +756,17 @@ export class SeedMapperPageComponent {
         block.rows.forEach((row, rowIndex) =>
           this.statKeys.forEach((stat, statIndex) => {
             if (row.marks[stat] > 0) {
-              lower(view.firstSlot + rowIndex, statIndex, block.growth[stat]);
+              lower(this.slotOf(view, rowIndex), statIndex, block.growthOf(rowIndex)[stat]);
             }
           }),
         );
       }
+
+      view.section.rows.forEach((row, rowIndex) => {
+        if (row.exam?.passed) {
+          lower(this.slotOf(view, rowIndex) - 1, STR_INDEX, row.exam.chance);
+        }
+      });
 
       const exam = view.section.exam;
 
@@ -587,12 +815,13 @@ export class SeedMapperPageComponent {
     for (const view of this.sectionViews()) {
       for (const block of this.blocksOf(view)) {
         block.rows.forEach((row, rowIndex) => {
-          const slot = view.firstSlot + rowIndex;
-          const { marks } = this.effectiveRow(block.growth, row, slot);
+          const slot = this.slotOf(view, rowIndex);
+          const growth = block.growthOf(rowIndex);
+          const { marks } = this.effectiveRow(growth, row, slot);
 
           this.statKeys.forEach((stat, statIndex) =>
             add(slot, statIndex, {
-              growth: block.growth[stat],
+              growth: growth[stat],
               hit: marks[stat] > 0,
               examOf: null,
             }),
@@ -609,6 +838,17 @@ export class SeedMapperPageComponent {
           examOf: view.section.id,
         });
       }
+
+      // Negative ids keep inline exams apart from exam sections.
+      view.section.rows.forEach((row, rowIndex) => {
+        if (row.exam) {
+          add(this.slotOf(view, rowIndex) - 1, STR_INDEX, {
+            growth: row.exam.chance,
+            hit: row.exam.passed,
+            examOf: -row.id,
+          });
+        }
+      });
     }
 
     return observations;
@@ -638,11 +878,16 @@ export class SeedMapperPageComponent {
 
   // --- stats -------------------------------------------------------------
 
-  private gainsOf(view: SectionView, growth: GrowthRates | null, rows: SeedRow[], until: number): GrowthRates {
+  private gainsOf(
+    view: SectionView,
+    growthOf: (rowIndex: number) => GrowthRates | null,
+    rows: SeedRow[],
+    until: number,
+  ): GrowthRates {
     const gains = { ...ZERO_GROWTH };
 
     for (let index = 0; index <= until && index < rows.length; index++) {
-      const { marks } = this.effectiveRow(growth, rows[index], view.firstSlot + index);
+      const { marks } = this.effectiveRow(growthOf(index), rows[index], this.slotOf(view, index));
 
       for (const stat of this.statKeys) {
         gains[stat] += marks[stat];
@@ -652,39 +897,49 @@ export class SeedMapperPageComponent {
     return gains;
   }
 
-  private readonly sectionStarts = computed(() => {
-    const starts = new Map<number, SectionStart>();
+  // Walks each section's level ups in order, so passed inline exams can raise stats to the class's
+  // base stats from what the unit has at that point, and exam branches start from the right totals.
+  private readonly progress = computed(() => {
+    const result = new Map<number, SectionProgress>();
     const views = this.sectionViews();
 
     for (const view of views) {
       const exam = view.section.exam;
+      let start: SectionStart = NO_START;
 
-      if (!exam) {
-        starts.set(view.section.id, NO_START);
-        continue;
+      if (exam) {
+        const parent = result.get(exam.parentId);
+        const parentView = views.find((candidate) => candidate.section.id === exam.parentId);
+        const until = parentView?.section.rows.findIndex((row) => row.id === exam.afterRowId) ?? -1;
+        const carried = (until >= 0 ? parent?.after[until] : undefined) ?? parent?.start ?? NO_START;
+        const examBoost = exam.passed ? this.floorBoost(exam.classId, carried.gains) : ZERO_GROWTH;
+
+        start = {
+          gains: sumGrowth(carried.gains, examBoost),
+          floorBoosts: sumGrowth(carried.floorBoosts, examBoost),
+          examBoost,
+        };
       }
 
-      const parent = views.find((candidate) => candidate.section.id === exam.parentId);
-      const parentStart = starts.get(exam.parentId) ?? NO_START;
-      let carried = parentStart.gains;
+      let gains = start.gains;
+      let floorBoosts = start.floorBoosts;
+      const after: Progress[] = [];
+      const boosts: GrowthRates[] = [];
 
-      if (parent && exam.afterRowId !== null) {
-        const until = parent.section.rows.findIndex((row) => row.id === exam.afterRowId);
-        const growth = parent.classId === null ? null : parent.growth;
+      view.section.rows.forEach((row, rowIndex) => {
+        const boost = row.exam?.passed ? this.floorBoost(row.exam.classId, gains) : ZERO_GROWTH;
+        const { marks } = this.effectiveRow(this.rowGrowth(view, rowIndex), row, this.slotOf(view, rowIndex));
 
-        carried = sumGrowth(carried, this.gainsOf(parent, growth, parent.section.rows, until));
-      }
-
-      const examBoost = exam.passed ? this.floorBoost(exam.classId, carried) : ZERO_GROWTH;
-
-      starts.set(view.section.id, {
-        gains: sumGrowth(carried, examBoost),
-        floorBoosts: sumGrowth(parentStart.floorBoosts, examBoost),
-        examBoost,
+        gains = sumGrowth(gains, boost, toGrowth(marks));
+        floorBoosts = sumGrowth(floorBoosts, boost);
+        boosts.push(boost);
+        after.push({ gains, floorBoosts });
       });
+
+      result.set(view.section.id, { start, after, boosts });
     }
 
-    return starts;
+    return result;
   });
 
   private floorBoost(classId: number | null, gains: GrowthRates): GrowthRates {
@@ -696,14 +951,13 @@ export class SeedMapperPageComponent {
     }
 
     const base = this.seedMap().startStats;
-    const seedClassId = this.sectionViews()[0]?.classId ?? null;
-    const seedClass = this.classes().find((c) => c.id === seedClassId) ?? null;
+    const startingClass = this.startingClass();
 
     for (const stat of this.statKeys) {
       const start = base[stat];
 
       if (start !== null) {
-        const own = start - (seedClass?.bonusStats[stat] ?? 0) + gains[stat];
+        const own = start - (startingClass?.bonusStats[stat] ?? 0) + gains[stat];
         boost[stat] = Math.max(0, unitClass.classFloorStats[stat] - own);
       }
     }
@@ -715,6 +969,23 @@ export class SeedMapperPageComponent {
     return this.sectionStart(view).examBoost;
   }
 
+  inlineBoostOf(view: SectionView, rowIndex: number): GrowthRates {
+    return this.progress().get(view.section.id)?.boosts[rowIndex] ?? ZERO_GROWTH;
+  }
+
+  hasInlineBoost(view: SectionView, rowIndex: number): boolean {
+    const boost = this.inlineBoostOf(view, rowIndex);
+
+    return this.statKeys.some((stat) => boost[stat] > 0);
+  }
+
+  inlineBoostTitle(view: SectionView, row: SeedRow, rowIndex: number, stat: StatKey): string {
+    const unitClass = this.classes().find((c) => c.id === row.exam?.classId);
+    const floor = unitClass?.classFloorStats[stat] ?? 0;
+
+    return `+${this.inlineBoostOf(view, rowIndex)[stat]} to reach ${unitClass?.name ?? 'the class'}'s base ${this.statLabels[stat]} of ${floor}`;
+  }
+
   examBoostTitle(view: SectionView, stat: StatKey): string {
     const unitClass = this.classes().find((c) => c.id === view.section.exam?.classId);
     const floor = unitClass?.classFloorStats[stat] ?? 0;
@@ -723,7 +994,7 @@ export class SeedMapperPageComponent {
   }
 
   private sectionStart(view: SectionView): SectionStart {
-    return this.sectionStarts().get(view.section.id) ?? NO_START;
+    return this.progress().get(view.section.id)?.start ?? NO_START;
   }
 
   startStatsOf(view: SectionView): StatTotal[] {
@@ -734,29 +1005,31 @@ export class SeedMapperPageComponent {
       start.floorBoosts,
       view.classId,
       view.classId === null ? null : ridden(view.mount, view.mountLevel),
+      view.section,
     );
   }
 
   endStatsOf(view: SectionView, comparator: SeedComparator | null = null): StatTotal[] {
     const rows = comparator ? comparator.rows : view.section.rows;
-    const classId = comparator ? comparator.classId : view.classId;
-    const growth = comparator
-      ? comparator.classId === null
-        ? null
-        : this.comparatorGrowth(comparator)
-      : view.classId === null
-        ? null
-        : view.growth;
-    const mount =
-      classId === null
-        ? null
-        : comparator
-          ? ridden(this.comparatorMountOf(comparator), this.comparatorMountLevel(comparator))
-          : ridden(view.mount, view.mountLevel);
     const start = this.sectionStart(view);
-    const gains = sumGrowth(start.gains, this.gainsOf(view, growth, rows, rows.length - 1));
 
-    return this.totals(gains, start.floorBoosts, classId, mount);
+    if (comparator) {
+      const growth = comparator.classId === null ? null : this.comparatorGrowth(comparator);
+      const mount =
+        comparator.classId === null
+          ? null
+          : ridden(this.comparatorMountOf(comparator), this.comparatorMountLevel(comparator));
+      const gains = sumGrowth(start.gains, this.gainsOf(view, () => growth, rows, rows.length - 1));
+
+      return this.totals(gains, start.floorBoosts, comparator.classId, mount, view.section);
+    }
+
+    // After a reclass or inline exam, the end stats use the class (and its bonuses) the section ends in.
+    const classId = this.rowClassId(view, rows.length - 1);
+    const { mount, level } = this.mountFor(view, classId);
+    const end = this.progress().get(view.section.id)?.after.at(-1) ?? start;
+
+    return this.totals(end.gains, end.floorBoosts, classId, classId === null ? null : ridden(mount, level), view.section);
   }
 
   startLevelOf(view: SectionView): number {
@@ -772,28 +1045,38 @@ export class SeedMapperPageComponent {
     floorBoosts: GrowthRates,
     classId: number | null,
     mount: RiddenMount | null,
+    section: SeedSection,
   ): StatTotal[] {
     const base = this.seedMap().startStats;
     const seed = this.sectionViews()[0];
     const seedClassId = seed?.classId ?? null;
     const seedClass = this.classes().find((c) => c.id === seedClassId) ?? null;
+    const startingClass = this.startingClass();
     const shownClass =
       classId === null ? seedClass : (this.classes().find((c) => c.id === classId) ?? null);
     const shownMount = mount ?? ridden(seed?.mount ?? null, seed?.mountLevel ?? null);
+    const abilities = this.equippedAbilitiesOf(section.abilities, section.id);
 
     return this.statKeys.map((stat) => {
       const start = base[stat];
       const classBonus =
-        (shownClass?.bonusStats[stat] ?? 0) - (seedClass?.bonusStats[stat] ?? 0);
+        (shownClass?.bonusStats[stat] ?? 0) - (startingClass?.bonusStats[stat] ?? 0);
       const mountBonus = shownMount.bonus[stat];
+      const boostOf = (ability: StatBoostAbility) =>
+        (ability.boosts[stat] ?? 0) +
+        (section.weapon ? (ability.weaponBoosts?.[section.weapon]?.[stat] ?? 0) : 0);
+      const boosting = abilities.filter((ability) => boostOf(ability) !== 0);
+      const abilityBonus = boosting.reduce((sum, ability) => sum + boostOf(ability), 0);
 
       return {
-        value: start === null ? null : start + gains[stat] + classBonus + mountBonus,
+        value: start === null ? null : start + gains[stat] + classBonus + mountBonus + abilityBonus,
         gained: gains[stat] - floorBoosts[stat],
         classBonus,
-        versus: classBonus === 0 ? null : (seedClass?.name ?? null),
+        versus: classBonus === 0 ? null : (startingClass?.name ?? null),
         mountBonus,
         mountSource: mountBonus === 0 ? null : shownMount.label,
+        abilityBonus,
+        abilitySources: boosting.map((ability) => ability.name),
         floorBoost: floorBoosts[stat],
       };
     });
@@ -821,7 +1104,40 @@ export class SeedMapperPageComponent {
       );
     }
 
+    if (total.abilityBonus !== 0) {
+      parts.push(`+${total.abilityBonus} from ${total.abilitySources.join(', ')}`);
+    }
+
     return parts.join('; ');
+  }
+
+  // Names in saves that are no longer in the data file, not this character's, or whose class
+  // isn't available are skipped; of an ability and its upgrade, only the last one equipped counts.
+  private equippedAbilitiesOf(names: readonly string[], sectionId: number): StatBoostAbility[] {
+    const byFamily = new Map<string, StatBoostAbility>();
+
+    for (const name of names) {
+      const ability = this.unitAbilities().find((candidate) => candidate.name === name);
+
+      if (ability && this.missingClassesFor(ability, sectionId).length === 0) {
+        byFamily.delete(familyOf(ability));
+        byFamily.set(familyOf(ability), ability);
+      }
+    }
+
+    return [...byFamily.values()];
+  }
+
+  equippedAbilities(view: SectionView): StatBoostAbility[] {
+    return this.equippedAbilitiesOf(view.section.abilities, view.section.id);
+  }
+
+  usesWeapon(view: SectionView): boolean {
+    return this.equippedAbilities(view).some((ability) => ability.weaponBoosts);
+  }
+
+  onWeaponChange(view: SectionView, value: string): void {
+    this.state.setWeapon(view.section.id, WEAPON_KEYS.find((weapon) => weapon === value) ?? null);
   }
 
   onStartStatChange(stat: StatKey, event: Event): void {
@@ -947,28 +1263,37 @@ export class SeedMapperPageComponent {
     const view = this.latestView();
 
     if (view && this.canTakeLatestExam()) {
-      this.openExam(view, view.section.rows.at(-1) ?? null);
+      this.openExam(view, view.section.rows.length, true);
     }
   }
 
   openExamAt(view: SectionView, rowIndex: number): void {
     if (this.canTakeExamAtRow(view, rowIndex)) {
-      this.openExam(view, this.rowBefore(view, rowIndex));
+      this.openExam(view, rowIndex, false);
     }
   }
 
-  private openExam(view: SectionView, row: SeedRow | null): void {
+  // From +, an exam branches off in place of the level up at `rowIndex`; from Exam / Reclass it's
+  // added inline as a new level. A reclass always starts on that level, in the same section.
+  private openExam(view: SectionView, rowIndex: number, inline: boolean): void {
+    const row = this.rowBefore(view, rowIndex);
     const from = this.positionAfter(view, row?.id ?? null);
 
     this.examDialog.set({
-      title: 'Exam taken',
-      context: describeExam(view.title, from),
+      title: 'Exam or reclass',
+      context: inline ? describeInlineExam(view.title, from.level + 1) : describeExam(view.title, from),
+      reclassContext: describeReclass(view.title, from.level + 1),
       classGroups: this.examClassGroups(view),
+      reclassGroups: this.reclassOptions(view, rowIndex),
       initial: null,
+      initialMode: 'exam',
+      canSwitchMode: true,
       strBounds: this.strBoundsAt(from.slot + 1, null),
       parentId: view.section.id,
       afterRowId: row?.id ?? null,
       sectionId: null,
+      reclassRowId: view.section.rows[rowIndex]?.id ?? null,
+      inline,
     });
   }
 
@@ -983,12 +1308,18 @@ export class SeedMapperPageComponent {
     this.examDialog.set({
       title: `Edit ${view.title}`,
       context: describeExam(parent.title, view.exam),
+      reclassContext: '',
       classGroups: this.examClassGroups(parent),
+      reclassGroups: [],
       initial: { classId: exam.classId, chance: exam.chance, passed: exam.passed },
+      initialMode: 'exam',
+      canSwitchMode: false,
       strBounds: this.strBoundsAt(view.exam.slot, view.section.id),
       parentId: parent.section.id,
       afterRowId: exam.afterRowId,
       sectionId: view.section.id,
+      reclassRowId: null,
+      inline: false,
     });
   }
 
@@ -1002,8 +1333,26 @@ export class SeedMapperPageComponent {
     this.examDialog.set(null);
     this.loadMounts(draft.classId);
 
+    if (draft.reclass) {
+      if (dialog.reclassRowId === null) {
+        this.state.addReclassLevel(dialog.parentId, draft.classId);
+      } else {
+        this.state.setReclass(dialog.parentId, dialog.reclassRowId, draft.classId);
+      }
+      return;
+    }
+
     if (dialog.sectionId !== null) {
       this.state.updateExam(dialog.sectionId, draft);
+      return;
+    }
+
+    if (dialog.inline) {
+      this.state.addExamLevel(dialog.parentId, {
+        classId: draft.classId,
+        chance: draft.chance,
+        passed: draft.passed,
+      });
       return;
     }
 
@@ -1035,7 +1384,7 @@ export class SeedMapperPageComponent {
       return { slot: view.firstSlot - 1, level: view.firstLevel - 1 };
     }
 
-    return { slot: view.firstSlot + index, level: view.firstLevel + index };
+    return { slot: levelSlot(view.firstSlot, view.section.rows, index), level: view.firstLevel + index };
   }
 
   private examClassGroups(view: SectionView): SelectItemGroup[] {
@@ -1044,6 +1393,71 @@ export class SeedMapperPageComponent {
     return this.groupClasses(
       this.spoilers.filter(this.usableClasses()).filter((c) => !owned.has(c.id)),
     );
+  }
+
+  // A reclass switches to another class the unit already has, other than the one it's leaving.
+  reclassOptions(view: SectionView, rowIndex: number): SelectItemGroup[] {
+    const leaving = this.rowClassId(view, rowIndex - 1);
+
+    return this.groupClasses(
+      this.spoilers.filter(this.availableClasses(view)).filter((c) => c.id !== leaving),
+    );
+  }
+
+  onReclassChange(view: SectionView, row: SeedRow, classId: number | null): void {
+    if (classId !== null) {
+      this.state.setReclass(view.section.id, row.id, classId);
+      this.loadMounts(classId);
+    }
+  }
+
+  removeReclass(view: SectionView, row: SeedRow): void {
+    this.state.setReclass(view.section.id, row.id, null);
+  }
+
+  // Classes the unit doesn't have yet, plus the one this exam is already for.
+  inlineExamOptions(view: SectionView, row: SeedRow): SelectItemGroup[] {
+    const owned = new Set(
+      this.availableClasses(view)
+        .map((unitClass) => unitClass.id)
+        .filter((id) => id !== row.exam?.classId),
+    );
+
+    return this.groupClasses(
+      this.spoilers.filter(this.usableClasses()).filter((c) => !owned.has(c.id)),
+    );
+  }
+
+  private updateInlineExam(view: SectionView, row: SeedRow, change: Partial<InlineExam>): void {
+    if (row.exam) {
+      this.state.setInlineExam(view.section.id, row.id, { ...row.exam, ...change });
+    }
+  }
+
+  onInlineExamClass(view: SectionView, row: SeedRow, classId: number | null): void {
+    if (classId !== null) {
+      this.updateInlineExam(view, row, { classId });
+      this.loadMounts(classId);
+    }
+  }
+
+  onInlineExamChance(view: SectionView, row: SeedRow, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const chance = Number(input.value);
+
+    if (input.value.trim() !== '' && Number.isInteger(chance) && chance >= 0 && chance <= 100) {
+      this.updateInlineExam(view, row, { chance });
+    } else {
+      input.value = String(row.exam?.chance ?? '');
+    }
+  }
+
+  onInlineExamPassed(view: SectionView, row: SeedRow, passed: boolean): void {
+    this.updateInlineExam(view, row, { passed });
+  }
+
+  removeInlineExam(view: SectionView, row: SeedRow): void {
+    this.state.setInlineExam(view.section.id, row.id, null);
   }
 
   private groupClasses(classes: UnitClass[]): SelectItemGroup[] {
@@ -1083,6 +1497,12 @@ export class SeedMapperPageComponent {
         problems.push(`${view.title} has no exam class selected.`);
       }
 
+      view.section.rows.forEach((row, index) => {
+        if (row.exam && row.exam.classId === null) {
+          problems.push(`${view.title}: the exam before Lv ${this.levelOf(view, index)} has no class selected.`);
+        }
+      });
+
       if (this.endLevelOf(view) > MAX_LEVEL) {
         problems.push(`${view.title} goes past Lv ${MAX_LEVEL}; remove the extra levels.`);
       }
@@ -1106,9 +1526,16 @@ export class SeedMapperPageComponent {
         });
       }
 
-      view.section.rows.forEach((_, index) =>
-        entries.push({ slot: view.firstSlot + index, label: `Lv ${this.levelOf(view, index)}` }),
-      );
+      view.section.rows.forEach((row, index) => {
+        if (row.exam) {
+          entries.push({
+            slot: this.slotOf(view, index) - 1,
+            label: `${row.exam.passed ? 'Exam' : 'Skip'} before Lv ${this.levelOf(view, index)}`,
+          });
+        }
+
+        entries.push({ slot: this.slotOf(view, index), label: `Lv ${this.levelOf(view, index)}` });
+      });
 
       for (const entry of entries) {
         if (reported.has(entry.slot)) {
@@ -1436,6 +1863,16 @@ function branchKey(sectionId: number, rowId: number | null): string {
   return `${sectionId}:${rowId ?? 'exam'}`;
 }
 
+function levelSlot(firstSlot: number, rows: readonly SeedRow[], rowIndex: number): number {
+  let exams = 0;
+
+  for (let index = 0; index <= rowIndex && index < rows.length; index++) {
+    exams += rows[index].exam ? 1 : 0;
+  }
+
+  return firstSlot + rowIndex + exams;
+}
+
 interface RiddenMount {
   bonus: GrowthRates;
   label: string | null;
@@ -1448,6 +1885,11 @@ function ridden(mount: Mount | null, level: number | null): RiddenMount {
   };
 }
 
+/** An ability and its upgrades share the name of the base ability. */
+function familyOf(ability: StatBoostAbility): string {
+  return ability.upgradeOf ?? ability.name;
+}
+
 function sectionAnchor(sectionId: number): string {
   return `seed-section-${sectionId}`;
 }
@@ -1456,6 +1898,14 @@ function describeExam(sectionTitle: string, from: RowPosition): string {
   const skipped = from.level + 1;
 
   return `Taken in ${sectionTitle} in place of the Lv ${skipped} level up, so it uses that roll. Lv ${skipped} then comes from the roll after it.`;
+}
+
+function describeReclass(sectionTitle: string, level: number): string {
+  return `Switches class in ${sectionTitle} from the Lv ${level} level up on. No roll is used and no level is skipped.`;
+}
+
+function describeInlineExam(sectionTitle: string, level: number): string {
+  return `Taken in ${sectionTitle} just before a new Lv ${level}. It uses a roll of its own, and a pass switches class from Lv ${level} on.`;
 }
 
 function slugify(name: string): string {

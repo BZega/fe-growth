@@ -1,0 +1,139 @@
+{
+  "UnitId": "Cai",
+  "PersonalAbility": {
+    "Name": "Brio",
+    "Description": "Grants Mov\u002B1."
+  },
+  "Bloodmark": {
+    "Name": "Diadem of the Apostle",
+    "Description": "Grants Hit\u002B20 when attacking, Trigger % = 20."
+  },
+  "LevelUpPersonalAbilities": [
+    {
+      "Name": "Flamekeeper",
+      "LevelAcquired": 35,
+      "Description": "Unit and allies are unaffected by Underworld Flames and take half damage from attacks while in Underworld Flames."
+    }
+  ],
+  "Paths": [
+    {
+      "Path": "Cai",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": [
+        {
+          "Chapter": 1,
+          "Level": 1,
+          "ClassName": "Noble/Commoner",
+          "SkillRanks": {
+            "Sword": "E",
+            "Spear": "D",
+            "Axe": "E",
+            "Bow": "E",
+            "Gauntlet": "E",
+            "BlackMagic": "E",
+            "WhiteMagic": "E",
+            "Authority": "E",
+            "Infantry": "E",
+            "Riding": "E",
+            "HeavyArmor": "E",
+            "Flying": "E"
+          },
+          "Inventory": {
+            "Weapons": [
+              {
+                "Name": "Wooden Spear",
+                "Description": "A light, simple spear made of wood.",
+                "Durability": "10/10",
+                "EffectiveType": [
+                  "Cavalry"
+                ],
+                "Mt": 3,
+                "Hit": 90,
+                "Crit": 0,
+                "Curse": "--",
+                "Wt": 5,
+                "Avo": 0,
+                "Range": "1",
+                "Skill": {
+                  "SkillType": "Spear",
+                  "SkillRank": "E"
+                }
+              }
+            ],
+            "Items": [],
+            "MagicTomes": null,
+            "WhiteTomes": null,
+            "CombatArts": [
+              {
+                "Name": "Tempest Spear",
+                "Description": "Hight Hit.",
+                "Cost": "2",
+                "SkillType": "Spear",
+                "Mt": 4,
+                "Hit": 10,
+                "Crit": 0,
+                "Rng": "1"
+              }
+            ]
+          },
+          "GrowthRates": {
+            "Hp": 45,
+            "Str": 45,
+            "Mag": 40,
+            "Spd": 45,
+            "Dex": 45,
+            "Def": 35,
+            "Res": 35,
+            "Lck": 40,
+            "Cha": 40
+          },
+          "Stats": {
+            "Hp": 27,
+            "Str": 10,
+            "Mag": 7,
+            "Spd": 8,
+            "Dex": 8,
+            "Def": 6,
+            "Res": 5,
+            "Lck": 6,
+            "Cha": 5,
+            "Mov": 4,
+            "Bld": 2
+          },
+          "EquippedAbilities": []
+        }
+      ]
+    },
+    {
+      "Path": "Leda",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Dietrich",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Theodora",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "WarArc",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "SalvationArc",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": []
+    }
+  ]
+}

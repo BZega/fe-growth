@@ -1,4 +1,4 @@
-import { DEFAULT_MOUNT_BOND_LEVEL, GrowthRates, STAT_KEYS, StatKey, ZERO_GROWTH } from './growth.models';
+import { DEFAULT_MOUNT_BOND_LEVEL, GrowthRates, STAT_KEYS, StatKey, WEAPON_KEYS, WeaponKey, ZERO_GROWTH } from './growth.models';
 
 export type StatValues = Record<StatKey, number | null>;
 
@@ -29,12 +29,40 @@ export interface ExamSnapshot {
   passed: boolean;
 }
 
+export interface ReclassSnapshot {
+  rowIndex: number;
+  classId: number;
+}
+
+export interface InlineExamSnapshot {
+  rowIndex: number;
+  classId: number | null;
+  chance: number;
+  passed: boolean;
+}
+
+export interface ReclassDto {
+  row: number;
+  unitClass: string;
+}
+
+export interface InlineExamDto {
+  row: number;
+  unitClass: string | null;
+  chance: number;
+  passed: boolean;
+}
+
 export interface SectionSnapshot {
   exam: ExamSnapshot | null;
   classId: number | null;
   mountId: number | null;
   mountLevel: number;
+  abilities: string[];
+  weapon: WeaponKey | null;
   rows: GrowthRates[];
+  reclasses: ReclassSnapshot[];
+  exams: InlineExamSnapshot[];
   comparators: ComparatorSnapshot[];
 }
 
@@ -66,7 +94,11 @@ export interface SectionDto {
   unitClass: string | null;
   mount: string | null;
   mountLevel: number;
+  abilities: string[];
+  weapon: WeaponKey | null;
   rows: GrowthRates[];
+  reclasses: ReclassDto[];
+  exams: InlineExamDto[];
   comparators: ComparatorDto[];
 }
 
@@ -157,7 +189,11 @@ function fromVersion1(seeds: unknown): SeedMapDto {
         unitClass: readName(seed['unitClass']),
         mount: readName(seed['mount']),
         mountLevel: readMountLevel(seed['mountLevel']),
+        abilities: [],
+        weapon: null,
         rows: readRows(seed['rows']),
+        reclasses: [],
+        exams: [],
         comparators: readComparators(seed['comparators']),
       },
     ],
@@ -185,17 +221,21 @@ function readSeedMap(raw: unknown): SeedMapDto {
       fail(`section ${index + 1} is missing its exam`);
     }
 
+    const rows = readRows(section['rows']);
+
     sections.push({
       exam,
       unitClass: readName(section['unitClass']),
       mount: readName(section['mount']),
       mountLevel: readMountLevel(section['mountLevel']),
-      rows: readRows(section['rows']),
+      abilities: readNames(section['abilities']),
+      weapon: WEAPON_KEYS.find((weapon) => weapon === section['weapon']) ?? null,
+      rows,
+      reclasses: readReclasses(section['reclasses'], rows.length),
+      exams: readInlineExams(section['exams'], rows.length),
       comparators: readComparators(section['comparators']),
     });
   });
-
-  const availableClasses = raw['availableClasses'];
 
   return {
     unit: readUnitName(raw['unit']),
@@ -204,14 +244,19 @@ function readSeedMap(raw: unknown): SeedMapDto {
         ? readLevel(raw['statsLevel'])
         : fromFirstRowLevel(raw['startLevel']),
     startStats: readStats(raw['startStats']),
-    availableClasses: Array.isArray(availableClasses)
-      ? availableClasses.flatMap((name) => {
-          const read = readName(name);
-          return read === null ? [] : [read];
-        })
-      : [],
+    availableClasses: readNames(raw['availableClasses']),
     sections,
   };
+}
+
+// Missing in saves written before the field existed, so an absent list reads as empty.
+function readNames(raw: unknown): string[] {
+  return Array.isArray(raw)
+    ? raw.flatMap((name) => {
+        const read = readName(name);
+        return read === null ? [] : [read];
+      })
+    : [];
 }
 
 function fromFirstRowLevel(value: unknown): number | null {
@@ -279,6 +324,43 @@ function readExam(raw: unknown, earlier: readonly SectionDto[]): ExamDto | null 
 
 function readComparators(raw: unknown): ComparatorDto[] {
   return Array.isArray(raw) ? raw.map(readComparator) : [];
+}
+
+// Saves from before inline exams have none; invalid entries are dropped rather than failing the load.
+function readInlineExams(raw: unknown, rowCount: number): InlineExamDto[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw.flatMap((entry) => {
+    if (!isRecord(entry)) {
+      return [];
+    }
+
+    const { row, chance, passed } = entry;
+    const valid =
+      typeof row === 'number' && Number.isInteger(row) && row >= 0 && row < rowCount &&
+      typeof chance === 'number' && Number.isFinite(chance) && chance >= 0 && chance <= 100 &&
+      typeof passed === 'boolean';
+
+    return valid ? [{ row, unitClass: readName(entry['unitClass']), chance, passed }] : [];
+  });
+}
+
+// Saves from before reclassing have none; entries pointing past the section's levels are dropped.
+function readReclasses(raw: unknown, rowCount: number): ReclassDto[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw.flatMap((entry) => {
+    const row = isRecord(entry) ? entry['row'] : undefined;
+    const unitClass = isRecord(entry) ? readName(entry['unitClass']) : null;
+
+    return typeof row === 'number' && Number.isInteger(row) && row >= 0 && row < rowCount && unitClass
+      ? [{ row, unitClass }]
+      : [];
+  });
 }
 
 function readComparator(raw: unknown): ComparatorDto {

@@ -119,13 +119,23 @@
   opacity: 0.6;
 }
 
-.outcome {
+.outcome,
+.mode {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
 }
 
-.outcome__option {
+.mode {
+  margin-top: 1rem;
+}
+
+.field--reclass {
+  margin: 1rem 0 0.25rem;
+}
+
+.outcome__option,
+.mode__option {
   background: #1d222c;
   border: 1px solid var(--panel-border);
   border-radius: 6px;
@@ -155,6 +165,11 @@
   background: #9c2b2b;
   border-color: #c04545;
   color: #ffeaea;
+}
+
+.mode__option--selected {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .hint {

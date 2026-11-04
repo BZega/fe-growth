@@ -1,10 +1,36 @@
 @let current = unit();
 
+@let info = recruitment();
+
 <header class="page-header">
   <div>
     <a class="back" routerLink="/characters">&larr; Characters</a>
     <h1>{{ current?.name ?? 'Character not found' }}</h1>
   </div>
+
+  <!-- The character's own abilities, whatever route or chapter they're met in. -->
+  @if (info && (info.personalAbility || info.levelUpAbilities.length || info.bloodmark)) {
+    <div class="profile-abilities">
+      @if (info.personalAbility; as ability) {
+        <section class="card" aria-labelledby="personal-title">
+          <h2 class="section-title" id="personal-title">Personal Ability</h2>
+          <ng-container *ngTemplateOutlet="abilityList; context: { $implicit: [ability] }" />
+        </section>
+      }
+      @if (info.levelUpAbilities.length) {
+        <section class="card" aria-labelledby="level-up-title">
+          <h2 class="section-title" id="level-up-title">Level-Up Personal Abilities</h2>
+          <ng-container *ngTemplateOutlet="abilityList; context: { $implicit: info.levelUpAbilities }" />
+        </section>
+      }
+      @if (info.bloodmark; as ability) {
+        <section class="card" aria-labelledby="bloodmark-title">
+          <h2 class="section-title" id="bloodmark-title">Bloodmark</h2>
+          <ng-container *ngTemplateOutlet="abilityList; context: { $implicit: [ability] }" />
+        </section>
+      }
+    </div>
+  }
 </header>
 
 @if (current) {
@@ -102,6 +128,127 @@
           </section>
         }
       }
+      @case ('recruitment') {
+        @if (routes().length === 0) {
+          <p class="empty empty--boxed">No recruitment data for {{ current.name }} yet.</p>
+        } @else {
+          <div class="route-bar">
+            <div class="route-tabs" role="tablist" aria-label="Routes">
+              @for (route of routes(); track route.key) {
+                <button
+                  type="button"
+                  role="tab"
+                  class="route-tabs__tab"
+                  [class.route-tabs__tab--active]="route.key === activeRouteKey()"
+                  [attr.aria-selected]="route.key === activeRouteKey()"
+                  (click)="selectRoute(route.key)"
+                >
+                  {{ route.label }}
+                </button>
+              }
+            </div>
+
+            @if (activeRoute(); as route) {
+              <label class="chapter-picker">
+                <span class="chapter-picker__label">Chapter</span>
+                <select
+                  class="chapter-picker__select"
+                  [value]="selectedChapter()"
+                  (change)="selectChapter($any($event.target).value)"
+                >
+                  @for (chapter of route.chapters; track chapter.chapter) {
+                    <option [value]="chapter.chapter" [selected]="chapter.chapter === selectedChapter()">
+                      Chapter {{ chapter.chapter }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
+          </div>
+
+          @if (activeRoute(); as route) {
+            <p class="route-status">
+              <span class="tag" [class.tag--yes]="route.recruitable">
+                {{ route.recruitable ? 'Recruitable' : 'Not recruitable' }}
+              </span>
+              @if (route.recruitable && route.requirement; as requirement) {
+                <span class="route-status__requirement">{{ requirementText(requirement) }}</span>
+              }
+            </p>
+          }
+
+          @if (chapterView(); as view) {
+            <div class="chapter">
+              <div class="card sheet">
+                <div class="sheet__col">
+                  <section aria-labelledby="stats-title">
+                    <div class="profile">
+                      <span class="profile__class summary__value">{{ view.chapter.className }}</span>
+                      <ng-container *ngTemplateOutlet="statRows; context: { $implicit: view.profile }" />
+                    </div>
+                  </section>
+                  <section aria-labelledby="growth-title">
+                    <div class="sheet__head">
+                      <h2 class="sheet__title" id="growth-title">Growth Rates</h2>
+                      @if (view.growthTotal !== null) {
+                        <span class="section-hint">Total {{ view.growthTotal }}%</span>
+                      }
+                    </div>
+                    @if (view.unitClass) {
+                      <ng-container *ngTemplateOutlet="statRows; context: { $implicit: view.growth, split: true }" />
+                    } @else {
+                      <p class="empty">The class "{{ view.chapter.className }}" isn't in the class data, so growths can't be worked out.</p>
+                    }
+                  </section>
+                  <section aria-labelledby="stats-title">
+                    <h2 class="sheet__title" id="stats-title">Basic Stats</h2>
+                    <ng-container *ngTemplateOutlet="statRows; context: { $implicit: view.stats, split: true }" />
+                  </section>     
+                </div>
+
+                <div class="sheet__col">
+                  @for (group of view.inventory; track group.label) {
+                    <ng-container *ngTemplateOutlet="inventoryGroup; context: { $implicit: group }" />
+                  }
+
+                  @if (view.skillRanks.length) {
+                    <section aria-labelledby="ranks-title">
+                      <div class="sheet__head">
+                        <h2 class="sheet__title" id="ranks-title">Skill Lv</h2>
+                        <span class="section-hint">Highlighted = usable</span>
+                      </div>
+                      <ul class="skill-grid">
+                        @for (skill of view.skillRanks; track skill.key) {
+                          <li class="skill-rank" [class.skill-rank--usable]="skill.usable" [title]="skill.label + (skill.usable ? '' : ' (not usable)')">
+                            <img class="skill-rank__icon" [src]="skillIcon(skill.key, skill.preference)" alt="" />
+                            <span class="skill-rank__label">{{ skill.label }}</span>
+                            <span class="skill-rank__value">{{ skill.value }}</span>
+                          </li>
+                        }
+                      </ul>
+                    </section>
+                  }
+                </div>
+
+                <div class="sheet__col">
+                  <section aria-labelledby="equipped-title">
+                    <h2 class="sheet__title" id="equipped-title">Equipped Abilities</h2>
+                    @if (view.chapter.equippedAbilities.length) {
+                      <ng-container *ngTemplateOutlet="abilityList; context: { $implicit: view.chapter.equippedAbilities }" />
+                    } @else {
+                      <p class="empty">None equipped.</p>
+                    }
+                  </section>
+
+                  @if (view.combatArts; as group) {
+                    <ng-container *ngTemplateOutlet="inventoryGroup; context: { $implicit: group }" />
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        }
+      }
       @default {
         <p class="wip">Work in progress</p>
       }
@@ -110,3 +257,58 @@
 } @else {
   <p class="wip">No character matches this link.</p>
 }
+
+<ng-template #abilityList let-abilities>
+  <ul class="abilities">
+    @for (ability of abilities; track ability.name) {
+      <li class="ability">
+        <div class="ability__head">
+          <span class="ability__name">{{ ability.name }}</span>
+          @if (ability.level) {
+            <span class="tag">Lv {{ ability.level }}</span>
+          }
+        </div>
+        <p class="ability__description">{{ ability.description }}</p>
+      </li>
+    }
+  </ul>
+</ng-template>
+
+<ng-template #inventoryGroup let-group>
+  <section [attr.aria-label]="group.label">
+    <div class="sheet__head">
+      <h2 class="sheet__title">{{ group.label }}</h2>
+    </div>
+    <ul class="inventory">
+      @for (entry of group.entries; track $index) {
+        <li class="inventory__entry">
+          <span class="inventory__item">{{ entry.name }}</span>
+          <ul class="inventory__stats">
+            @for (column of group.columns; track column) {
+              @if (entry.values[column]) {
+                <li class="inventory__stat">
+                  <span class="inventory__stat-label">{{ column }}</span>
+                  {{ entry.values[column] }}
+                </li>
+              }
+            }
+          </ul>
+          @if (entry.description) {
+            <span class="inventory__description">{{ entry.description }}</span>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+</ng-template>
+
+<ng-template #statRows let-items let-split="split">
+  <ul class="stat-rows" [class.stat-rows--split]="split">
+    @for (item of items; track item.label) {
+      <li class="stat-row" [class.stat-row--wide]="item.wide" [attr.data-tone]="item.tone">
+        <span class="stat-row__label">{{ item.label }}</span>
+        <span class="stat-row__value">{{ item.value }}</span>
+      </li>
+    }
+  </ul>
+</ng-template>

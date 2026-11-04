@@ -1,12 +1,22 @@
 import { inject, Injectable, signal } from '@angular/core';
 
-import { DEFAULT_MOUNT_BOND_LEVEL, GrowthRates, StatKey, ZERO_GROWTH } from '../models/growth.models';
+import { DEFAULT_MOUNT_BOND_LEVEL, GrowthRates, MAX_EQUIPPED_ABILITIES, StatKey, WeaponKey, ZERO_GROWTH } from '../models/growth.models';
 import { EMPTY_STATS, SeedMapSnapshot, StatValues } from '../models/seed-save';
 import { GrowthDataService } from './growth-data.service';
 
 export interface SeedRow {
   id: number;
   marks: GrowthRates;
+  /** Reclass into this class before this level up; it applies from here to the section's end. */
+  reclassTo?: number;
+  /** An exam taken just before this level up; it uses a roll of its own. */
+  exam?: InlineExam;
+}
+
+export interface InlineExam {
+  classId: number | null;
+  chance: number;
+  passed: boolean;
 }
 
 export interface SeedComparator {
@@ -31,6 +41,10 @@ export interface SeedSection {
   classId: number | null;
   mountId: number | null;
   mountLevel: number;
+  /** Names of equipped stat-boosting abilities. */
+  abilities: string[];
+  /** Weapon type equipped, for abilities whose boost depends on it. */
+  weapon: WeaponKey | null;
   rows: SeedRow[];
   comparators: SeedComparator[];
 }
@@ -47,6 +61,8 @@ export interface ExamDraft {
   classId: number;
   chance: number;
   passed: boolean;
+  /** Set by the dialog when it's a reclass rather than an exam. */
+  reclass?: boolean;
 }
 
 export const MIN_LEVEL = 1;
@@ -57,18 +73,48 @@ export function effectiveClassId(
   sections: readonly SeedSection[],
   section: SeedSection,
 ): number | null {
-  let current: SeedSection | undefined = section;
+  const exam = section.exam;
 
-  while (current?.exam && !current.exam.passed) {
-    const parentId: number = current.exam.parentId;
-    current = sections.find((candidate) => candidate.id === parentId);
+  // A failed exam keeps whatever class the parent had at that level, reclasses included.
+  if (exam && !exam.passed) {
+    const parent = sections.find((candidate) => candidate.id === exam.parentId);
+
+    return parent ? classAtRow(sections, parent, exam.afterRowId) : null;
   }
 
-  if (!current) {
-    return null;
+  return exam ? (section.classId ?? exam.classId) : section.classId;
+}
+
+/** The class a row switches to before its level up, if any: a reclass or a passed inline exam. */
+export function rowSwitchesTo(row: SeedRow): number | null {
+  if (row.exam) {
+    return row.exam.passed ? row.exam.classId : null;
   }
 
-  return current.exam ? (current.classId ?? current.exam.classId) : current.classId;
+  return row.reclassTo ?? null;
+}
+
+/** The section's class after the given level up, following any reclasses up to and including it. */
+export function classAtRow(
+  sections: readonly SeedSection[],
+  section: SeedSection,
+  rowId: number | null,
+): number | null {
+  let classId = effectiveClassId(sections, section);
+
+  if (rowId === null) {
+    return classId;
+  }
+
+  for (const row of section.rows) {
+    classId = rowSwitchesTo(row) ?? classId;
+
+    if (row.id === rowId) {
+      break;
+    }
+  }
+
+  return classId;
 }
 
 export function availableClassIds(
@@ -78,14 +124,33 @@ export function availableClassIds(
 ): Set<number> {
   const available = new Set<number>([...always, ...map.availableClassIds]);
   let current: SeedSection | undefined = section;
+  let untilRowId: number | null | undefined;
 
-  while (current?.exam) {
-    const exam: SeedExam = current.exam;
+  // Classes passed into along the way count: inline exams up to the branch point, and exam sections.
+  while (current) {
+    const rows = untilRowId === null ? [] : current.rows;
+
+    for (const row of rows) {
+      if (row.exam?.passed && row.exam.classId !== null) {
+        available.add(row.exam.classId);
+      }
+
+      if (untilRowId !== undefined && row.id === untilRowId) {
+        break;
+      }
+    }
+
+    const exam: SeedExam | null = current.exam;
+
+    if (!exam) {
+      break;
+    }
 
     if (exam.passed && exam.classId !== null) {
       available.add(exam.classId);
     }
 
+    untilRowId = exam.afterRowId;
     current = map.sections.find((candidate) => candidate.id === exam.parentId);
   }
 
@@ -157,7 +222,13 @@ export class SeedMapperStateService {
           classId: section.classId,
           mountId: section.mountId,
           mountLevel: section.mountLevel,
+          abilities: [...section.abilities],
+          weapon: section.weapon,
           rows: section.rows.map((row) => ({ ...row.marks })),
+          reclasses: section.rows.flatMap((row, rowIndex) =>
+            row.reclassTo === undefined ? [] : [{ rowIndex, classId: row.reclassTo }],
+          ),
+          exams: section.rows.flatMap((row, rowIndex) => (row.exam ? [{ rowIndex, ...row.exam }] : [])),
           comparators: section.comparators.map((comparator) => ({
             classId: comparator.classId,
             mountId: comparator.mountId,
@@ -173,10 +244,17 @@ export class SeedMapperStateService {
     const sections: SeedSection[] = [];
 
     for (const entry of snapshot.sections) {
-      const rows = entry.rows.map((marks) => ({
-        id: this.nextRowId++,
-        marks: { ...marks },
-      }));
+      const rows = entry.rows.map((marks, rowIndex) => {
+        const exam = entry.exams.find((candidate) => candidate.rowIndex === rowIndex);
+
+        return withExam(
+          withReclass(
+            { id: this.nextRowId++, marks: { ...marks } },
+            entry.reclasses.find((reclass) => reclass.rowIndex === rowIndex)?.classId ?? null,
+          ),
+          exam ? { classId: exam.classId, chance: exam.chance, passed: exam.passed } : null,
+        );
+      });
       const parent = entry.exam ? sections[entry.exam.parentIndex] : undefined;
 
       sections.push({
@@ -197,6 +275,8 @@ export class SeedMapperStateService {
         classId: entry.classId,
         mountId: entry.mountId,
         mountLevel: entry.mountLevel,
+        abilities: [...entry.abilities],
+        weapon: entry.weapon,
         rows,
         comparators: entry.comparators.map((comparator) => ({
           id: this.nextComparatorId++,
@@ -216,7 +296,7 @@ export class SeedMapperStateService {
       statsLevel: snapshot.statsLevel ?? MIN_LEVEL,
       startStats: { ...snapshot.startStats },
       availableClassIds: [...snapshot.availableClassIds],
-      sections,
+      sections: foldEndExams(sections),
     };
 
     this.mapState.set(
@@ -310,6 +390,17 @@ export class SeedMapperStateService {
     this.patch(sectionId, (section) => ({ ...section, mountId }));
   }
 
+  setAbilities(sectionId: number, abilities: readonly string[]): void {
+    this.patch(sectionId, (section) => ({
+      ...section,
+      abilities: [...new Set(abilities)].slice(0, MAX_EQUIPPED_ABILITIES),
+    }));
+  }
+
+  setWeapon(sectionId: number, weapon: WeaponKey | null): void {
+    this.patch(sectionId, (section) => ({ ...section, weapon }));
+  }
+
   setMountLevel(sectionId: number, mountLevel: number): void {
     this.patch(sectionId, (section) => ({ ...section, mountLevel }));
   }
@@ -353,6 +444,48 @@ export class SeedMapperStateService {
       ...section,
       rows: toggle(section.rows, rowId, stat),
     }));
+  }
+
+  /** Reclass before the given level up; null removes the reclass. A row holds a reclass or an exam, not both. */
+  setReclass(sectionId: number, rowId: number, classId: number | null): void {
+    this.patch(sectionId, (section) => ({
+      ...section,
+      rows: section.rows.map((row) =>
+        row.id === rowId ? withReclass(withExam(row, null), classId) : row,
+      ),
+    }));
+  }
+
+  /** Adds a level up that starts with a reclass. */
+  addReclassLevel(sectionId: number, classId: number): void {
+    this.addLevel(sectionId);
+
+    const rowId = this.mapState().sections.find((section) => section.id === sectionId)?.rows.at(-1)?.id;
+
+    if (rowId !== undefined) {
+      this.setReclass(sectionId, rowId, classId);
+    }
+  }
+
+  /** Takes (or changes) an exam just before the given level up; null removes it. */
+  setInlineExam(sectionId: number, rowId: number, exam: InlineExam | null): void {
+    this.patch(sectionId, (section) => ({
+      ...section,
+      rows: section.rows.map((row) =>
+        row.id === rowId ? withExam(withReclass(row, null), exam) : row,
+      ),
+    }));
+  }
+
+  /** Adds a level up that starts with an exam. */
+  addExamLevel(sectionId: number, exam: InlineExam): void {
+    this.addLevel(sectionId);
+
+    const rowId = this.mapState().sections.find((section) => section.id === sectionId)?.rows.at(-1)?.id;
+
+    if (rowId !== undefined) {
+      this.setInlineExam(sectionId, rowId, exam);
+    }
   }
 
   addComparator(sectionId: number): void {
@@ -433,10 +566,18 @@ export class SeedMapperStateService {
 
     const section: SeedSection = {
       id: this.nextSectionId++,
-      exam: { parentId, afterRowId, ...draft },
+      exam: {
+        parentId,
+        afterRowId,
+        classId: draft.classId,
+        chance: draft.chance,
+        passed: draft.passed,
+      },
       classId: null,
       mountId: draft.passed ? null : parent.mountId,
       mountLevel: draft.passed ? DEFAULT_MOUNT_BOND_LEVEL : parent.mountLevel,
+      abilities: [...parent.abilities],
+      weapon: parent.weapon,
       rows: [this.createRow()],
       comparators: [],
     };
@@ -451,7 +592,12 @@ export class SeedMapperStateService {
       section.exam
         ? {
             ...section,
-            exam: { ...section.exam, ...draft },
+            exam: {
+              ...section.exam,
+              classId: draft.classId,
+              chance: draft.chance,
+              passed: draft.passed,
+            },
             classId: draft.passed ? passedExamClass(section.classId, draft.classId) : null,
           }
         : section,
@@ -561,6 +707,8 @@ export class SeedMapperStateService {
             classId: null,
             mountId: null,
             mountLevel: DEFAULT_MOUNT_BOND_LEVEL,
+            abilities: [],
+            weapon: null,
             rows: [this.createRow()],
             comparators: [],
           },
@@ -627,8 +775,9 @@ function clearUnavailableClasses(map: SeedMap, always: readonly number[]): SeedM
     const keep = (classId: number | null) => classId === null || available.has(classId);
     const baseClassValid = keep(section.classId);
     const comparatorsValid = section.comparators.every((comparator) => keep(comparator.classId));
+    const reclassesValid = section.rows.every((row) => keep(row.reclassTo ?? null));
 
-    if (baseClassValid && comparatorsValid) {
+    if (baseClassValid && comparatorsValid && reclassesValid) {
       return section;
     }
 
@@ -639,6 +788,7 @@ function clearUnavailableClasses(map: SeedMap, always: readonly number[]): SeedM
       classId: baseClassValid ? section.classId : null,
       mountId: baseClassValid ? section.mountId : null,
       mountLevel: baseClassValid ? section.mountLevel : DEFAULT_MOUNT_BOND_LEVEL,
+      rows: section.rows.map((row) => (keep(row.reclassTo ?? null) ? row : withReclass(row, null))),
       comparators: section.comparators.map((comparator) =>
         keep(comparator.classId)
           ? comparator
@@ -652,6 +802,89 @@ function clearUnavailableClasses(map: SeedMap, always: readonly number[]): SeedM
 
 function passedExamClass(chosen: number | null, examClassId: number | null): number | null {
   return chosen === examClassId ? null : chosen;
+}
+
+function withReclass(row: SeedRow, classId: number | null): SeedRow {
+  const { reclassTo: _, ...rest } = row;
+
+  return classId === null ? rest : { ...rest, reclassTo: classId };
+}
+
+function withExam(row: SeedRow, exam: InlineExam | null): SeedRow {
+  const { exam: _, ...rest } = row;
+
+  return exam === null ? rest : { ...rest, exam: { ...exam } };
+}
+
+/**
+ * Older saves kept every exam as its own section. One that starts right after the last level of
+ * the section it came from is just the seed carrying on, so it becomes an inline exam there —
+ * unless that would lose something only the exam section had.
+ */
+function foldEndExams(sections: SeedSection[]): SeedSection[] {
+  let result = sections;
+  let folded = true;
+
+  while (folded) {
+    folded = false;
+
+    for (const section of result) {
+      const exam = section.exam;
+      const parent = exam && result.find((candidate) => candidate.id === exam.parentId);
+
+      if (!exam || !parent || !canFold(section, parent, exam)) {
+        continue;
+      }
+
+      const [first, ...rest] = section.rows;
+      const merged: SeedSection = {
+        ...parent,
+        rows: [
+          ...parent.rows,
+          withExam(withReclass(first, null), { classId: exam.classId, chance: exam.chance, passed: exam.passed }),
+          ...rest,
+        ],
+        comparators: [],
+      };
+
+      result = result
+        .filter((candidate) => candidate.id !== section.id)
+        .map((candidate) => {
+          if (candidate.id === parent.id) {
+            return merged;
+          }
+
+          return candidate.exam?.parentId === section.id
+            ? { ...candidate, exam: { ...candidate.exam, parentId: parent.id } }
+            : candidate;
+        });
+      folded = true;
+      break;
+    }
+  }
+
+  return result;
+}
+
+function canFold(section: SeedSection, parent: SeedSection, exam: SeedExam): boolean {
+  const atEnd = parent.rows.length > 0 && exam.afterRowId === parent.rows.at(-1)!.id;
+  const sameMount = exam.passed
+    ? section.mountId === null || section.mountId === parent.mountId
+    : section.mountId === parent.mountId && section.mountLevel === parent.mountLevel;
+  const sameClass = !exam.passed || section.classId === null || section.classId === exam.classId;
+  const first = section.rows[0];
+
+  return (
+    atEnd &&
+    sameMount &&
+    sameClass &&
+    first !== undefined &&
+    first.reclassTo === undefined &&
+    section.comparators.length === 0 &&
+    parent.comparators.length === 0 &&
+    section.weapon === parent.weapon &&
+    section.abilities.join('\n') === parent.abilities.join('\n')
+  );
 }
 
 function toggle(rows: SeedRow[], rowId: number, stat: StatKey): SeedRow[] {

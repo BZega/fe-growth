@@ -1,0 +1,163 @@
+{
+  "UnitId": "Peter",
+  "PersonalAbility": {
+    "Name": "Steady Aim",
+    "Description": "Grants Rng\u002B1 when attacking with a bow combat art."
+  },
+  "Bloodmark": null,
+  "LevelUpPersonalAbilities": [
+    {
+      "Name": "Correct for Drift",
+      "LevelAcquired": 20,
+      "Description": "If unit\u0027s hit % \u2265 90, grants Hit\u002B10 during combat."
+    },
+    {
+      "Name": "Correct for Drift\u002B",
+      "LevelAcquired": 35,
+      "Description": "If unit\u0027s hit % \u2265 75, grants Hit\u002B20 during combat."
+    }
+  ],
+  "Paths": [
+    {
+      "Path": "Cai",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": [
+        {
+          "Chapter": 1,
+          "Level": 1,
+          "ClassName": "Noble/Commoner",
+          "SkillRanks": {
+            "Sword": "E",
+            "Spear": "E",
+            "Axe": "E",
+            "Bow": "D",
+            "Gauntlet": "E",
+            "BlackMagic": "E",
+            "WhiteMagic": "E",
+            "Authority": "E",
+            "Infantry": "E",
+            "Riding": "E",
+            "HeavyArmor": "E",
+            "Flying": "E"
+          },
+          "Inventory": {
+            "Weapons": [
+              {
+                "Name": "Wooden Bow",
+                "Description": "A light, simple bow made of wood.",
+                "Durability": "10/10",
+                "EffectiveType": [
+                  "ExtraFlying"
+                ],
+                "Mt": 2,
+                "Hit": 75,
+                "Crit": 0,
+                "Curse": "--",
+                "Wt": 4,
+                "Avo": 0,
+                "Range": "2",
+                "Skill": {
+                  "SkillType": "Bow",
+                  "SkillRank": "E"
+                }
+              }
+            ],
+            "Items": [],
+            "MagicTomes": null,
+            "WhiteTomes": null,
+            "CombatArts": [
+              {
+                "Name": "Curved Shot",
+                "Description": "High Hit.",
+                "Cost": "2",
+                "SkillType": "Bow",
+                "Mt": 4,
+                "Hit": 10,
+                "Crit": 0,
+                "Rng": "2"
+              },
+              {
+                "Name": "Vital Shot",
+                "Description": "High Crit.",
+                "Cost": "2",
+                "SkillType": "Bow",
+                "Mt": 4,
+                "Hit": 0,
+                "Crit": 5,
+                "Rng": "2"
+              }
+            ]
+          },
+          "GrowthRates": {
+            "Hp": 40,
+            "Str": 35,
+            "Mag": 20,
+            "Spd": 45,
+            "Dex": 60,
+            "Def": 30,
+            "Res": 25,
+            "Lck": 35,
+            "Cha": 30
+          },
+          "Stats": {
+            "Hp": 25,
+            "Str": 9,
+            "Mag": 3,
+            "Spd": 6,
+            "Dex": 10,
+            "Def": 5,
+            "Res": 4,
+            "Lck": 5,
+            "Cha": 4,
+            "Mov": 4,
+            "Bld": 1
+          },
+          "EquippedAbilities": []
+        }
+      ]
+    },
+    {
+      "Path": "Leda",
+      "IsRecruitable": true,
+      "Requirement": {
+        "SupportLv": 3,
+        "RenownLv": 10,
+        "RecruitmentNegotiation": "Complete Peter\u0027s Request"
+      },
+      "Chapters": []
+    },
+    {
+      "Path": "Dietrich",
+      "IsRecruitable": true,
+      "Requirement": {
+        "SupportLv": 3,
+        "RenownLv": 8,
+        "RecruitmentNegotiation": "Complete Peter\u0027s Request"
+      },
+      "Chapters": []
+    },
+    {
+      "Path": "Theodora",
+      "IsRecruitable": true,
+      "Requirement": {
+        "SupportLv": 3,
+        "RenownLv": 7,
+        "RecruitmentNegotiation": "Complete Peter\u0027s Request"
+      },
+      "Chapters": []
+    },
+    {
+      "Path": "WarArc",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "SalvationArc",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": []
+    }
+  ]
+}

@@ -16,6 +16,18 @@
   }
 }
 
+// Personal Ability, Level-Up Abilities and Bloodmark, side by side under the name.
+.profile-abilities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+
+  .card {
+    padding: 1rem 1.1rem;
+  }
+}
+
 .back {
   color: inherit;
   font-size: 0.85rem;
@@ -189,6 +201,364 @@
   font-style: italic;
 }
 
+// --- Recruitment tab -----------------------------------------------------------
+
+.route-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.route-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.1rem;
+}
+
+.route-tabs__tab {
+  margin: 0 0 -1px;
+  padding: 0 0 0.45rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  &:hover {
+    color: rgb(232 236 244 / 80%);
+  }
+
+  &--active,
+  &--active:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+}
+
+.chapter-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.78rem;
+}
+
+.chapter-picker__label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+.chapter-picker__select {
+  background: #1d222c;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.45rem;
+
+  &:hover,
+  &:focus {
+    border-color: var(--accent);
+  }
+}
+
+.route-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+}
+
+.route-status .tag:not(.tag--yes) {
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.route-status__requirement {
+  color: rgb(232 236 244 / 80%);
+}
+
+.chapter {
+  display: grid;
+  gap: 1rem;
+}
+
+// Laid out like the in-game Stats screen: profile + stats | growths + skill levels | abilities.
+.sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
+  padding: 1.25rem 0;
+}
+
+.sheet__col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+  padding: 0 1.35rem;
+
+  & + & {
+    border-left: 1px solid var(--hairline);
+  }
+}
+
+.sheet__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--gold-line);
+  margin-bottom: 0.15rem;
+
+  .sheet__title {
+    border-bottom: none;
+    margin: 0;
+  }
+}
+
+.sheet__title {
+  margin: 0 0 0.15rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--gold-line);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.profile {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem 0.5rem;
+  border: 1px solid var(--gold-line);
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--gold-soft), var(--surface) 70%);
+}
+
+.summary__value.profile__class {
+  font-size: 1.15rem;
+  color: #f5e3b3;
+}
+
+.summary__value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stat-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--stat-gap);
+  --stat-gap: 1.5rem;
+}
+
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.42rem 0.1rem;
+  border-bottom: 1px dashed rgb(240 192 74 / 18%);
+  font-variant-numeric: tabular-nums;
+
+  // Alone on its row but only as wide as the left column, so its value lines up with the column below.
+  &--wide {
+    grid-column: 1 / -1;
+    justify-self: start;
+    width: calc((100% - var(--stat-gap)) / 2);
+  }
+}
+
+// Column-first: HP (when present) on its own row, then Str-Dex down the left and Def-Cha down the right.
+.stat-rows--split {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(4, auto);
+
+  &:has(.stat-row--wide) {
+    grid-template-rows: repeat(5, auto);
+  }
+}
+
+.stat-row__label {
+  font-size: 0.8rem;
+  color: rgb(232 236 244 / 70%);
+}
+
+.stat-row__value {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.stat-row[data-tone='positive'] .stat-row__value {
+  color: var(--green);
+}
+
+.stat-row[data-tone='negative'] .stat-row__value {
+  color: var(--red);
+}
+
+.stat-row[data-tone='zero'] .stat-row__value {
+  color: var(--muted);
+}
+
+// 12 skills, so six columns gives the two rows of the in-game Skill Lv panel.
+.skill-grid {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+// Rank wraps under the icon when the tile gets too narrow for both side by side.
+.skill-rank {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.3rem 0.2rem;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface);
+  opacity: 0.5;
+
+  &--usable {
+    border-color: var(--gold-line);
+    background: var(--gold-soft);
+    opacity: 1;
+  }
+}
+
+.skill-rank__icon {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.skill-rank__value {
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+
+  .skill-rank--usable & {
+    color: var(--accent);
+  }
+}
+
+// Shown by the tile's tooltip; kept for screen readers.
+.skill-rank__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.note {
+  margin: 0.7rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.inventory {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.inventory__entry {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.55rem 0.1rem;
+  border-bottom: 1px dashed rgb(240 192 74 / 18%);
+}
+
+.inventory__stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.inventory__stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.inventory__stat-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.inventory__item {
+  display: block;
+  font-weight: 700;
+  color: #f5e3b3;
+}
+
+.inventory__description {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: rgb(232 236 244 / 65%);
+}
+
+@media (max-width: 1100px) {
+  .sheet {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 1.25rem;
+  }
+
+  .sheet__col:last-child {
+    grid-column: 1 / -1;
+    padding-top: 1.25rem;
+    border-left: none;
+    border-top: 1px solid var(--hairline);
+  }
+}
+
 @media (max-width: 640px) {
   :host {
     padding: 1rem 0.75rem;
@@ -196,6 +566,25 @@
 
   .page-header h1 {
     font-size: 1.35rem;
+  }
+
+  .sheet {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1rem 0;
+  }
+
+  .sheet__col {
+    padding: 0 1rem;
+
+    & + & {
+      padding-top: 1.25rem;
+      border-left: none;
+      border-top: 1px solid var(--hairline);
+    }
+  }
+
+  .stat-rows {
+    --stat-gap: 1rem;
   }
 
   .difference {

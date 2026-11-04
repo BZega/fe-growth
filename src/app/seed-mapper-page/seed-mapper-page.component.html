@@ -14,13 +14,15 @@
     </div>
     <p id="seed-mapper-help" class="page-header__help" [class.is-collapsed]="!helpOpen()">
       Enter the unit's stats and change the starting level if it isn't 1. Mark which stats rose on each level up.
-      Add classes the unit already has available
-      <strong>Available classes</strong>; Noble/Commoner is defaulted and always available. 
+      Use <strong>Classes</strong> to pick the classes the unit already has available; Noble/Commoner is always available.
+      Use <strong>Abilities</strong> to equip up to five stat-boosting abilities for each section.
       Comparators replay the same levels in another available class. 
-      Press the <strong>+</strong> beside a level to take an exam in place of that level up, or
-      click <strong>Take Exam</strong> to take one after the last level up. Passing an exam raises
+      Press the <strong>+</strong> beside a level to branch off with an exam in place of that level up, or
+      click <strong>Exam / Reclass</strong> to carry the seed on with an exam row and a new level. Passing an exam raises
       any stat below the new class's base stat up to it; the added points show on the exam line and
-      the pass chance moves to <strong>Seed RNG</strong>.
+      the pass chance moves to <strong>Seed RNG</strong>. Choose <strong>Reclass</strong> in the same
+      dialog to switch to a class the unit already has from that level on: the level stays, and the
+      new class's growth rates show on a reclass row above it.
     </p>
   </div>
 
@@ -57,7 +59,7 @@
       [title]="latestExamHint()"
       (click)="openLatestExam()"
     >
-      Take Exam
+      Exam / Reclass
     </button>
   </div>
 </header>
@@ -100,15 +102,38 @@
             </div>
           }
           @if (!exam) {
-            <app-searchable-select
-              class="compact add-class"
-              label="Add available class"
-              placeholder="+ Add class"
-              [groups]="addableClassGroups()"
-              [clearable]="false"
-              [value]="null"
-              (valueChange)="onAddAvailableClass($event)"
-            />
+            <button
+              type="button"
+              class="ghost-button"
+              [title]="'Available classes: ' + pickerSummary(availableClassNames(view))"
+              (click)="openClassPicker()"
+            >
+              Classes ({{ availableClasses(view).length }})
+            </button>
+          }
+
+          <button
+            type="button"
+            class="ghost-button"
+            [title]="'Stat abilities: ' + pickerSummary(equippedAbilityNames(view))"
+            (click)="openAbilityPicker(view)"
+          >
+            Abilities ({{ equippedAbilities(view).length }}/{{ maxAbilities }})
+          </button>
+
+          @if (usesWeapon(view)) {
+            <select
+              class="picker__select"
+              aria-label="Equipped weapon"
+              title="Equipped weapon, for weapon-dependent abilities"
+              [value]="section.weapon ?? ''"
+              (change)="onWeaponChange(view, $any($event.target).value)"
+            >
+              <option value="" [selected]="section.weapon === null">— Weapon —</option>
+              @for (weapon of weaponKeys; track weapon) {
+                <option [value]="weapon" [selected]="weapon === section.weapon">{{ weaponLabels[weapon] }}</option>
+              }
+            </select>
           }
 
           <button
@@ -141,26 +166,6 @@
             </button>
           }
         </header>
-
-        <div class="available">
-          <span class="available__label">Available classes</span>
-          @for (unitClass of availableClasses(view); track unitClass.id) {
-            <span class="chip" [class.chip--fixed]="!isRemovableClass(view, unitClass)">
-              {{ unitClass.name }}
-              @if (isRemovableClass(view, unitClass)) {
-                <button
-                  type="button"
-                  class="chip__remove"
-                  [attr.aria-label]="'Remove ' + unitClass.name"
-                  [title]="'Remove ' + unitClass.name"
-                  (click)="removeAvailableClass(unitClass)"
-                >
-                  &times;
-                </button>
-              }
-            </span>
-          }
-        </div>
 
         @if (!exam) {
           <div class="start-stats">
@@ -309,11 +314,117 @@
                 @let examHere = hasExamAt(view, rowIndex);
                 @let examSection = examSectionAt(view, rowIndex);
                 @let anchored = isBranchRow(view, rowIndex);
-                @let cells = effectiveRow(
-                  view.classId === null ? null : view.growth,
-                  row,
-                  view.firstSlot + rowIndex
-                );
+                @let rowGrowths = rowGrowth(view, rowIndex);
+                @let cells = effectiveRow(rowGrowths, row, slotOf(view, rowIndex));
+
+                @if (row.exam; as inlineExam) {
+                  @let boost = inlineBoostOf(view, rowIndex);
+
+                  <div class="grid__label" [title]="'Uses the roll before Lv ' + levelOf(view, rowIndex)">
+                    <span class="level level--exam">{{ inlineExam.passed ? 'Exam' : 'Skip' }}</span>
+                  </div>
+                  <div class="grid__inline">
+                    <app-searchable-select
+                      class="compact"
+                      style="flex: 0 1 14rem; min-width: 0"
+                      label="Exam class"
+                      placeholder="— Select a class —"
+                      [groups]="inlineExamOptions(view, row)"
+                      [clearable]="false"
+                      [value]="inlineExam.classId"
+                      (valueChange)="onInlineExamClass(view, row, $event)"
+                    />
+                    <input
+                      class="level-input level-input--inline"
+                      type="number"
+                      inputmode="numeric"
+                      min="0"
+                      max="100"
+                      aria-label="Pass chance"
+                      title="Pass chance %"
+                      [value]="inlineExam.chance"
+                      (change)="onInlineExamChance(view, row, $event)"
+                    />%
+                    <button
+                      type="button"
+                      class="ghost-button"
+                      [class.tag--pass]="inlineExam.passed"
+                      [class.tag--fail]="!inlineExam.passed"
+                      [attr.aria-pressed]="inlineExam.passed"
+                      [title]="inlineExam.passed ? 'Passed; click to mark as failed' : 'Failed; click to mark as passed'"
+                      (click)="onInlineExamPassed(view, row, !inlineExam.passed)"
+                    >
+                      {{ inlineExam.passed ? 'Passed' : 'Failed' }}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    class="level__remove"
+                    title="Remove this exam (keeps the level)"
+                    aria-label="Remove this exam"
+                    (click)="removeInlineExam(view, row)"
+                  >
+                    &times;
+                  </button>
+
+                  @if (hasInlineBoost(view, rowIndex)) {
+                    <div class="grid__label">Base</div>
+                    @for (stat of statKeys; track stat) {
+                      @if (boost[stat] > 0) {
+                        <div class="floor-cell" [title]="inlineBoostTitle(view, row, rowIndex, stat)">+{{ boost[stat] }}</div>
+                      } @else {
+                        <div class="grid__corner"></div>
+                      }
+                    }
+                    <div class="grid__corner"></div>
+                  }
+
+                  @if (inlineExam.passed) {
+                    <div class="grid__label">Growth</div>
+                    @for (stat of statKeys; track stat) {
+                      <div class="grid__growth" [class.negative]="(rowGrowths?.[stat] ?? 0) < 0">
+                        {{ rowGrowths?.[stat] ?? 0 }}%
+                      </div>
+                    }
+                    <div class="grid__corner"></div>
+                  }
+                }
+
+                @if (row.reclassTo !== undefined) {
+                  <div class="grid__label">
+                    <span class="level level--exam">Reclass</span>
+                  </div>
+                  <div class="grid__inline">
+                    <app-searchable-select
+                      class="compact"
+                      style="flex: 0 1 14rem; min-width: 0"
+                      label="Reclass to"
+                      placeholder="— Select a class —"
+                      [groups]="reclassOptions(view, rowIndex)"
+                      [clearable]="false"
+                      [value]="row.reclassTo"
+                      (valueChange)="onReclassChange(view, row, $event)"
+                    />
+                    <span class="grid__caption-note">from Lv {{ levelOf(view, rowIndex) }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="level__remove"
+                    title="Remove this reclass"
+                    aria-label="Remove this reclass"
+                    (click)="removeReclass(view, row)"
+                  >
+                    &times;
+                  </button>
+
+                  <div class="grid__label">Growth</div>
+                  @for (stat of statKeys; track stat) {
+                    <div class="grid__growth" [class.negative]="(rowGrowths?.[stat] ?? 0) < 0">
+                      {{ rowGrowths?.[stat] ?? 0 }}%
+                    </div>
+                  }
+                  <div class="grid__corner"></div>
+                }
 
                 <div class="grid__label">
                   <span class="level">Lv {{ levelOf(view, rowIndex) }}</span>
@@ -321,7 +432,7 @@
                     <button
                       type="button"
                       class="level__remove"
-                      [title]="anchored ? 'An exam is taken at or right after this level' : 'Remove this level'"
+                      [title]="anchored ? 'An exam branches off at or right after this level' : 'Remove this level'"
                       aria-label="Remove this level"
                       [disabled]="anchored"
                       (click)="removeLevel(view, row)"
@@ -350,11 +461,11 @@
                   [class.exam-add--used]="examHere"
                   [title]="
                     examSection
-                      ? 'Lv ' + levelOf(view, rowIndex) + ' was already skipped by ' + examSection.title +
-                        '. To skip it again, use the + on ' + examSection.title + ' Lv ' + levelOf(view, rowIndex) + '.'
-                      : 'Exam taken at Lv ' + levelOf(view, rowIndex) + ' (skips this level up)'
+                      ? examSection.title + ' already branches off at Lv ' + levelOf(view, rowIndex) +
+                        '. To branch again, use the + on ' + examSection.title + ' Lv ' + levelOf(view, rowIndex) + '.'
+                      : 'Exam in place of Lv ' + levelOf(view, rowIndex) + ', or reclass from Lv ' + levelOf(view, rowIndex)
                   "
-                  [attr.aria-label]="'Exam taken at Lv ' + levelOf(view, rowIndex)"
+                  [attr.aria-label]="'Exam or reclass at Lv ' + levelOf(view, rowIndex)"
                   [disabled]="!canTakeExamAtRow(view, rowIndex)"
                   (click)="openExamAt(view, rowIndex)"
                 >
@@ -476,7 +587,7 @@
                   @let comparatorCells = effectiveRow(
                     comparator.classId === null ? null : comparatorGrowths,
                     row,
-                    view.firstSlot + rowIndex
+                    slotOf(view, rowIndex)
                   );
 
                   <div class="grid__label">
@@ -683,8 +794,8 @@
 </div>
 
 <ng-template #statTotal let-total="total">
-  @let delta = total.gained + total.floorBoost + total.classBonus + total.mountBonus;
-  @let bonus = total.classBonus + total.mountBonus;
+  @let delta = total.gained + total.floorBoost + total.classBonus + total.mountBonus + total.abilityBonus;
+  @let bonus = total.classBonus + total.mountBonus + total.abilityBonus;
   <div
     class="stat-value"
     [class.stat-value--bonus-up]="bonus > 0"
@@ -748,10 +859,26 @@
   <app-exam-dialog
     [title]="dialog.title"
     [context]="dialog.context"
+    [reclassContext]="dialog.reclassContext"
     [classGroups]="dialog.classGroups"
+    [reclassGroups]="dialog.reclassGroups"
     [initial]="dialog.initial"
+    [initialMode]="dialog.initialMode"
+    [canSwitchMode]="dialog.canSwitchMode"
     [strBounds]="dialog.strBounds"
     (confirmed)="onExamConfirmed($event)"
     (closed)="closeExam()"
+  />
+}
+
+@if (pickerConfig(); as picker) {
+  <app-picker-dialog
+    [title]="picker.title"
+    [context]="picker.context"
+    [groups]="picker.groups"
+    [selected]="picker.selected"
+    [max]="picker.max"
+    (confirmed)="onPickerConfirmed($event)"
+    (closed)="closePicker()"
   />
 }

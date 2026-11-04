@@ -1,0 +1,199 @@
+{
+  "UnitId": "Troy",
+  "PersonalAbility": {
+    "Name": "Yun Shou",
+    "Description": "When equipped with gauntlets, grants Hit\u002B10."
+  },
+  "Bloodmark": null,
+  "LevelUpPersonalAbilities": [
+    {
+      "Name": "Modified Weapon",
+      "LevelAcquired": 50,
+      "Description": "When equipped with Zerberus, attacks are effective vs. flying."
+    },
+    {
+      "Name": "Modified Weapon\u002B",
+      "LevelAcquired": 60,
+      "Description": "When equipped with Zerberus, attacks are effective\u002B vs. flying."
+    }
+  ],
+  "Paths": [
+    {
+      "Path": "Prologue",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": [
+        {
+          "Chapter": 2,
+          "Level": 45,
+          "ClassName": "War Monk",
+          "SkillRanks": {
+            "Sword": "E",
+            "Spear": "E",
+            "Axe": "E",
+            "Bow": "E",
+            "Gauntlet": "A",
+            "BlackMagic": "C",
+            "WhiteMagic": "A",
+            "Authority": "D",
+            "Infantry": "D",
+            "Riding": "E",
+            "HeavyArmor": "E",
+            "Flying": "E"
+          },
+          "Inventory": {
+            "Weapons": [
+              {
+                "Name": "Zerberus",
+                "Description": "A handheld firearm made for Troy. Treated as a magical attack. Allows the compressed Laser combat art.",
+                "Durability": "5/5",
+                "EffectiveType": [],
+                "Mt": 9,
+                "Hit": 80,
+                "Crit": 0,
+                "Curse": "--",
+                "Wt": 5,
+                "Avo": 0,
+                "Range": "1-2",
+                "Skill": {
+                  "SkillType": "Gauntlet",
+                  "SkillRank": "A"
+                }
+              },
+              {
+                "Name": "Silver Gauntlets",
+                "Description": "Powerful gauntlets plated in refined silver.",
+                "Durability": "20/20",
+                "EffectiveType": [],
+                "Mt": 18,
+                "Hit": 90,
+                "Crit": 0,
+                "Curse": "--",
+                "Wt": 5,
+                "Avo": 0,
+                "Range": "1",
+                "Skill": {
+                  "SkillType": "Gauntlet",
+                  "SkillRank": "B"
+                }
+              }
+            ],
+            "Items": [
+              {
+                "Name": "Vulnerary",
+                "Description": "Restores 20 HP.",
+                "Durability": "3/3",
+                "Mt": "--",
+                "Hit": "--",
+                "Crit": "--",
+                "Curse": "--",
+                "Wt": "--",
+                "Avo": "--",
+                "Range": "--",
+                "Skill": null
+              }
+            ],
+            "MagicTomes": null,
+            "WhiteTomes": [
+              {
+                "Name": "Heal",
+                "Description": "Sacred magic that heals wounds. Restores HP to an ally.",
+                "MagicType": "White",
+                "Uses": 10,
+                "Pwr": "10",
+                "Hit": "--",
+                "Crit": "--",
+                "Curse": "--",
+                "Wt": "--",
+                "Avo": 0,
+                "Range": "1"
+              }
+            ],
+            "CombatArts": [
+              {
+                "Name": "Mighty Fist",
+                "Description": "High Hit.",
+                "Cost": "2",
+                "SkillType": "Gauntlet",
+                "Mt": 4,
+                "Hit": 10,
+                "Crit": 0,
+                "Rng": "1"
+              }
+            ]
+          },
+          "GrowthRates": {
+            "Hp": 55,
+            "Str": 55,
+            "Mag": 45,
+            "Spd": 65,
+            "Dex": 40,
+            "Def": 35,
+            "Res": 45,
+            "Lck": 35,
+            "Cha": 35
+          },
+          "Stats": {
+            "Hp": 52,
+            "Str": 31,
+            "Mag": 32,
+            "Spd": 33,
+            "Dex": 28,
+            "Def": 23,
+            "Res": 28,
+            "Lck": 24,
+            "Cha": 21,
+            "Mov": 4,
+            "Bld": 6
+          },
+          "EquippedAbilities": [
+            {
+              "Name": "Fists Lv. 5",
+              "Description": "When equipped with gauntlets, grants Hit/Avo\u002B10."
+            },
+            {
+              "Name": "White Magic Lv. 5",
+              "Description": "When equipped with white magic, grants Hit/Avo\u002B10."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Path": "Cai",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Leda",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Dietrich",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Theodora",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "WarArc",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "SalvationArc",
+      "IsRecruitable": false,
+      "Requirement": null,
+      "Chapters": []
+    }
+  ]
+}

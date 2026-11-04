@@ -1,0 +1,65 @@
+<div class="backdrop" (click)="close()"></div>
+
+<div class="dialog dialog--picker" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+  <header class="dialog__header">
+    <div>
+      <p class="dialog__eyebrow">Seed Mapper</p>
+      <h2 id="picker-title">{{ title() }}</h2>
+    </div>
+    <button type="button" class="dialog__close" aria-label="Close" (click)="close()">
+      &times;
+    </button>
+  </header>
+
+  @if (context()) {
+    <p class="dialog__context">{{ context() }}</p>
+  }
+
+  <div class="picker-bar">
+    <input
+      class="picker-search"
+      type="search"
+      placeholder="Search…"
+      aria-label="Search"
+      [value]="query()"
+      (input)="query.set($any($event.target).value)"
+    />
+    <span class="picker-count" [class.picker-count--full]="full()">
+      {{ count() }}{{ max() === null ? '' : '/' + max() }} selected
+    </span>
+  </div>
+
+  <div class="picker-list">
+    @for (group of filtered(); track group.label) {
+      @if (group.label) {
+        <p class="picker-group">{{ group.label }}</p>
+      }
+      @for (item of group.items; track item.id) {
+        <label class="picker-item" [class.picker-item--disabled]="isDisabled(item)" [class.picker-item--on]="isPicked(item)">
+          <input
+            type="checkbox"
+            [checked]="isPicked(item)"
+            [disabled]="isDisabled(item)"
+            (change)="toggle(item)"
+          />
+          <span class="picker-item__text">
+            <span class="picker-item__name">{{ item.name }}</span>
+            @if (item.description) {
+              <span class="picker-item__description">{{ item.description }}</span>
+            }
+            @if (item.locked) {
+              <span class="picker-item__locked">{{ item.locked }}</span>
+            }
+          </span>
+        </label>
+      }
+    } @empty {
+      <p class="hint">Nothing matches "{{ query() }}".</p>
+    }
+  </div>
+
+  <footer class="dialog__footer">
+    <button type="button" class="button" (click)="close()">Cancel</button>
+    <button type="button" class="button button--primary" (click)="confirm()">Confirm</button>
+  </footer>
+</div>

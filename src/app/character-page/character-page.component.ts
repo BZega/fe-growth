@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs/operators';
 import { GrowthCalculatorComponent } from '../growth-calculator/growth-calculator.component';
-import { diffGrowth, growthTotal, Mount, SKILL_KEYS, SKILL_LABELS, SkillKey, SkillPreference, STAT_KEYS, STAT_LABELS, sumGrowth, Unit, UnitClass } from '../models/growth.models';
+import { BOOSTED_GROWTH_VARIANTS, characterKey, diffGrowth, growthTotal, Mount, SKILL_KEYS, SKILL_LABELS, SkillKey, SkillPreference, STAT_KEYS, STAT_LABELS, sumGrowth, toGrowth, Unit, UnitClass } from '../models/growth.models';
 import { BASE_MOVE, buildFromStrength, chapterGrowth, RouteRequirement } from '../models/recruitment.models';
 import { CalculatorStateService } from '../services/calculator-state.service';
 import { GrowthDataService } from '../services/growth-data.service';
@@ -17,6 +17,7 @@ interface Pill {
   value: string;
   tone: Tone;
   wide?: boolean;
+  detail?: string;
 }
 
 type CharacterTab = 'build' | 'skill' | 'recruitment';
@@ -122,9 +123,11 @@ export class CharacterPageComponent {
       { label: 'Mov', value: unitClass ? String(BASE_MOVE + unitClass.bonusStats.mov) : '—', tone: 'base' },
       { label: 'Bld', value: String(buildFromStrength(strength)), tone: 'base' },
     ];
+    const { growthUnit, baseUnit } = this.growthUnitsFor(unit);
     const growth = unitClass
-      ? chapterGrowth(unit, unitClass, classMountType, this.mounts())
+      ? chapterGrowth(growthUnit, unitClass, classMountType, this.mounts())
       : null;
+    const bonus = baseUnit ? diffGrowth(toGrowth(growthUnit), toGrowth(baseUnit)) : null;
 
     return {
       chapter,
@@ -139,6 +142,10 @@ export class CharacterPageComponent {
             value: `${growth.growth[stat]}%`,
             tone: toneOf(growth.growth[stat]),
             wide: stat === 'hp',
+            detail:
+              baseUnit && bonus && bonus[stat] !== 0
+                ? `Base: ${growth.growth[stat] - bonus[stat]}% + Bonus: ${bonus[stat]}%`
+                : undefined,
           }))
         : [],
       growthTotal: growth ? growthTotal(growth.growth) : null,
@@ -155,6 +162,15 @@ export class CharacterPageComponent {
 
   readonly slotA = computed(() => `character-${this.unitId()}-1`);
   readonly slotB = computed(() => `character-${this.unitId()}-2`);
+
+  // Mu and Mu* both use Mu*'s growths here, measured against Mu's so the bonus shows.
+  private growthUnitsFor(unit: Unit): { growthUnit: Unit; baseUnit: Unit | null } {
+    const key = characterKey(unit.name);
+    const boosted = this.units().find((candidate) => candidate.name === BOOSTED_GROWTH_VARIANTS[key]);
+    const base = this.units().find((candidate) => candidate.name === key);
+
+    return boosted && base ? { growthUnit: boosted, baseUnit: base } : { growthUnit: unit, baseUnit: null };
+  }
 
   readonly comparing = linkedSignal(() => this.state.has(this.slotB()));
 

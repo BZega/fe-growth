@@ -315,3 +315,69 @@ describe('CharacterPageComponent recruitment', () => {
     expect(text('.empty--boxed')).toEqual(['No recruitment data for Hong Hua yet.']);
   });
 });
+
+describe("CharacterPageComponent Mu's recruitment", () => {
+  const mu = units.find((candidate) => candidate.name === 'Mu')!;
+  const muStar = units.find((candidate) => candidate.name === 'Mu*')!;
+
+  const open = (unitName: string) => {
+    const id = units.find((candidate) => candidate.name === unitName)!.id;
+
+    TestBed.configureTestingModule({
+      imports: [CharacterPageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: String(id) })) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(CharacterPageComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    Array.from(host.querySelectorAll<HTMLButtonElement>('.tabs__tab'))
+      .find((tab) => tab.textContent!.includes('Recruitment'))!
+      .click();
+    fixture.detectChanges();
+
+    const growthRow = (label: string) =>
+      Array.from(host.querySelectorAll<HTMLElement>('section[aria-labelledby="growth-title"] .stat-row')).find(
+        (row) => row.querySelector('.stat-row__label')!.textContent!.trim() === label,
+      )!;
+
+    return { fixture, host, growthRow };
+  };
+
+  for (const name of ['Mu', 'Mu*']) {
+    it(`loads Mu.json for ${name}`, () => {
+      const { fixture } = open(name);
+
+      expect(fixture.componentInstance.recruitment()?.unitName).toBe('Mu');
+      expect(fixture.componentInstance.chapter()?.className).toBe('Noble/Commoner');
+    });
+
+    it(`shows Mu*'s growth rates for ${name}, with Mu's base plus the bonus on hover`, () => {
+      const { growthRow } = open(name);
+      const noble = classes.find((candidate) => candidate.name === 'Noble/Commoner')!;
+      const hp = growthRow('HP');
+
+      expect(hp.querySelector('.stat-row__value')!.textContent!.trim()).toBe(`${muStar.hp + noble.hp}%`);
+      expect(hp.getAttribute('title')).toBe(`Base: ${mu.hp + noble.hp}% + Bonus: ${muStar.hp - mu.hp}%`);
+    });
+  }
+
+  it('gives every stat the same +20 bonus over Mu', () => {
+    expect(STAT_KEYS.map((stat) => muStar[stat] - mu[stat])).toEqual(STAT_KEYS.map(() => 20));
+  });
+
+  it("doesn't show a Bloodmark when the file has none", () => {
+    const { host } = open('Mu');
+
+    expect(Array.from(host.querySelectorAll('.page-header .section-title')).map((title) => title.textContent!.trim()))
+      .not.toContain('Bloodmark');
+  });
+
+  it("leaves other characters' growths without a breakdown", () => {
+    const { host } = open('Hong Hua');
+
+    expect(host.querySelector('section[aria-labelledby="growth-title"] .stat-row[title]')).toBeNull();
+  });
+});

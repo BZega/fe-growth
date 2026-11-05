@@ -183,8 +183,11 @@ function toInventory(inventory: Record<string, Row[] | null>): InventoryGroup[] 
   }).filter((group) => group.entries.length > 0);
 }
 
-function toAbility(ability: RawAbility | null | undefined): { name: string; description: string } | null {
-  return ability ? { name: ability.Name, description: ability.Description } : null;
+// Some files hold an empty list instead of null when there's nothing to show.
+function toAbility(ability: RawAbility | readonly unknown[] | null | undefined): { name: string; description: string } | null {
+  return ability && !Array.isArray(ability) && (ability as RawAbility).Name
+    ? { name: (ability as RawAbility).Name, description: (ability as RawAbility).Description }
+    : null;
 }
 
 function skillRank(skill: unknown): string {

@@ -1,6 +1,8 @@
 import { afterNextRender, Component, DestroyRef, ElementRef, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { SpoilerService } from './services/spoiler.service';
+import { SuggestionDialogComponent } from './suggestion-dialog/suggestion-dialog.component';
+import { SupportDialogComponent } from './support-dialog/support-dialog.component';
 
 const TEXT_FIELD = 'input:not([type=checkbox]):not([type=radio]):not([type=button]), textarea, select';
 const KEYBOARD_KEY = 'fe-growth:keyboard-inset';
@@ -10,7 +12,7 @@ const isEditing = () => document.activeElement?.matches(TEXT_FIELD) ?? false;
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, SuggestionDialogComponent, SupportDialogComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -29,6 +31,8 @@ export class AppComponent {
   ];
 
   readonly menuOpen = signal(false);
+  readonly suggestionsOpen = signal(false);
+  readonly supportOpen = signal(false);
   readonly hideSpoilers = this.spoilers.hidden;
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -326,6 +330,16 @@ export class AppComponent {
 
   toggleSpoilers(): void {
     this.spoilers.toggle();
+  }
+
+  openSuggestions(): void {
+    this.closeMenu();
+    this.suggestionsOpen.set(true);
+  }
+
+  openSupport(): void {
+    this.closeMenu();
+    this.supportOpen.set(true);
   }
 }
 

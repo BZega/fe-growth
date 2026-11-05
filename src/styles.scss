@@ -12,6 +12,19 @@
   box-sizing: border-box;
 }
 
+// Text cursors (pointer and caret) only belong where you can type.
+html {
+  cursor: default;
+  caret-color: transparent;
+}
+
+input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='button'], [type='submit'], [type='reset']),
+textarea,
+[contenteditable='true'] {
+  cursor: text;
+  caret-color: auto;
+}
+
 html,
 body {
   margin: 0;

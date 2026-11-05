@@ -1,0 +1,173 @@
+{
+  "UnitId": "Mu",
+  "PersonalAbility": {
+    "Name": "Signs of Growth",
+    "Description": "When unit levels up, grants enhanced basic stat growth."
+  },
+  "Bloodmark": [],
+  "LevelUpPersonalAbilities": [
+    {
+      "Name": "Warrior\u0027s Blood",
+      "LevelAcquired": 20,
+      "Description": "Grants stat increase based on equipped weapon type."
+    },
+    {
+      "Name": "Warrior\u0027s Blood\u002B",
+      "LevelAcquired": 35,
+      "Description": "Grants a large stat increase based on equipped weapon type."
+    }
+  ],
+  "Paths": [
+    {
+      "Path": "Prologue",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Cai",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": [
+        {
+          "Chapter": 4,
+          "Level": 4,
+          "ClassName": "Noble/Commoner",
+          "SkillRanks": {
+            "Sword": "E",
+            "Spear": "E",
+            "Axe": "E",
+            "Bow": "E",
+            "Gauntlet": "D",
+            "BlackMagic": "E",
+            "WhiteMagic": "D",
+            "Authority": "E",
+            "Infantry": "E",
+            "Riding": "E",
+            "HeavyArmor": "E",
+            "Flying": "E"
+          },
+          "Inventory": {
+            "Weapons": [
+              {
+                "Name": "Wooden Gauntlets",
+                "Description": "Light, simple gauntlets made of wood.",
+                "Durability": "10/10",
+                "EffectiveType": [],
+                "Mt": 2,
+                "Hit": 90,
+                "Crit": 0,
+                "Curse": "--",
+                "Wt": 1,
+                "Avo": 0,
+                "Range": "1",
+                "Skill": {
+                  "SkillType": "Gauntlet",
+                  "SkillRank": "E"
+                }
+              }
+            ],
+            "Items": [
+              {
+                "Name": "Vulnerary",
+                "Description": "Restores 20 HP.",
+                "Durability": null,
+                "Mt": "--",
+                "Hit": "--",
+                "Crit": "--",
+                "Curse": "--",
+                "Wt": "--",
+                "Avo": "--",
+                "Range": "--",
+                "Skill": null
+              }
+            ],
+            "MagicTomes": null,
+            "WhiteTomes": [
+              {
+                "Name": "Heal",
+                "Description": "Sacred magic that heals wounds. Restores HP to an ally.",
+                "MagicType": "White",
+                "Uses": 10,
+                "Pwr": "10",
+                "Hit": "--",
+                "Crit": "--",
+                "Curse": "--",
+                "Wt": "--",
+                "Avo": 0,
+                "Range": "1"
+              }
+            ],
+            "CombatArts": [
+              {
+                "Name": "Deal Death",
+                "Description": "High Crit.",
+                "Cost": "2",
+                "SkillType": "Gauntlet",
+                "Mt": 4,
+                "Hit": 0,
+                "Crit": 5,
+                "Rng": "1"
+              }
+            ]
+          },
+          "GrowthRates": {
+            "Hp": 30,
+            "Str": 30,
+            "Mag": 5,
+            "Spd": 30,
+            "Dex": 30,
+            "Def": 20,
+            "Res": 10,
+            "Lck": 10,
+            "Cha": 20
+          },
+          "Stats": {
+            "Hp": 24,
+            "Str": 8,
+            "Mag": 3,
+            "Spd": 8,
+            "Dex": 9,
+            "Def": 6,
+            "Res": 5,
+            "Lck": 4,
+            "Cha": 5,
+            "Mov": 4,
+            "Bld": 1
+          },
+          "EquippedAbilities": []
+        }
+      ]
+    },
+    {
+      "Path": "Leda",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Dietrich",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "Theodora",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "WarArc",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": []
+    },
+    {
+      "Path": "SalvationArc",
+      "IsRecruitable": true,
+      "Requirement": null,
+      "Chapters": []
+    }
+  ]
+}

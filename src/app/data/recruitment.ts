@@ -2,9 +2,10 @@
 import file0 from './recruitment/Cai.json';
 import file1 from './recruitment/Eshmel.json';
 import file2 from './recruitment/Hong Hua.json';
-import file3 from './recruitment/Peter.json';
-import file4 from './recruitment/Tialla.json';
-import file5 from './recruitment/Troy.json';
+import file3 from './recruitment/Mu.json';
+import file4 from './recruitment/Peter.json';
+import file5 from './recruitment/Tialla.json';
+import file6 from './recruitment/Troy.json';
 
 export const RECRUITMENT_FILES: readonly unknown[] = [
   file0,
@@ -13,4 +14,5 @@ export const RECRUITMENT_FILES: readonly unknown[] = [
   file3,
   file4,
   file5,
+  file6,
 ];

@@ -1,0 +1,42 @@
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  margin-top: 1rem;
+}
+
+.suggestion__input {
+  width: 100%;
+  resize: vertical;
+  background: #1d222c;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.6rem;
+
+  &:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+}
+
+.suggestion__count {
+  align-self: flex-end;
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  opacity: 0.55;
+}
+
+// Off-screen rather than display: none, which some bots skip.
+.suggestion__trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+}
+
+.suggestion__done {
+  margin: 1rem 0 0;
+  color: #7ee08a;
+}

@@ -1,0 +1,28 @@
+<div class="backdrop" (click)="close()"></div>
+
+<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="support-title">
+  <header class="dialog__header">
+    <div>
+      <p class="dialog__eyebrow">FE Growths</p>
+      <h2 id="support-title">Support the Developer</h2>
+    </div>
+    <button type="button" class="dialog__close" aria-label="Close" (click)="close()">
+      &times;
+    </button>
+  </header>
+
+  <p class="support__lead">Enjoying the FE Growth App?</p>
+  <p class="support__text">
+    This tool is a passion project built in my free time and will always be free to use. If you've
+    found it helpful and would like to support its continued development, tips are always
+    appreciated, but never expected!
+  </p>
+
+  <div class="support__links">
+    @for (link of links; track link.label) {
+      <a class="button button--primary support__link" [href]="link.url" target="_blank" rel="noopener noreferrer">
+        {{ link.label }}
+      </a>
+    }
+  </div>
+</div>

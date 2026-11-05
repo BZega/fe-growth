@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, HostListener, inject, Injector, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs/operators';
 import { BONUS_STAT_KEYS, BONUS_STAT_LABELS, CLASS_RANK_ORDER, ClassAbility, SKILL_KEYS, SKILL_LABELS, SkillKey, STAT_KEYS, STAT_LABELS, UnitClass } from '../models/growth.models';
 import { GrowthDataService } from '../services/growth-data.service';
@@ -20,9 +20,11 @@ export class ClassPageComponent {
   private readonly api = inject(GrowthDataService);
   private readonly spoilers = inject(SpoilerService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly injector = inject(Injector);
 
   private readonly switcher = viewChild<ElementRef<HTMLElement>>('switcher');
+  private readonly toggle = viewChild<ElementRef<HTMLButtonElement>>('toggle');
   private readonly filterBox = viewChild<ElementRef<HTMLInputElement>>('filterBox');
 
   readonly switcherOpen = signal(false);
@@ -149,6 +151,109 @@ export class ClassPageComponent {
     })).filter((group) => group.classes.length > 0);
   });
 
+  // Same order as the switcher: by tier, then as listed in the data.
+  private readonly orderedClasses = computed(() =>
+    CLASS_RANK_ORDER.flatMap((rank) =>
+      this.spoilers.filter(this.classes()).filter((unitClass) => unitClass.rank === rank),
+    ),
+  );
+
+  /** The open switcher's highlighted option; Enter opens it. */
+  readonly highlightId = signal<number | null>(null);
+
+  // No wrapping here: the first and last classes just have one link.
+  readonly adjacentClasses = computed(() => {
+    const list = this.orderedClasses();
+    const index = list.findIndex((unitClass) => unitClass.id === this.classId());
+
+    return {
+      previous: index > 0 ? list[index - 1] : null,
+      next: index >= 0 && index < list.length - 1 ? list[index + 1] : null,
+    };
+  });
+
+  @HostListener('document:keydown', ['$event'])
+  onArrowKey(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement | null;
+    // Arrow keys already mean something in fields and on the stat tabs.
+    const busy = target?.closest('input, textarea, select, [contenteditable="true"], [role="tab"]');
+
+    if (busy || event.defaultPrevented || this.switcherOpen() || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+
+    const { previous, next } = this.adjacentClasses();
+    const step = event.key === 'ArrowLeft' ? previous : event.key === 'ArrowRight' ? next : null;
+
+    if (step) {
+      event.preventDefault();
+      this.router.navigate(['/classes', step.id]);
+    }
+  }
+
+  private readonly matches = computed(() => this.switcherGroups().flatMap((group) => group.classes));
+
+  onFilterInput(value: string): void {
+    this.filter.set(value);
+    this.highlightId.set(this.matches()[0]?.id ?? null);
+  }
+
+  onFilterKey(event: KeyboardEvent): void {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.moveHighlight(event.key === 'ArrowDown' ? 1 : -1);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const target = this.matches().find((unitClass) => unitClass.id === this.highlightId()) ?? this.matches()[0];
+
+      if (target) {
+        this.goTo(target.id);
+      }
+    }
+  }
+
+  private moveHighlight(step: number): void {
+    const list = this.matches();
+
+    if (list.length === 0) {
+      return;
+    }
+
+    const index = list.findIndex((unitClass) => unitClass.id === this.highlightId());
+    const next = list[(index + step + list.length) % list.length];
+
+    this.highlightId.set(next.id);
+    afterNextRender(
+      () => document.getElementById(`class-option-${next.id}`)?.scrollIntoView({ block: 'nearest' }),
+      { injector: this.injector },
+    );
+  }
+
+  // With the switcher closed, ↑/↓ on the class name step straight to the previous/next class.
+  onToggleKey(event: KeyboardEvent): void {
+    if (this.switcherOpen() || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')) {
+      return;
+    }
+
+    const list = this.orderedClasses();
+    const index = list.findIndex((unitClass) => unitClass.id === this.classId());
+
+    if (list.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    const step = event.key === 'ArrowDown' ? 1 : -1;
+    this.router.navigate(['/classes', list[(index + step + list.length) % list.length].id]);
+  }
+
+  /** Opens a class from the switcher and puts focus back on the class name, ready for ↑/↓. */
+  goTo(classId: number): void {
+    this.closeSwitcher();
+    this.router.navigate(['/classes', classId]);
+    this.toggle()?.nativeElement.focus();
+  }
+
   toggleSwitcher(): void {
     if (this.switcherOpen()) {
       this.closeSwitcher();
@@ -156,6 +261,7 @@ export class ClassPageComponent {
     }
 
     this.filter.set('');
+    this.highlightId.set(this.classId());
     this.switcherOpen.set(true);
 
     afterNextRender(
@@ -171,13 +277,6 @@ export class ClassPageComponent {
 
   closeSwitcher(): void {
     this.switcherOpen.set(false);
-  }
-
-  openFirstMatch(event: Event): void {
-    event.preventDefault();
-    this.switcher()
-      ?.nativeElement.querySelector<HTMLAnchorElement>('.switcher__option')
-      ?.click();
   }
 
   @HostListener('document:pointerdown', ['$event'])

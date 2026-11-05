@@ -305,7 +305,7 @@
 <ng-template #statRows let-items let-split="split">
   <ul class="stat-rows" [class.stat-rows--split]="split">
     @for (item of items; track item.label) {
-      <li class="stat-row" [class.stat-row--wide]="item.wide" [attr.data-tone]="item.tone">
+      <li class="stat-row" [class.stat-row--wide]="item.wide" [attr.data-tone]="item.tone" [attr.title]="item.detail ?? null">
         <span class="stat-row__label">{{ item.label }}</span>
         <span class="stat-row__value">{{ item.value }}</span>
       </li>

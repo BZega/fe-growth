@@ -123,6 +123,11 @@ export function characterKey(unitName: string): string {
   return CHARACTER_ALIASES[unitName] ?? unitName;
 }
 
+/** Characters whose recruitment growths come from a boosted variant, shown as the base unit's plus a bonus. */
+export const BOOSTED_GROWTH_VARIANTS: Readonly<Record<string, string>> = {
+  Mu: 'Mu*',
+};
+
 export interface Unit extends GrowthRates {
   id: number;
   name: string;

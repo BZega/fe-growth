@@ -1,0 +1,24 @@
+.support__lead {
+  margin: 1rem 0 0;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.support__text {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+.support__links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.support__link {
+  text-align: center;
+  text-decoration: none;
+}

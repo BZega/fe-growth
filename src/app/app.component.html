@@ -39,6 +39,28 @@
       <button
         type="button"
         class="spoiler-toggle"
+        aria-haspopup="dialog"
+        (click)="openSuggestions()"
+      >
+        Suggestions
+      </button>
+    </li>
+
+    <li class="topnav__spoilers">
+      <button
+        type="button"
+        class="spoiler-toggle"
+        aria-haspopup="dialog"
+        (click)="openSupport()"
+      >
+        Support
+      </button>
+    </li>
+
+    <li class="topnav__spoilers">
+      <button
+        type="button"
+        class="spoiler-toggle"
         [class.is-on]="hideSpoilers()"
         [attr.aria-pressed]="hideSpoilers()"
         (click)="toggleSpoilers()"
@@ -55,3 +77,11 @@
 <main>
   <router-outlet />
 </main>
+
+@if (suggestionsOpen()) {
+  <app-suggestion-dialog (closed)="suggestionsOpen.set(false)" />
+}
+
+@if (supportOpen()) {
+  <app-support-dialog (closed)="supportOpen.set(false)" />
+}

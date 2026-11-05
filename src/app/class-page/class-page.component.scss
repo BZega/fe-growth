@@ -37,6 +37,16 @@
   gap: 1rem;
 }
 
+.class-steps {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.class-steps__next {
+  margin-left: auto;
+}
+
 // --- shared card + headings -------------------------------------------------
 
 .card {
@@ -200,13 +210,15 @@
 
 .badge {
   display: inline-flex;
-  align-items: center;
+  // The small caps label sits on the same text line as the value.
+  align-items: baseline;
   gap: 0.45rem;
-  padding: 0.28rem 0.7rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 999px;
   background: rgb(255 255 255 / 6%);
   font-size: 0.8rem;
   font-weight: 600;
+  line-height: 1;
 }
 
 .badge__label {
@@ -337,7 +349,8 @@
   text-decoration: none;
 
   &:hover,
-  &:focus-visible {
+  &:focus-visible,
+  &--active {
     background: rgb(255 255 255 / 10%);
     outline: none;
   }

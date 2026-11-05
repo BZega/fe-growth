@@ -1,0 +1,76 @@
+<div class="backdrop" (click)="close()"></div>
+
+<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="suggestion-title">
+  <header class="dialog__header">
+    <div>
+      <p class="dialog__eyebrow">FE Growths</p>
+      <h2 id="suggestion-title">Send a suggestion</h2>
+    </div>
+    <button type="button" class="dialog__close" aria-label="Close" (click)="close()">
+      &times;
+    </button>
+  </header>
+
+  @if (state() === 'sent') {
+    <p class="suggestion__done" role="status">Thanks! Your suggestion was sent.</p>
+  } @else {
+    <form class="suggestion" (submit)="$event.preventDefault(); send()">
+      <label class="field">
+        <span class="field__label">Suggestion</span>
+        <textarea
+          class="suggestion__input"
+          rows="6"
+          placeholder="Found a mistake or have an idea? Let us know."
+          [attr.maxlength]="maxLength"
+          [value]="message()"
+          [disabled]="state() === 'sending'"
+          (input)="message.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      <span class="suggestion__count">{{ message().length }}/{{ maxLength }}</span>
+
+      <label class="field">
+        <span class="field__label">Email (optional)</span>
+        <input
+          class="suggestion__input"
+          type="email"
+          name="email"
+          autocomplete="email"
+          placeholder="If you'd like a reply"
+          maxlength="254"
+          [attr.aria-invalid]="emailInvalid()"
+          [value]="email()"
+          [disabled]="state() === 'sending'"
+          (input)="email.set($any($event.target).value)"
+        />
+      </label>
+      @if (emailInvalid()) {
+        <p class="hint hint--error">That doesn't look like an email address.</p>
+      }
+
+      <input
+        class="suggestion__trap"
+        type="text"
+        name="_gotcha"
+        tabindex="-1"
+        autocomplete="off"
+        aria-hidden="true"
+        [value]="trap()"
+        (input)="trap.set($any($event.target).value)"
+      />
+
+      @if (!configured()) {
+        <p class="hint hint--error">Suggestions aren't set up yet.</p>
+      } @else if (state() === 'error') {
+        <p class="hint hint--error" role="alert">Something went wrong sending that. Please try again.</p>
+      }
+
+      <footer class="dialog__footer">
+        <button type="button" class="button" (click)="close()">Cancel</button>
+        <button type="submit" class="button button--primary" [disabled]="!canSend()">
+          {{ state() === 'sending' ? 'Sending…' : 'Submit' }}
+        </button>
+      </footer>
+    </form>
+  }
+</div>

@@ -88,7 +88,7 @@
                   [value]="mount?.id"
                   (change)="setMount(tierIndex, entry.id, $any($event.target).value)"
                 >
-                  @for (option of mountsFor(entry); track option.id) {
+                  @for (option of mountChoices(entry, mount?.id); track option.id) {
                     <option [value]="option.id" [selected]="option.id === mount?.id">{{ option.name }}</option>
                   }
                 </select>

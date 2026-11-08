@@ -223,7 +223,7 @@
                   <span class="picker__label">Mount</span>
                   <app-searchable-select
                     label="Mount"
-                    [items]="mountsForClass(view.classId)"
+                    [items]="mountItems(view.classId, view.mount?.id)"
                     [clearable]="false"
                     [value]="view.mount?.id ?? null"
                     (valueChange)="onMountChange(view, $event)"
@@ -502,7 +502,7 @@
                     <span class="picker__label">Mount</span>
                     <app-searchable-select
                       label="Mount"
-                      [items]="mountsForClass(comparator.classId)"
+                      [items]="mountItems(comparator.classId, comparatorMountOf(comparator)?.id)"
                       [clearable]="false"
                       [value]="comparatorMountOf(comparator)?.id ?? null"
                       (valueChange)="onComparatorMountChange(view, comparator, $event)"

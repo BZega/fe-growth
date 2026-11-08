@@ -35,6 +35,31 @@ describe('SpoilerService tiers', () => {
     ).toEqual(['Swordmaster']);
   });
 
+  it('hides the Salvation Arc mounts and Elephant Rider with the Salvation Arc tier', () => {
+    const items = [
+      { name: 'Wild Horse' },
+      { name: 'Black Horse' },
+      { name: 'Red Falicorn' },
+      { name: 'Red Bau' },
+      { name: 'Black Bau' },
+      { name: 'Saramis War Elephant' },
+      { name: 'Elephant Rider', rank: 'Advanced' },
+    ];
+
+    expect(shown(...items).length).toBe(items.length);
+
+    spoilers.setHidden('salvation', true);
+    expect(shown(...items)).toEqual(['Wild Horse']);
+  });
+
+  it('keeps the selected item listed even when it is a hidden spoiler', () => {
+    spoilers.setHidden('salvation', true);
+    const mounts = [{ id: 1, name: 'Wild Horse' }, { id: 2, name: 'Black Horse' }];
+
+    expect(spoilers.filterKeeping(mounts, 2).map((mount) => mount.name)).toEqual(['Wild Horse', 'Black Horse']);
+    expect(spoilers.filterKeeping(mounts, 1).map((mount) => mount.name)).toEqual(['Wild Horse']);
+  });
+
   it('shows the DLC classes only when Salvation Arc and DLC are both revealed', () => {
     const trickster = { name: 'Trickster', rank: 'Master' };
 

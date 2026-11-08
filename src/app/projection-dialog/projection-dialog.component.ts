@@ -154,6 +154,10 @@ export class ProjectionDialogComponent implements OnInit {
     return type === 'None' ? [] : this.mounts().filter((mount) => mount.type === type);
   }
 
+  mountChoices(entry: PlanEntry, selectedId: number | undefined): Mount[] {
+    return this.spoilers.filterKeeping(this.mountsFor(entry), selectedId);
+  }
+
   // Defaults to the unit's own mount when it has one of this type, otherwise the first one.
   mountOf(entry: PlanEntry): Mount | null {
     const options = this.mountsFor(entry);

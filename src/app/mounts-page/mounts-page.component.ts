@@ -6,6 +6,7 @@ import { LayoutSwitchComponent, ListLayout } from '../layout-switch/layout-switc
 import { StatSortComponent, StatSortDirection } from '../stat-sort/stat-sort.component';
 import { BonusStatKey, growthTotal, Mount, mountBonusAt, mountGrowthAt, MOUNT_TYPE_ORDER, STAT_KEYS } from '../models/growth.models';
 import { GrowthDataService } from '../services/growth-data.service';
+import { SpoilerService } from '../services/spoiler.service';
 
 type MountView = 'growth' | 'bonus';
 
@@ -76,10 +77,13 @@ type MountView = 'growth' | 'bonus';
 })
 export class MountsPageComponent {
   private readonly api = inject(GrowthDataService);
+  private readonly spoilers = inject(SpoilerService);
 
-  private readonly mounts = toSignal(this.api.getMounts(), {
+  private readonly allMounts = toSignal(this.api.getMounts(), {
     initialValue: [] as Mount[],
   });
+
+  private readonly mounts = computed(() => this.spoilers.filter(this.allMounts()));
 
   readonly tabs: readonly { key: MountView; label: string }[] = [
     { key: 'growth', label: 'Growth Rates' },

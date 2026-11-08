@@ -62,7 +62,7 @@ export class GrowthCalculatorComponent implements OnInit {
     })).filter((group) => group.items.length > 0);
   });
 
-  readonly mountOptions = toSignal(
+  private readonly allMountOptions = toSignal(
     toObservable(this.selectedClassId).pipe(
       switchMap((classId) =>
         classId === null ? of<Mount[]>([]) : this.api.getMountsForClass(classId),
@@ -70,6 +70,8 @@ export class GrowthCalculatorComponent implements OnInit {
     ),
     { initialValue: [] as Mount[] },
   );
+
+  readonly mountOptions = computed(() => this.spoilers.filter(this.allMountOptions()));
 
   readonly unit = computed(
     () => this.units().find((u) => u.id === this.selectedUnitId()) ?? null,

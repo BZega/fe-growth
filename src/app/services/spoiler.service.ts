@@ -13,13 +13,20 @@ type HiddenTiers = Record<SpoilerTier, boolean>;
 const STORAGE_KEY = 'fe-growth.hidden-spoiler-tiers';
 const LEGACY_STORAGE_KEY = 'fe-growth.hide-spoilers';
 
-const UNIT_TIERS: Readonly<Record<string, SpoilerTier>> = {
+// Characters, mounts and individual classes, by name.
+const NAMED_TIERS: Readonly<Record<string, SpoilerTier>> = {
   Nathan: 'war',
   Creek: 'war',
   Tahonia: 'salvation',
   Aswan: 'salvation',
   Klapka: 'salvation',
   Centurio: 'salvation',
+  'Elephant Rider': 'salvation',
+  'Black Horse': 'salvation',
+  'Red Falicorn': 'salvation',
+  'Red Bau': 'salvation',
+  'Black Bau': 'salvation',
+  'Saramis War Elephant': 'salvation',
   Aurora: 'dlc',
   Jurah: 'dlc',
   Mars: 'dlc',
@@ -74,10 +81,10 @@ export class SpoilerService {
 
   isSpoiler(item: { name: string; rank?: string }): boolean {
     const tiers = this.hiddenTiers();
-    const unitTier = UNIT_TIERS[item.name];
+    const namedTier = NAMED_TIERS[item.name];
 
-    if (unitTier) {
-      return tiers[unitTier];
+    if (namedTier) {
+      return tiers[namedTier];
     }
 
     // DLC classes are also Master rank, so they only show once both Salvation Arc and DLC are revealed.
@@ -90,6 +97,11 @@ export class SpoilerService {
 
   filter<T extends { name: string; rank?: string }>(items: readonly T[]): T[] {
     return items.filter((item) => !this.isSpoiler(item));
+  }
+
+  // Keeps the current choice listed so saved selections still display.
+  filterKeeping<T extends { id: number; name: string; rank?: string }>(items: readonly T[], keepId: number | null | undefined): T[] {
+    return items.filter((item) => item.id === keepId || !this.isSpoiler(item));
   }
 }
 

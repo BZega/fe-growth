@@ -554,6 +554,10 @@ export class SeedMapperPageComponent {
     return classId === null ? [] : (this.mountsByClass().get(classId) ?? []);
   }
 
+  mountItems(classId: number | null, selectedId: number | null | undefined): Mount[] {
+    return this.spoilers.filterKeeping(this.mountsForClass(classId), selectedId);
+  }
+
   private resolveMount(classId: number | null, mountId: number | null): Mount | null {
     const options = this.mountsForClass(classId);
 

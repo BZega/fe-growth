@@ -27,6 +27,12 @@
   }
 }
 
+.page-header__title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
 .header-actions {
   display: flex;
   align-items: center;

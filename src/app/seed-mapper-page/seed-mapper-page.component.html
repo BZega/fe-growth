@@ -2,28 +2,8 @@
   <div>
     <div class="page-header__title">
       <h1>Seed Mapper</h1>
-      <button
-        type="button"
-        class="help-toggle"
-        aria-controls="seed-mapper-help"
-        [attr.aria-expanded]="helpOpen()"
-        (click)="toggleHelp()"
-      >
-        {{ helpOpen() ? 'Hide help' : 'Show help' }}
-      </button>
+      <app-help-dialog heading="Seed Mapper" [paragraphs]="helpText" />
     </div>
-    <p id="seed-mapper-help" class="page-header__help" [class.is-collapsed]="!helpOpen()">
-      Enter the unit's stats and change the starting level if it isn't 1. Mark which stats rose on each level up.
-      Use <strong>Classes</strong> to pick the classes the unit already has available; Noble/Commoner is always available.
-      Use <strong>Abilities</strong> to equip up to five stat-boosting abilities for each section.
-      Comparators replay the same levels in another available class. 
-      Press the <strong>+</strong> beside a level to branch off with an exam in place of that level up, or
-      click <strong>Exam / Reclass</strong> to carry the seed on with an exam row and a new level. Passing an exam raises
-      any stat below the new class's base stat up to it; the added points show on the exam line and
-      the pass chance moves to <strong>Seed RNG</strong>. Choose <strong>Reclass</strong> in the same
-      dialog to switch to a class the unit already has from that level on: the level stays, and the
-      new class's growth rates show on a reclass row above it.
-    </p>
   </div>
 
   <div class="page-header__actions">
@@ -64,7 +44,7 @@
   </div>
 </header>
 
-<div class="seeds" (focusin)="hideHelp()">
+<div class="seeds">
   @for (view of sectionViews(); track view.section.id) {
     @let section = view.section;
     @let exam = section.exam;
@@ -184,7 +164,6 @@
                   (keydown.enter)="focusNextStartField($event)"
                 />
               </label>
-              <span class="grid__caption-note">Enter without mount bonuses; each block adds its mount's bonus at its bond level.</span>
             </div>
 
             <div class="grid" [style.--stat-count]="statKeys.length">
@@ -448,7 +427,6 @@
                     class="cell"
                     [class.cell--on]="cells.marks[stat] > 0"
                     [class.cell--auto]="cells.auto[stat]"
-                    [title]="cells.auto[stat] ? autoHint : ''"
                     (click)="toggleStat(view, row, stat)"
                   >
                     {{ cells.marks[stat] }}
@@ -600,7 +578,6 @@
                       class="cell"
                       [class.cell--on]="comparatorCells.marks[stat] > 0"
                       [class.cell--auto]="comparatorCells.auto[stat]"
-                      [title]="comparatorCells.auto[stat] ? autoHint : ''"
                       (click)="toggleComparatorStat(view, comparator, row, stat)"
                     >
                       {{ comparatorCells.marks[stat] }}

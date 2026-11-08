@@ -1,0 +1,34 @@
+<button
+  type="button"
+  class="help-button"
+  [attr.aria-label]="'Help: ' + heading()"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="open()"
+  (click)="open.set(true)"
+>
+  ?
+</button>
+
+@if (open()) {
+  <div class="help-overlay">
+    <div class="backdrop" (click)="close()"></div>
+
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="help-dialog-title">
+      <header class="dialog__header">
+        <div>
+          <p class="dialog__eyebrow">Help</p>
+          <h2 id="help-dialog-title">{{ heading() }}</h2>
+        </div>
+        <button type="button" class="dialog__close" aria-label="Close help" (click)="close()">
+          &times;
+        </button>
+      </header>
+
+      <div class="help-dialog__body">
+        @for (paragraph of paragraphs(); track $index) {
+          <p>{{ paragraph }}</p>
+        }
+      </div>
+    </section>
+  </div>
+}

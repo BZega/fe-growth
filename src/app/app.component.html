@@ -53,23 +53,43 @@
         aria-haspopup="dialog"
         (click)="openSupport()"
       >
-        Support
+        Donations
       </button>
     </li>
 
-    <li class="topnav__spoilers">
+    <li class="topnav__spoilers spoiler-menu">
       <button
         type="button"
-        class="spoiler-toggle"
+        class="spoiler-toggle spoiler-menu__trigger"
         [class.is-on]="hideSpoilers()"
-        [attr.aria-pressed]="hideSpoilers()"
-        (click)="toggleSpoilers()"
+        aria-haspopup="true"
+        aria-controls="spoiler-menu-panel"
+        [attr.aria-expanded]="spoilerMenuOpen()"
+        (click)="toggleSpoilerMenu()"
       >
-        <span class="spoiler-toggle__track" aria-hidden="true">
-          <span class="spoiler-toggle__thumb"></span>
-        </span>
-        Hide spoilers
+        Spoilers
+        <span class="spoiler-menu__caret" aria-hidden="true">{{ spoilerMenuOpen() ? '▴' : '▾' }}</span>
       </button>
+
+      @if (spoilerMenuOpen()) {
+        <div id="spoiler-menu-panel" class="spoiler-menu__panel" role="group" aria-label="Hide spoilers">
+          @for (tier of spoilerTiers; track tier.key) {
+            <button
+              type="button"
+              class="spoiler-toggle"
+              role="switch"
+              [class.is-on]="hiddenTiers()[tier.key]"
+              [attr.aria-checked]="hiddenTiers()[tier.key]"
+              (click)="toggleSpoilerTier(tier.key)"
+            >
+              <span class="spoiler-toggle__track" aria-hidden="true">
+                <span class="spoiler-toggle__thumb"></span>
+              </span>
+              {{ tier.label }}
+            </button>
+          }
+        </div>
+      }
     </li>
   </ul>
 </nav>

@@ -9,6 +9,43 @@
   font-style: italic;
 }
 
+// One wrapped column of non-zero bonuses instead of a column per stat.
+.list .list__bonus {
+  text-align: left;
+  white-space: normal;
+}
+
+thead .list__bonus {
+  padding: 0.45rem 0.6rem;
+}
+
+.chip {
+  display: inline-block;
+  margin: 0.1rem 0.35rem 0.1rem 0;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 6%);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip--positive {
+  color: #7ee08a;
+}
+
+.chip--negative {
+  color: #ff8d8d;
+}
+
+.chip--sorted {
+  outline: 1px solid var(--accent);
+}
+
+.chip--none {
+  font-weight: 400;
+  opacity: 0.55;
+}
+
 .scroller {
   flex: 1;
   min-height: 0;

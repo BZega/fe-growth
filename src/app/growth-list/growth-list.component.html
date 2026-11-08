@@ -2,7 +2,7 @@
   <p class="empty">Loading…</p>
 } @else {
   <div class="scroller">
-    <table class="list">
+    <table class="list" [class.list--bonus]="bonusLayout()">
       <thead>
         <tr>
           <th scope="col" class="list__name" [attr.aria-sort]="ariaSort('name')">
@@ -19,20 +19,24 @@
               </button>
             </th>
           }
-          @for (stat of visibleStats(); track stat) {
-            <th scope="col" [attr.aria-sort]="ariaSort(stat)">
-              <button type="button" class="sort" (click)="sortBy(stat)">
-                {{ statLabels[stat] }}
-                <span class="sort__arrow">{{ sortIndicator(stat) }}</span>
+          @if (bonusLayout()) {
+            <th scope="col" class="list__bonus">Stat Bonus</th>
+          } @else {
+            @for (stat of visibleStats(); track stat) {
+              <th scope="col" [attr.aria-sort]="ariaSort(stat)">
+                <button type="button" class="sort" (click)="sortBy(stat)">
+                  {{ statLabels[stat] }}
+                  <span class="sort__arrow">{{ sortIndicator(stat) }}</span>
+                </button>
+              </th>
+            }
+            <th scope="col" class="list__total" [attr.aria-sort]="ariaSort('total')">
+              <button type="button" class="sort" (click)="sortBy('total')">
+                Total
+                <span class="sort__arrow">{{ sortIndicator('total') }}</span>
               </button>
             </th>
           }
-          <th scope="col" class="list__total" [attr.aria-sort]="ariaSort('total')">
-            <button type="button" class="sort" (click)="sortBy('total')">
-              Total
-              <span class="sort__arrow">{{ sortIndicator('total') }}</span>
-            </button>
-          </th>
           @if (detailHeader(); as header) {
             <th scope="col" class="list__detail" [attr.aria-sort]="ariaSort('detail')">
               <button type="button" class="sort sort--left" (click)="sortBy('detail')">
@@ -69,12 +73,27 @@
               @if (tagHeader()) {
                 <td class="list__tag">{{ row.tag?.label }}</td>
               }
-              @for (stat of visibleStats(); track stat) {
-                <td [class]="cellClass(row.growth[stat])">
-                  {{ row.growth[stat] }}<span class="unit">{{ valueSuffix() }}</span>
+              @if (bonusLayout()) {
+                <td class="list__bonus">
+                  @for (chip of bonusChips(row); track chip.stat) {
+                    <span
+                      class="chip"
+                      [class.chip--positive]="chip.positive"
+                      [class.chip--negative]="!chip.positive"
+                      [class.chip--sorted]="chip.stat === sortStat()"
+                    >{{ chip.text }}</span>
+                  } @empty {
+                    <span class="chip chip--none">No bonuses</span>
+                  }
                 </td>
+              } @else {
+                @for (stat of visibleStats(); track stat) {
+                  <td [class]="cellClass(row.growth[stat] ?? 0)">
+                    {{ (row.growth[stat] ?? 0) === 0 ? zeroDisplay() : row.growth[stat] }}<span class="unit">{{ valueSuffix() }}</span>
+                  </td>
+                }
+                <td class="list__total">{{ row.total }}<span class="unit">{{ valueSuffix() }}</span></td>
               }
-              <td class="list__total">{{ row.total }}<span class="unit">{{ valueSuffix() }}</span></td>
               @if (detailHeader()) {
                 <td class="list__detail">
                   @if (row.detail; as detail) {

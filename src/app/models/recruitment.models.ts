@@ -1,11 +1,13 @@
 import {
   CLASS_LEVEL_CONFIGS,
+  ClassLevelConfig,
   GrowthRates,
   Mount,
   mountGrowthAt,
   MountType,
   scaleGrowth,
   SkillKey,
+  STAT_KEYS,
   sumGrowth,
   toGrowth,
   Unit,
@@ -106,7 +108,6 @@ export interface UnitRecruitment {
 
 export const BASE_MOVE = 4;
 
-/** Bld from Str: Str / 5 rounded down, never below 1 (0-9 is 1, 10-14 is 2, and so on). */
 export function buildFromStrength(strength: number): number {
   return Math.max(1, Math.floor(strength / 5));
 }
@@ -123,10 +124,6 @@ export interface ChapterGrowth {
   mount: { name: string; bondLevel: number } | null;
 }
 
-/**
- * Growth rates for a unit in a class, worked out the same way as the calculator: the unit's own growths,
- * the class's (at its default class level, if it has levels), and the unit's signature mount, if any.
- */
 export function chapterGrowth(
   unit: Unit,
   unitClass: UnitClass,
@@ -149,7 +146,70 @@ export function chapterGrowth(
   };
 }
 
-/** "WarArc" reads as "War Arc". */
 export function routeLabel(key: string): string {
   return key.replace(/([a-z])([A-Z])/g, '$1 $2');
+}
+
+// --- stat projection ------------------------------------------------------------
+
+export interface ClassStep {
+  fromLevel: number;
+  classId: number;
+}
+
+export function classAtLevel(steps: readonly ClassStep[], level: number): number | null {
+  return stepAtLevel(steps, level)?.classId ?? null;
+}
+
+export function stepAtLevel<T extends { fromLevel: number }>(steps: readonly T[], level: number): T | null {
+  let found: T | null = null;
+
+  for (const step of steps) {
+    if (step.fromLevel <= level && (found === null || step.fromLevel >= found.fromLevel)) {
+      found = step;
+    }
+  }
+
+  return found;
+}
+
+export function classLevelGate(config: ClassLevelConfig, unitLevel: number): number {
+  return [...config.levels].sort((a, b) => a - b).filter((gate) => gate <= unitLevel).at(-1) ?? config.levels[0];
+}
+
+export function levelUpGrowth(
+  unit: Unit,
+  unitClass: UnitClass,
+  unitLevel: number,
+  mount: Mount | null,
+  bondLevel: number | null,
+): GrowthRates {
+  const config = CLASS_LEVEL_CONFIGS[unitClass.name] ?? null;
+  const levelBonus = toGrowth(config ? config.bonuses[classLevelGate(config, unitLevel)] : null);
+  const mountGrowth = mount
+    ? scaleGrowth(mountGrowthAt(mount, bondLevel), config?.mountMultiplier ?? 1)
+    : toGrowth(null);
+
+  return sumGrowth(toGrowth(unit), toGrowth(unitClass), levelBonus, mountGrowth);
+}
+
+export function projectStats(
+  start: GrowthRates,
+  startLevel: number,
+  endLevel: number,
+  growthAt: (level: number) => GrowthRates | null,
+): GrowthRates {
+  const result = { ...start };
+
+  for (let level = startLevel; level < endLevel; level++) {
+    const growth = growthAt(level);
+
+    if (growth) {
+      for (const stat of STAT_KEYS) {
+        result[stat] += growth[stat] / 100;
+      }
+    }
+  }
+
+  return result;
 }

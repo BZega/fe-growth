@@ -7,6 +7,7 @@ import { bondLevelOf, characterKey, ClassAbility, CLASS_RANK_ORDER, ClassRank, G
 import { estimateRoll, RollBounds, rollBounds, RollEstimate, RollObservation } from '../models/seed-roll';
 import { CURRENT_SAVE_VERSION, migrateSave, newSaveId, SeedSave } from '../models/seed-save';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
+import { HelpDialogComponent } from '../help-dialog/help-dialog.component';
 import { RngSection, SeedRngDialogComponent } from '../seed-rng-dialog/seed-rng-dialog.component';
 import { GrowthDataService } from '../services/growth-data.service';
 import { SeedSaveStorageService } from '../services/seed-save-storage.service';
@@ -115,16 +116,6 @@ interface ExamDialogState {
   inline: boolean;
 }
 
-const HELP_STORAGE_KEY = 'fe-growth.seed-mapper-help-open';
-
-function readHelpOpen(): boolean {
-  try {
-    return localStorage.getItem(HELP_STORAGE_KEY) !== 'false';
-  } catch {
-    return true;
-  }
-}
-
 const STR_INDEX = STAT_KEYS.indexOf('str');
 const NO_ROLLS: RollEstimate[] = STAT_KEYS.map(() => estimateRoll([]));
 
@@ -133,6 +124,7 @@ const NO_ROLLS: RollEstimate[] = STAT_KEYS.map(() => estimateRoll([]));
   imports: [
     DatePipe,
     ExamDialogComponent,
+    HelpDialogComponent,
     NgTemplateOutlet,
     PickerDialogComponent,
     SearchableSelectComponent,
@@ -156,12 +148,18 @@ export class SeedMapperPageComponent {
   readonly changeCount = this.state.changeCount;
   readonly loadedSave = this.state.loadedSave;
   readonly status = signal<string | null>(null);
-  readonly helpOpen = signal(readHelpOpen());
   readonly statKeys = STAT_KEYS;
   readonly statLabels = STAT_LABELS;
   readonly minLevel = MIN_LEVEL;
   readonly maxLevel = MAX_LEVEL;
-  readonly autoHint = 'Filled in automatically: the same roll rose at an equal or lower growth elsewhere.';
+  readonly helpText = [
+    'Enter the unit’s stats and change the starting level if it is not 1. Mark which stats rose on each level up.',
+    'Starting stats exclude mount bonuses. Each block adds its mount’s bonus at the selected bond level.',
+    'Use Classes to choose classes the unit already has available; Noble/Commoner is always available. Use Abilities to equip up to five stat-boosting abilities for each section.',
+    'Comparators replay the same levels in another available class. A marked stat may fill automatically when the same roll raised another stat with an equal or lower growth rate.',
+    'Press + beside a level to branch off with an exam in place of that level up, or choose Exam / Reclass to continue the seed with an exam row and a new level. Passing an exam raises stats below the new class floor; the added points appear on the exam line and the pass chance is available in Seed RNG.',
+    'Choose Reclass in the same dialog to switch to a class the unit already has from that level on. The level stays, and the new class growth rates appear on a reclass row above it.',
+  ];
 
   readonly allUnits = toSignal(this.api.getUnits(), { initialValue: [] as Unit[] });
   private readonly classes = toSignal(this.api.getClasses(), {
@@ -335,20 +333,6 @@ export class SeedMapperPageComponent {
 
   closeRng(): void {
     this.rngSectionId.set(null);
-  }
-
-  toggleHelp(): void {
-    this.helpOpen.update((open) => !open);
-
-    try {
-      localStorage.setItem(HELP_STORAGE_KEY, String(this.helpOpen()));
-    } catch {
-    }
-  }
-
-  // Not persisted, so help still shows by default on the next visit.
-  hideHelp(): void {
-    this.helpOpen.set(false);
   }
 
   constructor() {

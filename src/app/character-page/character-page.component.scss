@@ -273,6 +273,22 @@
   }
 }
 
+.projection-button {
+  margin-bottom: 0.4rem;
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  color: #10141c;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}
+
 .route-status {
   display: flex;
   align-items: center;

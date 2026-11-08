@@ -163,6 +163,10 @@
                   }
                 </select>
               </label>
+
+              <button type="button" class="projection-button" (click)="projectionOpen.set(true)">
+                Projected stats
+              </button>
             }
           </div>
 
@@ -256,6 +260,15 @@
   </div>
 } @else {
   <p class="wip">No character matches this link.</p>
+}
+
+@if (projectionOpen() && activeRoute() && projectionUnit()) {
+  <app-projection-dialog
+    [unit]="projectionUnit()!"
+    [chapters]="activeRoute()!.chapters"
+    [initialChapter]="selectedChapter()"
+    (closed)="projectionOpen.set(false)"
+  />
 }
 
 <ng-template #abilityList let-abilities>

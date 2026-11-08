@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angul
 import { of } from 'rxjs';
 import unitClassData from '../data/unit-classes.json';
 import { CLASS_RANK_ORDER, UnitClass } from '../models/growth.models';
+import { SpoilerService } from '../services/spoiler.service';
 import { ClassPageComponent } from './class-page.component';
 
 const ordered = CLASS_RANK_ORDER.flatMap((rank) =>
@@ -10,6 +11,11 @@ const ordered = CLASS_RANK_ORDER.flatMap((rank) =>
 );
 
 describe('ClassPageComponent class switcher keyboard', () => {
+  afterEach(() => {
+    TestBed.inject(SpoilerService).setAllHidden(true);
+    TestBed.flushEffects();
+  });
+
   const open = (id: number) => {
     TestBed.configureTestingModule({
       imports: [ClassPageComponent],
@@ -18,6 +24,7 @@ describe('ClassPageComponent class switcher keyboard', () => {
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: String(id) })) } },
       ],
     });
+    TestBed.inject(SpoilerService).setAllHidden(false);
     const fixture = TestBed.createComponent(ClassPageComponent);
     fixture.detectChanges();
     const navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);

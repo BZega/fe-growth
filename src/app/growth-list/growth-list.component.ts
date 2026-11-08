@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { GrowthRates, STAT_KEYS, STAT_LABELS, StatKey } from '../models/growth.models';
+import { BONUS_STAT_LABELS, BonusStatKey, STAT_KEYS, StatKey } from '../models/growth.models';
 
 export interface GrowthListRow {
   id: number;
   name: string;
-  growth: GrowthRates;
+  growth: Partial<Record<BonusStatKey, number>>;
   total: number;
   /** Shown in an extra column after the name when the list has a tagHeader. */
   tag?: GrowthListTag;
@@ -29,10 +29,16 @@ export interface GrowthListGroup {
   rows: GrowthListRow[];
 }
 
-export type GrowthSortKey = 'name' | 'tag' | StatKey | 'total' | 'detail';
+export type GrowthSortKey = 'name' | 'tag' | BonusStatKey | 'total' | 'detail';
 export type GrowthColorScale = 'sign' | 'tier';
 
 type SortDirection = 'asc' | 'desc';
+
+export interface StatBonusChip {
+  stat: BonusStatKey;
+  text: string;
+  positive: boolean;
+}
 
 @Component({
   selector: 'app-growth-list',
@@ -47,35 +53,51 @@ export class GrowthListComponent {
   readonly colorScale = input<GrowthColorScale>('sign');
   readonly linkBase = input<string | null>(null);
   readonly valueSuffix = input('%');
+  readonly zeroDisplay = input('0');
   readonly tagHeader = input<string | null>(null);
   /** Shown after Total on wider screens; phones leave it out to keep the stats readable. */
   readonly detailHeader = input<string | null>(null);
   /** Stats that never apply to this list's rows (e.g. HP for battalions), left out of the table. */
-  readonly omitStats = input<readonly StatKey[]>([]);
+  readonly statKeys = input<readonly BonusStatKey[]>(STAT_KEYS);
+  readonly omitStats = input<readonly BonusStatKey[]>([]);
+  /** Lists each row's non-zero bonuses in one Stat Bonus column instead of a column per stat. */
+  readonly bonusLayout = input(false);
+  /** Stat-list sort, chosen in the page header. */
+  readonly bonusSortStat = input<BonusStatKey | null>(null);
+  readonly bonusSortDirection = input<SortDirection>('desc');
 
-  readonly statLabels = STAT_LABELS;
+  readonly statLabels = BONUS_STAT_LABELS;
 
-  readonly visibleStats = computed(() => STAT_KEYS.filter((stat) => !this.omitStats().includes(stat)));
+  readonly visibleStats = computed(() => this.statKeys().filter((stat) => !this.omitStats().includes(stat)));
 
   readonly sortKey = signal<GrowthSortKey | null>(null);
   readonly sortDirection = signal<SortDirection>('asc');
 
-  // Name, the stats and Total, plus whichever optional columns are shown.
+  readonly sortStat = computed(() => {
+    const stat = this.bonusSortStat();
+    return this.bonusLayout() && stat !== null && this.visibleStats().includes(stat) ? stat : null;
+  });
+
+  // Name, the stats and Total (or the one Stat Bonus column), plus whichever optional columns are shown.
   readonly columnCount = computed(
-    () => this.visibleStats().length + 2 + (this.tagHeader() ? 1 : 0) + (this.detailHeader() ? 1 : 0),
+    () =>
+      (this.bonusLayout() ? 2 : this.visibleStats().length + 2) +
+      (this.tagHeader() ? 1 : 0) +
+      (this.detailHeader() ? 1 : 0),
   );
   readonly rowCount = computed(() =>
     this.groups().reduce((count, group) => count + group.rows.length, 0),
   );
 
   readonly sortedGroups = computed<GrowthListGroup[]>(() => {
-    const key = this.sortKey();
+    const stat = this.sortStat();
+    const key = stat ?? this.sortKey();
 
     if (key === null) {
       return this.groups();
     }
 
-    const direction = this.sortDirection() === 'asc' ? 1 : -1;
+    const direction = (stat ? this.bonusSortDirection() : this.sortDirection()) === 'asc' ? 1 : -1;
 
     return this.groups().map((group) => ({
       ...group,
@@ -98,6 +120,17 @@ export class GrowthListComponent {
     }
 
     this.sortKey.set(null);
+  }
+
+  bonusChips(row: GrowthListRow): StatBonusChip[] {
+    return this.visibleStats()
+      .map((stat) => ({ stat, value: row.growth[stat] ?? 0 }))
+      .filter(({ value }) => value !== 0)
+      .map(({ stat, value }) => ({
+        stat,
+        text: `${value > 0 ? '+' : ''}${value}${this.valueSuffix()} ${this.statLabels[stat]}`,
+        positive: value > 0,
+      }));
   }
 
   ariaSort(key: GrowthSortKey): 'ascending' | 'descending' | 'none' {
@@ -150,7 +183,7 @@ function valueOf(row: GrowthListRow, key: GrowthSortKey): number {
     return row.tag?.order ?? -1;
   }
 
-  return key === 'total' ? row.total : row.growth[key as StatKey];
+  return key === 'total' ? row.total : row.growth[key as BonusStatKey] ?? 0;
 }
 
 function defaultDirection(key: GrowthSortKey): SortDirection {

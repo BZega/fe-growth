@@ -27,10 +27,10 @@ export class ComparisonDialogComponent {
   readonly totalOf = growthTotal;
 
   readonly title = computed(() => {
-    const a = this.buildA().unit?.name ?? 'No unit';
-    const b = this.buildB().unit?.name ?? 'No unit';
+    const a = this.buildA().unit?.name ?? 'No Unit';
+    const b = this.buildB().unit?.name ?? 'No Unit';
 
-    return a === b ? `${a}: build comparison` : `${a} vs ${b}`;
+    return a === b ? `${a}: Build Comparison` : `${a} vs ${b}`;
   });
 
   readonly delta = computed(() =>
@@ -80,7 +80,7 @@ export class ComparisonDialogComponent {
       ? build.classLevel === null
         ? build.unitClass.name
         : `${build.unitClass.name} (Lv ${build.classLevel})`
-      : 'No class';
+      : 'No Class';
 
     return [unitClass, this.mountNote(build)].filter(Boolean).join(' • ');
   }

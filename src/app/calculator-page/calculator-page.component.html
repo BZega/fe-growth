@@ -1,9 +1,9 @@
 <header class="page-header">
   <div>
-    <h1>Growth Rate Calculator</h1>
-    <p>
-      Pick a unit, class and mount (if applicable).
-    </p>
+    <div class="page-header__title">
+      <h1>Growth Rate Calculator</h1>
+      <app-help-dialog heading="Growth Rate Calculator" [paragraphs]="helpText" />
+    </div>
   </div>
 
   <div class="header-actions">
@@ -18,11 +18,11 @@
     } @else {
       @if (canCompare()) {
         <button type="button" class="compare-button" (click)="startCompare()">
-          Compare builds
+          Compare Builds
         </button>
       }
       <button type="button" class="ghost-button" (click)="add()">
-        + Add calculator
+        + Add Calculator
       </button>
     }
   </div>

@@ -89,7 +89,7 @@
           </div>
         }
       } @else {
-        <span class="summary__label">{{ build.unit?.name ?? 'No unit' }}</span>
+        <span class="summary__label">{{ build.unit?.name ?? 'No Unit' }}</span>
         <span class="summary__build">{{ describe(build) }}</span>
       }
       <div class="summary__foot">
@@ -112,24 +112,24 @@
   <p class="verdict">
     @if (totalDelta() > 0) {
       @if (a.unit?.name === b.unit?.name) {
-        <strong>{{ buildB().unit?.name ?? 'No unit' }} ({{ buildB().unitClass?.name ?? 'No class' }}) has {{ totalDelta() }}% more total growth.</strong>
+        <strong>{{ buildB().unit?.name ?? 'No Unit' }} ({{ buildB().unitClass?.name ?? 'No Class' }}) has {{ totalDelta() }}% more total growth.</strong>
       } @else {
-        <strong>{{ buildB().unit?.name ?? 'No unit' }} has {{ totalDelta() }}% more total growth.</strong>
+        <strong>{{ buildB().unit?.name ?? 'No Unit' }} has {{ totalDelta() }}% more total growth.</strong>
       }
     } @else if (totalDelta() < 0) {
       @if (winsA() > winsB()) {
-        <strong>{{ buildA().unit?.name ?? 'No unit' }} ({{ buildA().unitClass?.name ?? 'No class' }}) has {{ -totalDelta() }}% more total growth.</strong>
+        <strong>{{ buildA().unit?.name ?? 'No Unit' }} ({{ buildA().unitClass?.name ?? 'No Class' }}) has {{ -totalDelta() }}% more total growth.</strong>
       } @else {
-        <strong>{{ buildA().unit?.name ?? 'No unit' }} has {{ -totalDelta() }}% more total growth.</strong>
+        <strong>{{ buildA().unit?.name ?? 'No Unit' }} has {{ -totalDelta() }}% more total growth.</strong>
       }
     } @else {
       Both builds have identical total growth.
     }
     <span class="verdict__counts">
       @if (a.unit?.name === b.unit?.name) {
-        {{ buildA().unit?.name ?? 'No unit' }} ({{ buildA().unitClass?.name ?? 'No class' }}) wins {{ winsA() }} · {{ buildB().unit?.name ?? 'No unit' }} ({{ buildB().unitClass?.name ?? 'No class' }}) wins {{ winsB() }} ·
+        {{ buildA().unit?.name ?? 'No Unit' }} ({{ buildA().unitClass?.name ?? 'No Class' }}) wins {{ winsA() }} · {{ buildB().unit?.name ?? 'No Unit' }} ({{ buildB().unitClass?.name ?? 'No Class' }}) wins {{ winsB() }} ·
       } @else {
-        {{ buildA().unit?.name ?? 'No unit' }} wins {{ winsA() }} · {{ buildB().unit?.name ?? 'No unit' }} wins {{ winsB() }} ·
+        {{ buildA().unit?.name ?? 'No Unit' }} wins {{ winsA() }} · {{ buildB().unit?.name ?? 'No Unit' }} wins {{ winsB() }} ·
       }
       {{ ties() }} tied
     </span>
@@ -140,11 +140,11 @@
       <tr>
         <th scope="col">Stat</th>
         @if (a.unit?.name === b.unit?.name) {
-          <th scope="col">{{ buildA().unit?.name ?? 'No unit' }} ({{ buildA().unitClass?.name ?? 'No class' }})</th>
-          <th scope="col">{{ buildB().unit?.name ?? 'No unit' }} ({{ buildB().unitClass?.name ?? 'No class' }})</th>
+          <th scope="col">{{ buildA().unit?.name ?? 'No Unit' }} ({{ buildA().unitClass?.name ?? 'No Class' }})</th>
+          <th scope="col">{{ buildB().unit?.name ?? 'No Unit' }} ({{ buildB().unitClass?.name ?? 'No Class' }})</th>
         } @else {
-          <th scope="col">{{ buildA().unit?.name ?? 'No unit' }}</th>
-          <th scope="col">{{ buildB().unit?.name ?? 'No unit' }}</th>
+          <th scope="col">{{ buildA().unit?.name ?? 'No Unit' }}</th>
+          <th scope="col">{{ buildB().unit?.name ?? 'No Unit' }}</th>
         }
         <th scope="col">Difference</th>
       </tr>

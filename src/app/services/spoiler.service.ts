@@ -1,75 +1,118 @@
-import { effect, Injectable, signal } from '@angular/core';
+import { computed, effect, Injectable, signal } from '@angular/core';
 
-const STORAGE_KEY = 'fe-growth.hide-spoilers';
+export type SpoilerTier = 'war' | 'salvation' | 'dlc';
 
-const SPOILER_UNIT_NAMES: ReadonlySet<string> = new Set([
-  'Creek',
-  'Nathan',
-  'Bertrand',
-  'Talimun',
-  'Anatolia',
-  'Orchel',
-  'Centurio',
-  'Aswan',
-  'Tahonia',
-  'Klapka',
-  'Jurah',
-  'Mars',
-  'Smyrnos',
-  'Credna',
-  'Kalla',
-  'Aurora',
-  'Cleobulus',
-  'Myson',
-  'Anna',
-  'Gladius',
-]);
+export const SPOILER_TIERS: readonly { key: SpoilerTier; label: string }[] = [
+  { key: 'war', label: 'War Arc' },
+  { key: 'salvation', label: 'Salvation Arc' },
+  { key: 'dlc', label: 'DLC' },
+];
 
-const SPOILER_CLASS_NAMES: ReadonlySet<string> = new Set([
+type HiddenTiers = Record<SpoilerTier, boolean>;
+
+const STORAGE_KEY = 'fe-growth.hidden-spoiler-tiers';
+const LEGACY_STORAGE_KEY = 'fe-growth.hide-spoilers';
+
+const UNIT_TIERS: Readonly<Record<string, SpoilerTier>> = {
+  Nathan: 'war',
+  Creek: 'war',
+  Tahonia: 'salvation',
+  Aswan: 'salvation',
+  Klapka: 'salvation',
+  Centurio: 'salvation',
+  Aurora: 'dlc',
+  Jurah: 'dlc',
+  Mars: 'dlc',
+  Smyrnos: 'dlc',
+  Credna: 'dlc',
+  Kalla: 'dlc',
+  Cleobulus: 'dlc',
+  Myson: 'dlc',
+  Anna: 'dlc',
+  Gladius: 'dlc',
+};
+
+const DLC_CLASS_NAMES: ReadonlySet<string> = new Set([
   'Trickster',
   'Awakened',
   'Seere',
   'Badhbh Cath',
 ]);
 
+const SALVATION_CLASS_RANKS: ReadonlySet<string> = new Set(['Master', 'Divine']);
+
 @Injectable({ providedIn: 'root' })
 export class SpoilerService {
-  readonly hidden = signal(read());
+  readonly hiddenTiers = signal<HiddenTiers>(read());
+  readonly hidden = computed(() => Object.values(this.hiddenTiers()).some(Boolean));
 
   constructor() {
     effect(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, String(this.hidden()));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.hiddenTiers()));
       } catch {
         
       }
     });
   }
 
-  toggle(): void {
-    this.hidden.update((hidden) => !hidden);
+  isHidden(tier: SpoilerTier): boolean {
+    return this.hiddenTiers()[tier];
   }
 
-  isSpoiler(name: string): boolean {
-    return SPOILER_UNIT_NAMES.has(name) || SPOILER_CLASS_NAMES.has(name);
+  setHidden(tier: SpoilerTier, hidden: boolean): void {
+    this.hiddenTiers.update((tiers) => ({ ...tiers, [tier]: hidden }));
   }
 
-  // Named after a spoiler character, e.g. "Kalla's Divas".
-  isNamedAfterSpoiler(name: string): boolean {
-    return [...SPOILER_UNIT_NAMES].some((unit) => name.startsWith(`${unit}'s `));
+  setAllHidden(hidden: boolean): void {
+    this.hiddenTiers.set(allTiers(hidden));
   }
 
-  filter<T extends { name: string }>(items: readonly T[]): T[] {
-    return this.hidden()
-      ? items.filter((item) => !this.isSpoiler(item.name))
-      : [...items];
+  toggle(tier: SpoilerTier): void {
+    this.setHidden(tier, !this.isHidden(tier));
+  }
+
+  isSpoiler(item: { name: string; rank?: string }): boolean {
+    const tiers = this.hiddenTiers();
+    const unitTier = UNIT_TIERS[item.name];
+
+    if (unitTier) {
+      return tiers[unitTier];
+    }
+
+    // DLC classes are also Master rank, so they only show once both Salvation Arc and DLC are revealed.
+    if (DLC_CLASS_NAMES.has(item.name) && tiers.dlc) {
+      return true;
+    }
+
+    return item.rank !== undefined && SALVATION_CLASS_RANKS.has(item.rank) && tiers.salvation;
+  }
+
+  filter<T extends { name: string; rank?: string }>(items: readonly T[]): T[] {
+    return items.filter((item) => !this.isSpoiler(item));
   }
 }
 
-function read(): boolean {
+function allTiers(hidden: boolean): HiddenTiers {
+  return { war: hidden, salvation: hidden, dlc: hidden };
+}
+
+function read(): HiddenTiers {
   try {
-    return localStorage.getItem(STORAGE_KEY) !== 'false';
+    const stored = localStorage.getItem(STORAGE_KEY);
+
+    if (stored) {
+      const parsed = JSON.parse(stored) as Partial<HiddenTiers>;
+      return {
+        war: parsed.war !== false,
+        salvation: parsed.salvation !== false,
+        dlc: parsed.dlc !== false,
+      };
+    }
+
+    // Carry over the old single toggle.
+    return allTiers(localStorage.getItem(LEGACY_STORAGE_KEY) !== 'false');
   } catch {
-    return true;
+    return allTiers(true);
   }
 }

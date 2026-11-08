@@ -1,22 +1,31 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { GrowthListComponent, GrowthListGroup } from '../growth-list/growth-list.component';
-import { growthTotal, Mount, mountBonusAt, mountGrowthAt, MOUNT_TYPE_ORDER } from '../models/growth.models';
+import { HelpDialogComponent } from '../help-dialog/help-dialog.component';
+import { LayoutSwitchComponent, ListLayout } from '../layout-switch/layout-switch.component';
+import { StatSortComponent, StatSortDirection } from '../stat-sort/stat-sort.component';
+import { BonusStatKey, growthTotal, Mount, mountBonusAt, mountGrowthAt, MOUNT_TYPE_ORDER, STAT_KEYS } from '../models/growth.models';
 import { GrowthDataService } from '../services/growth-data.service';
 
 type MountView = 'growth' | 'bonus';
 
 @Component({
   selector: 'app-mounts-page',
-  imports: [GrowthListComponent],
+  imports: [GrowthListComponent, HelpDialogComponent, LayoutSwitchComponent, StatSortComponent],
   template: `
     <header class="browse-header">
-      <h1>Mounts</h1>
-      <p>
-        {{ view() === 'growth' ? 'Growth bonuses' : 'Flat stat bonuses' }} from mounts at the
-        selected bond level, grouped by the mount type a class requires. Base mounts have no
-        bond and give nothing.
-      </p>
+      <div class="browse-header__title">
+        <h1>Mounts</h1>
+        <app-help-dialog heading="Mounts" [paragraphs]="helpText()" />
+      </div>
+      @if (view() === 'bonus') {
+        <div class="browse-header__controls">
+          <app-layout-switch [(layout)]="layout" />
+          @if (layout() === 'bonus') {
+            <app-stat-sort [stats]="statKeys" [(stat)]="sortStat" [(direction)]="sortDirection" />
+          }
+        </div>
+      }
     </header>
 
     <div class="view-bar">
@@ -57,6 +66,9 @@ type MountView = 'growth' | 'bonus';
       [groups]="groups()"
       nameHeader="Mount"
       [valueSuffix]="view() === 'growth' ? '%' : ''"
+      [bonusLayout]="view() === 'bonus' && layout() === 'bonus'"
+      [bonusSortStat]="sortStat()"
+      [bonusSortDirection]="sortDirection()"
     />
   `,
   styleUrls: ['../styles/browse-page.scss', './mounts-page.component.scss'],
@@ -75,6 +87,15 @@ export class MountsPageComponent {
   ];
 
   readonly view = signal<MountView>('growth');
+  readonly layout = signal<ListLayout>('table');
+  readonly statKeys = STAT_KEYS;
+  readonly sortStat = signal<BonusStatKey | null>(null);
+  readonly sortDirection = signal<StatSortDirection>('desc');
+
+  readonly helpText = computed(() => [
+    `${this.view() === 'growth' ? 'Growth rates' : 'Flat stat bonuses'} from mounts at the selected bond level, grouped by the mount type a class requires.`,
+    'Base mounts have no bond and give no bonuses.',
+  ]);
 
   readonly bondLevels = computed(() =>
     [...new Set(this.mounts().flatMap((mount) => mount.bondLevels.map((bond) => bond.level)))].sort(

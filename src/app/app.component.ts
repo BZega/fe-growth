@@ -1,6 +1,6 @@
-import { afterNextRender, Component, DestroyRef, ElementRef, inject, signal } from '@angular/core';
+import { afterNextRender, Component, DestroyRef, ElementRef, HostListener, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { SpoilerService } from './services/spoiler.service';
+import { SPOILER_TIERS, SpoilerService, SpoilerTier } from './services/spoiler.service';
 import { SuggestionDialogComponent } from './suggestion-dialog/suggestion-dialog.component';
 import { SupportDialogComponent } from './support-dialog/support-dialog.component';
 
@@ -34,6 +34,9 @@ export class AppComponent {
   readonly suggestionsOpen = signal(false);
   readonly supportOpen = signal(false);
   readonly hideSpoilers = this.spoilers.hidden;
+  readonly hiddenTiers = this.spoilers.hiddenTiers;
+  readonly spoilerTiers = SPOILER_TIERS;
+  readonly spoilerMenuOpen = signal(false);
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private keyboardInset = readKeyboardInset();
@@ -326,10 +329,27 @@ export class AppComponent {
 
   closeMenu(): void {
     this.menuOpen.set(false);
+    this.spoilerMenuOpen.set(false);
   }
 
-  toggleSpoilers(): void {
-    this.spoilers.toggle();
+  toggleSpoilerMenu(): void {
+    this.spoilerMenuOpen.update((open) => !open);
+  }
+
+  toggleSpoilerTier(tier: SpoilerTier): void {
+    this.spoilers.toggle(tier);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (event.target instanceof Element && !event.target.closest('.spoiler-menu')) {
+      this.spoilerMenuOpen.set(false);
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.spoilerMenuOpen.set(false);
   }
 
   openSuggestions(): void {

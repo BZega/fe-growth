@@ -1,9 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal, viewChildren } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs/operators';
 import { GrowthCalculatorComponent } from '../growth-calculator/growth-calculator.component';
+import { ProjectionDialogComponent } from '../projection-dialog/projection-dialog.component';
 import { BOOSTED_GROWTH_VARIANTS, characterKey, diffGrowth, growthTotal, Mount, SKILL_KEYS, SKILL_LABELS, SkillKey, SkillPreference, STAT_KEYS, STAT_LABELS, sumGrowth, toGrowth, Unit, UnitClass } from '../models/growth.models';
 import { BASE_MOVE, buildFromStrength, chapterGrowth, RouteRequirement } from '../models/recruitment.models';
 import { CalculatorStateService } from '../services/calculator-state.service';
@@ -26,7 +27,7 @@ const SKILL_ICON_COLORS: Record<SkillPreference, string> = { good: 'gold', neutr
 
 @Component({
   selector: 'app-character-page',
-  imports: [GrowthCalculatorComponent, NgTemplateOutlet, RouterLink],
+  imports: [GrowthCalculatorComponent, NgTemplateOutlet, ProjectionDialogComponent, RouterLink],
   templateUrl: './character-page.component.html',
   styleUrls: ['../styles/detail-cards.scss', './character-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -160,6 +161,15 @@ export class CharacterPageComponent {
     };
   });
 
+  readonly projectionOpen = signal(false);
+
+  /** The unit whose growths drive projections (Mu*'s for Mu). */
+  readonly projectionUnit = computed(() => {
+    const unit = this.unit();
+
+    return unit ? this.growthUnitsFor(unit).growthUnit : null;
+  });
+
   readonly slotA = computed(() => `character-${this.unitId()}-1`);
   readonly slotB = computed(() => `character-${this.unitId()}-2`);
 
@@ -188,8 +198,8 @@ export class CharacterPageComponent {
     return {
       growth,
       total: growthTotal(growth),
-      labelA: buildA.unitClass?.name ?? 'No class',
-      labelB: buildB.unitClass?.name ?? 'No class',
+      labelA: buildA.unitClass?.name ?? 'No Class',
+      labelB: buildB.unitClass?.name ?? 'No Class',
     };
   });
 

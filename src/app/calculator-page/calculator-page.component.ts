@@ -1,6 +1,7 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, signal, viewChildren } from '@angular/core';
 import { ComparisonDialogComponent } from '../comparison-dialog/comparison-dialog.component';
 import { GrowthCalculatorComponent } from '../growth-calculator/growth-calculator.component';
+import { HelpDialogComponent } from '../help-dialog/help-dialog.component';
 import { GrowthBuild } from '../models/growth.models';
 import { CalculatorStateService } from '../services/calculator-state.service';
 
@@ -15,7 +16,7 @@ interface Comparison {
 
 @Component({
   selector: 'app-calculator-page',
-  imports: [GrowthCalculatorComponent, ComparisonDialogComponent],
+  imports: [GrowthCalculatorComponent, ComparisonDialogComponent, HelpDialogComponent],
   templateUrl: './calculator-page.component.html',
   styleUrl: './calculator-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,6 +48,13 @@ export class CalculatorPageComponent {
   }
 
   readonly slots = this.state.slots;
+
+  readonly helpText = [
+    'Choose a unit, class, and mount (when applicable) to calculate growth rates. You can add as many calculators as you need by clicking the "+ Add Calculator" button.',
+    'Charioteer and Elephant Rider classes have a level selector for choosing level gates.',
+    'Mounts have a bond level selector for choosing bond levels, but only for special mounts base mounts do not have this feature.',
+    'Selecting "Compare Builds" (when two or more calculators exist) will allow you to compare two units side by side. You can change unit, class, and mount freely while comparing by clicking the "Change" button.'
+  ];
 
   readonly selectionMode = signal(false);
   readonly picked = signal<string[]>([]);

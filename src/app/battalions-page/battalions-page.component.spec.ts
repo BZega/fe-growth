@@ -24,14 +24,14 @@ describe('BattalionsPageComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [BattalionsPageComponent] });
     spoilers = TestBed.inject(SpoilerService);
-    spoilers.hidden.set(false);
+    spoilers.setAllHidden(false);
     fixture = TestBed.createComponent(BattalionsPageComponent);
     host = fixture.nativeElement;
     fixture.detectChanges();
   });
 
   afterEach(() => {
-    spoilers.hidden.set(true);
+    spoilers.setAllHidden(true);
     TestBed.flushEffects();
     fixture.destroy();
   });
@@ -63,17 +63,43 @@ describe('BattalionsPageComponent', () => {
     expect(headers.at(-1)).toBe('Skill');
   });
 
-  it('hides battalions named after spoiler characters while spoilers are hidden', () => {
-    const named = battalions.filter((battalion) => spoilers.isNamedAfterSpoiler(battalion.name));
-    expect(named.length).toBeGreaterThan(0);
+  it('switches to the stat list from the switch in the page header', () => {
+    const switchButtons = host.querySelectorAll<HTMLButtonElement>('.browse-header app-layout-switch button');
+    expect(Array.from(switchButtons).map((button) => button.textContent!.trim())).toEqual(['Table', 'Stat list']);
 
-    spoilers.hidden.set(true);
+    switchButtons[1].click();
     fixture.detectChanges();
 
-    expect(groups()).toEqual(expectedGroups(battalions.filter((battalion) => !named.includes(battalion))));
-    for (const battalion of named) {
-      expect(rowNamed(battalion.name)).toBeUndefined();
-    }
+    const headers = Array.from(host.querySelectorAll('thead th')).map((cell) => cell.textContent!.trim());
+    expect(headers).toEqual(['Battalion', 'Rank', 'Stat Bonus', 'Skill']);
+  });
+
+  it('puts the stat sort to the right of the switch, with arrows once a stat is picked', () => {
+    const controls = () => host.querySelector('.browse-header__controls')!;
+    expect(controls().querySelector('app-stat-sort')).toBeNull();
+
+    controls().querySelectorAll<HTMLButtonElement>('app-layout-switch button')[1].click();
+    fixture.detectChanges();
+
+    expect(Array.from(controls().children).map((child) => child.tagName.toLowerCase())).toEqual([
+      'app-layout-switch',
+      'app-stat-sort',
+    ]);
+    expect(controls().querySelector('.stat-sort__arrows')).toBeNull();
+
+    const select = controls().querySelector<HTMLSelectElement>('.stat-sort__select')!;
+    expect(Array.from(select.options).map((option) => option.text)).not.toContain('HP');
+    select.value = 'str';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const strengths = rows().map((row) => {
+      const name = row.querySelector('th')!.textContent!.trim();
+      return battalions.find((battalion) => battalion.name === name)!;
+    });
+    const firstGroup = strengths.filter((battalion) => battalion.type === strengths[0].type).map((b) => b.str);
+    expect(firstGroup).toEqual([...firstGroup].sort((a, b) => b - a));
+    expect(controls().querySelectorAll('.stat-sort__arrow').length).toBe(2);
   });
 
   it('sorts each group by skill name from the Skill column', () => {

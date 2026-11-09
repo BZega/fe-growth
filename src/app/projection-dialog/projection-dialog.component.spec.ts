@@ -71,18 +71,20 @@ describe('ProjectionDialogComponent', () => {
     equippedAbilities: [],
   };
 
-  const open = (unitName: string) => {
+  const open = (unitName: string, joining: RecruitmentChapter = chapter) => {
     units = [];
     TestBed.inject(GrowthDataService).getUnits().subscribe((loaded) => (units = loaded));
     const unit = units.find((candidate) => candidate.name === unitName)!;
     const fixture = TestBed.createComponent(ProjectionDialogComponent);
     fixture.componentRef.setInput('unit', unit);
-    fixture.componentRef.setInput('chapters', [chapter]);
-    fixture.componentRef.setInput('initialChapter', 4);
+    fixture.componentRef.setInput('chapters', [joining]);
+    fixture.componentRef.setInput('initialChapter', joining.chapter);
     fixture.detectChanges();
 
     return { fixture, dialog: fixture.componentInstance, host: fixture.nativeElement as HTMLElement, unit };
   };
+  const legends = (host: HTMLElement) =>
+    Array.from(host.querySelectorAll('.tier legend')).map((legend) => legend.textContent!.trim());
 
   it('offers only the ranks each tier allows, including the ranks below it', () => {
     const { dialog } = open('Cai');
@@ -96,12 +98,41 @@ describe('ProjectionDialogComponent', () => {
     expect(dialog.tiers.map((tier) => [tier.start, tier.end])).toEqual([[1, 5], [5, 20], [20, 35], [35, 45], [45, 99]]);
   });
 
-  it('keeps the first tier on Noble/Commoner with no option to add classes', () => {
-    const { dialog, host } = open('Cai');
+  it('leaves out the Lv 1–5 Base tier, since the starting class is implied', () => {
+    const { host } = open('Cai');
 
-    expect(host.querySelector('.tier__fixed')!.textContent!.trim()).toBe('Noble/Commoner');
-    expect(dialog.canAddClass(0)).toBeFalse();
-    expect(dialog.canAddClass(1)).toBeTrue();
+    expect(host.querySelector('.tier__fixed')).toBeNull();
+    expect(legends(host)).toEqual([
+      'Lv 5–20 · Beginner',
+      'Lv 20–35 · Speciality',
+      'Lv 35–45 · Advanced',
+      'Lv 45–99 · Master / Divine',
+    ]);
+  });
+
+  it('only shows the tiers still ahead of the joining level, starting the first one there', () => {
+    const { dialog, fixture, host } = open('Cai', { ...chapter, chapter: 20, level: 40 });
+
+    expect(legends(host)).toEqual(['Lv 40–45 · Advanced', 'Lv 45–99 · Master / Divine']);
+    expect(host.querySelector('.tier__from')!.textContent!.trim()).toBe('from Lv 40');
+
+    dialog.addClass(3);
+    fixture.detectChanges();
+    const levelBox = host.querySelector<HTMLInputElement>('.tier__level input')!;
+    expect(levelBox.value).toBe('41');
+
+    levelBox.value = '36';
+    levelBox.dispatchEvent(new Event('change'));
+    expect(levelBox.value).toBe('41');
+  });
+
+  it("projects from the joining chapter's class until a tier's class takes over", () => {
+    const swordmaster = byName('Swordmaster');
+    const { dialog, unit } = open('Cai', { ...chapter, chapter: 20, level: 40, className: swordmaster.name });
+    dialog.setEndLevel('44');
+
+    const expectedMag = 3 + (4 * (unit.mag + swordmaster.mag)) / 100 + swordmaster.bonusStats.mag;
+    expect(dialog.projection().find((row) => row.stat === 'mag')!.total).toBeCloseTo(expectedMag, 10);
   });
 
   it('adds extra classes inside the tier and keeps their switch level within it', () => {
@@ -115,6 +146,31 @@ describe('ProjectionDialogComponent', () => {
 
     expect(dialog.plan()[1][1].fromLevel).toBe(19);
     expect(levelBox.value).toBe('19');
+  });
+
+  it("doesn't offer the class the unit is already in when switching", () => {
+    const { dialog } = open('Cai');
+    const names = (tierIndex: number, entryIndex: number) =>
+      dialog
+        .switchClassGroups(tierIndex, dialog.plan()[tierIndex][entryIndex])
+        .flatMap((group) => group.classes.map((unitClass) => unitClass.name));
+    const offered = dialog.classGroups(2).flatMap((group) => group.classes);
+    const [first, second] = offered.filter((unitClass) => unitClass.rank !== 'Base');
+
+    // The joining class (Noble/Commoner) carries on while the Beginner tier is left empty.
+    expect(names(1, 0)).not.toContain('Noble/Commoner');
+    dialog.addClass(1);
+    expect(names(1, 1)).not.toContain('Noble/Commoner');
+
+    dialog.setClass(2, dialog.plan()[2][0].id, String(first.id));
+    expect(names(3, 0)).not.toContain(first.name);
+    dialog.addClass(2);
+    expect(names(2, 1)).not.toContain(first.name);
+    expect(names(2, 1)).toContain(second.name);
+
+    // A switch already set to that class keeps it listed.
+    dialog.setClass(2, dialog.plan()[2][1].id, String(first.id));
+    expect(names(2, 1)).toContain(first.name);
   });
 
   it('shows the projected final stats on a new page after Submit, to two decimals', () => {
@@ -163,6 +219,31 @@ describe('ProjectionDialogComponent', () => {
     const { dialog } = open('Cai');
 
     expect(dialog.projection().map((row) => row.stat)).toEqual([...STAT_KEYS]);
+  });
+
+  it('lays out HP on top, then Str to Dex on the left and Def to Cha on the right', () => {
+    const { dialog, fixture, host } = open('Cai');
+    dialog.submit();
+    fixture.detectChanges();
+
+    const boxes = Array.from(host.querySelectorAll<HTMLElement>('.results__stat')).map((stat) => ({
+      label: stat.querySelector('.results__label')!.textContent!.trim(),
+      rect: stat.getBoundingClientRect(),
+      value: stat.querySelector('.results__value')!.getBoundingClientRect(),
+    }));
+    const column = (labels: string[]) => boxes.filter((box) => labels.includes(box.label));
+    const [hp] = column(['HP']);
+    const left = column(['Str', 'Mag', 'Spd', 'Dex']);
+    const right = column(['Def', 'Res', 'Lck', 'Cha']);
+
+    expect(left.every((box) => box.rect.top > hp.rect.bottom - 1)).toBeTrue();
+    expect(left.every((box) => box.rect.left === left[0].rect.left)).toBeTrue();
+    expect(right.every((box) => box.rect.left === right[0].rect.left)).toBeTrue();
+    expect(right[0].rect.left).toBeGreaterThan(left[0].rect.right - 1);
+    expect(left.map((box) => box.rect.top)).toEqual(right.map((box) => box.rect.top));
+    expect(hp.rect.left).toBe(left[0].rect.left);
+    expect(hp.rect.width).toBe(left[0].rect.width);
+    expect(hp.value.right).toBe(left[0].value.right);
   });
 
   it('offers a mount and bond level for mounted classes, and shows the class level gates', () => {

@@ -4,7 +4,7 @@
   <header class="dialog__header">
     <div>
       <p class="dialog__eyebrow">{{ unit().name }}</p>
-      <h2 id="projection-title">{{ page() === 'plan' ? 'Projected stats' : 'Projected final stats' }}</h2>
+      <h2 id="projection-title">{{ page() === 'plan' ? 'Projected Stats' : 'Projected Final Stats' }}</h2>
     </div>
     <button type="button" class="dialog__close" aria-label="Close" (click)="close()">
       &times;
@@ -24,33 +24,30 @@
         </select>
       </label>
 
-      @for (tier of tiers; track tier.start; let tierIndex = $index) {
+      @for (tier of visibleTiers(); track tier.index) {
+        @let tierIndex = tier.index;
         <fieldset class="tier">
           <legend class="field__label">{{ tier.label }}</legend>
 
           @for (entry of plan()[tierIndex]; track entry.id; let entryIndex = $index) {
             <div class="tier__row">
-              @if (tierIndex === 0) {
-                <span class="tier__fixed">Noble/Commoner</span>
-              } @else {
-                <select
-                  class="plan__select"
-                  [attr.aria-label]="tier.label + ' class'"
-                  [value]="entry.classId ?? ''"
-                  (change)="setClass(tierIndex, entry.id, $any($event.target).value)"
-                >
-                  <option value="" [selected]="entry.classId === null">
-                    {{ entryIndex === 0 ? '— Keep the previous class —' : '— Select a class —' }}
-                  </option>
-                  @for (group of classGroups(tierIndex); track group.rank) {
-                    <optgroup [label]="group.rank">
-                      @for (option of group.classes; track option.id) {
-                        <option [value]="option.id" [selected]="option.id === entry.classId">{{ option.name }}</option>
-                      }
-                    </optgroup>
-                  }
-                </select>
-              }
+              <select
+                class="plan__select"
+                [attr.aria-label]="tier.label + ' class'"
+                [value]="entry.classId ?? ''"
+                (change)="setClass(tierIndex, entry.id, $any($event.target).value)"
+              >
+                <option value="" [selected]="entry.classId === null">
+                  {{ entryIndex === 0 ? '— Keep the previous class —' : '— Select a class —' }}
+                </option>
+                @for (group of switchClassGroups(tierIndex, entry); track group.rank) {
+                  <optgroup [label]="group.rank">
+                    @for (option of group.classes; track option.id) {
+                      <option [value]="option.id" [selected]="option.id === entry.classId">{{ option.name }}</option>
+                    }
+                  </optgroup>
+                }
+              </select>
 
               @if (entryIndex > 0) {
                 <label class="tier__level">
@@ -60,7 +57,7 @@
                     inputmode="numeric"
                     [min]="tier.start + 1"
                     [max]="tier.end - 1"
-                    [value]="entry.fromLevel"
+                    [value]="switchLevel(tier, entry)"
                     [attr.aria-label]="'Switch level for ' + tier.label"
                     (change)="setFromLevel(tierIndex, entry.id, $event)"
                   />
@@ -75,7 +72,7 @@
                   &times;
                 </button>
               } @else {
-                <span class="tier__from">from Lv {{ tier.start }}</span>
+                <span class="tier__from">Lv {{ tier.start }}</span>
               }
             </div>
 
@@ -122,10 +119,6 @@
         </fieldset>
       }
 
-      <p class="hint">
-        Starts from Chapter {{ chapter()?.chapter }}'s stats at Lv {{ startLevel() }}. Levels before that are skipped.
-      </p>
-
       <footer class="dialog__footer">
         <button type="button" class="button" (click)="close()">Cancel</button>
         <button type="submit" class="button button--primary" [disabled]="!chapter()">Submit</button>
@@ -155,10 +148,6 @@
         />
       </label>
 
-      <p class="results__summary">
-        Lv {{ endLevel() }} {{ endClass()?.name ?? 'no class' }}@if (endMount(); as mount) {, {{ mount.name }}@if (mount.bondLevel !== null) { (Bond Lv {{ mount.bondLevel }})}}, from Chapter {{ chapter()?.chapter }} at Lv {{ startLevel() }}
-      </p>
-
       <ul class="results__stats">
         @for (row of projection(); track row.stat) {
           <li
@@ -170,8 +159,6 @@
           </li>
         }
       </ul>
-
-      <p class="hint">Expected values: each level up adds its growth rate as a fraction (40% adds 0.40). Includes the class's and mount's stat bonuses at the end level.</p>
 
       <footer class="dialog__footer">
         <button type="button" class="button" (click)="page.set('plan')">Back</button>

@@ -6,20 +6,24 @@ import { GrowthDataService } from '../services/growth-data.service';
 import { SpoilerService } from '../services/spoiler.service';
 
 interface Tier {
-  label: string;
-  /** Level the tier's class is taken at; extra classes can start from start + 1 to end - 1. */
+  name: string;
   start: number;
   end: number;
   ranks: readonly ClassRank[];
 }
 
+interface VisibleTier extends Tier {
+  index: number;
+  label: string;
+}
+
 // Each tier also allows every rank below it.
 export const PROJECTION_TIERS: readonly Tier[] = [
-  { label: 'Lv 1–5 · Base', start: 1, end: 5, ranks: ['Base'] },
-  { label: 'Lv 5–20 · Beginner', start: 5, end: 20, ranks: ['Base', 'Beginner'] },
-  { label: 'Lv 20–35 · Speciality', start: 20, end: 35, ranks: ['Base', 'Beginner', 'Speciality'] },
-  { label: 'Lv 35–45 · Advanced', start: 35, end: 45, ranks: ['Base', 'Beginner', 'Speciality', 'Advanced'] },
-  { label: 'Lv 45–99 · Master / Divine', start: 45, end: 99, ranks: CLASS_RANK_ORDER },
+  { name: 'Base', start: 1, end: 5, ranks: ['Base'] },
+  { name: 'Beginner', start: 5, end: 20, ranks: ['Base', 'Beginner'] },
+  { name: 'Speciality', start: 20, end: 35, ranks: ['Base', 'Beginner', 'Speciality'] },
+  { name: 'Advanced', start: 35, end: 45, ranks: ['Base', 'Beginner', 'Speciality', 'Advanced'] },
+  { name: 'Master / Divine', start: 45, end: 99, ranks: CLASS_RANK_ORDER },
 ];
 
 export const MAX_PROJECTION_LEVEL = 99;
@@ -28,7 +32,6 @@ interface PlanEntry {
   id: number;
   classId: number | null;
   fromLevel: number;
-  /** Null picks the class's default mount. */
   mountId: number | null;
   bondLevel: number | null;
 }
@@ -50,7 +53,6 @@ export class ProjectionDialogComponent implements OnInit {
   private readonly api = inject(GrowthDataService);
   private readonly spoilers = inject(SpoilerService);
 
-  /** The unit whose growths are used (for Mu, Mu*'s). */
   readonly unit = input.required<Unit>();
   readonly chapters = input.required<readonly RecruitmentChapter[]>();
   readonly initialChapter = input<number | null>(null);
@@ -69,7 +71,6 @@ export class ProjectionDialogComponent implements OnInit {
 
   readonly page = signal<'plan' | 'results'>('plan');
   readonly chapterNumber = signal<number | null>(null);
-  /** One list per tier; the first entry is the tier's main class. */
   readonly plan = signal<PlanEntry[][]>([]);
   readonly endLevel = signal(MAX_PROJECTION_LEVEL);
 
@@ -83,6 +84,37 @@ export class ProjectionDialogComponent implements OnInit {
 
   private readonly noble = computed(() => this.classes().find((unitClass) => unitClass.rank === 'Base') ?? null);
 
+  readonly startLevel = computed(() => this.chapter()?.level ?? 1);
+
+  readonly visibleTiers = computed<VisibleTier[]>(() => {
+    const joined = this.startLevel();
+
+    return this.tiers.flatMap((tier, index) => {
+      if (index === 0 || tier.end <= joined) {
+        return [];
+      }
+
+      const start = Math.max(tier.start, joined);
+      return [{ ...tier, index, start, label: `Lv ${start}–${tier.end} · ${tier.name}` }];
+    });
+  });
+
+  private tierRange(tierIndex: number): { start: number; end: number } {
+    const tier = this.tiers[tierIndex];
+    return { start: Math.max(tier.start, this.startLevel()), end: tier.end };
+  }
+
+  switchLevel(tier: { start: number; end: number }, entry: PlanEntry): number {
+    return Math.min(tier.end - 1, Math.max(tier.start + 1, entry.fromLevel));
+  }
+
+  private readonly joiningEntry = computed<PlanEntry | null>(() => {
+    const name = this.chapter()?.className;
+    const unitClass = this.classes().find((candidate) => candidate.name === name) ?? this.noble();
+
+    return unitClass ? { id: 0, classId: unitClass.id, fromLevel: this.startLevel(), mountId: null, bondLevel: null } : null;
+  });
+
   ngOnInit(): void {
     this.chapterNumber.set(this.initialChapter() ?? this.chapters()[0]?.chapter ?? null);
     this.plan.set(this.tiers.map((tier, index) => [
@@ -94,23 +126,52 @@ export class ProjectionDialogComponent implements OnInit {
     return { id: this.nextId++, classId, fromLevel, mountId: null, bondLevel: null };
   }
 
-  classGroups(tierIndex: number): { rank: ClassRank; classes: UnitClass[] }[] {
+  classGroups(tierIndex: number, excludeId: number | null = null): { rank: ClassRank; classes: UnitClass[] }[] {
     const ranks = this.tiers[tierIndex].ranks;
 
     return ranks
-      .map((rank) => ({ rank, classes: this.usableClasses().filter((unitClass) => unitClass.rank === rank) }))
+      .map((rank) => ({
+        rank,
+        classes: this.usableClasses().filter((unitClass) => unitClass.rank === rank && unitClass.id !== excludeId),
+      }))
       .filter((group) => group.classes.length > 0);
   }
 
-  canAddClass(tierIndex: number): boolean {
-    const tier = this.tiers[tierIndex];
+  switchClassGroups(tierIndex: number, entry: PlanEntry): { rank: ClassRank; classes: UnitClass[] }[] {
+    const previous = this.classBefore(entry.id);
 
-    return tierIndex > 0 && (this.plan()[tierIndex]?.length ?? 0) < tier.end - tier.start;
+    return this.classGroups(tierIndex, previous === entry.classId ? null : previous);
+  }
+
+  private classBefore(entryId: number): number | null {
+    let previous = this.joiningEntry()?.classId ?? null;
+
+    for (const tier of this.visibleTiers()) {
+      const ordered = (this.plan()[tier.index] ?? [])
+        .map((entry, entryIndex) => ({ entry, level: entryIndex === 0 ? tier.start : this.switchLevel(tier, entry) }))
+        .sort((a, b) => a.level - b.level);
+
+      for (const { entry } of ordered) {
+        if (entry.id === entryId) {
+          return previous;
+        }
+
+        previous = entry.classId ?? previous;
+      }
+    }
+
+    return previous;
+  }
+
+  canAddClass(tierIndex: number): boolean {
+    const { start, end } = this.tierRange(tierIndex);
+
+    return tierIndex > 0 && (this.plan()[tierIndex]?.length ?? 0) < end - start;
   }
 
   // A new class starts the level after the tier's latest switch, so it stays in order.
   addClass(tierIndex: number): void {
-    const tier = this.tiers[tierIndex];
+    const { start, end } = this.tierRange(tierIndex);
 
     this.plan.update((plan) =>
       plan.map((entries, index) => {
@@ -118,9 +179,9 @@ export class ProjectionDialogComponent implements OnInit {
           return entries;
         }
 
-        const latest = Math.max(...entries.map((entry) => entry.fromLevel));
+        const latest = Math.max(start, ...entries.slice(1).map((entry) => entry.fromLevel));
 
-        return [...entries, this.newEntry(null, Math.min(latest + 1, tier.end - 1))];
+        return [...entries, this.newEntry(null, Math.min(latest + 1, end - 1))];
       }),
     );
   }
@@ -158,7 +219,6 @@ export class ProjectionDialogComponent implements OnInit {
     return this.spoilers.filterKeeping(this.mountsFor(entry), selectedId);
   }
 
-  // Defaults to the unit's own mount when it has one of this type, otherwise the first one.
   mountOf(entry: PlanEntry): Mount | null {
     const options = this.mountsFor(entry);
     const signature = SIGNATURE_MOUNTS[this.unit().name];
@@ -179,25 +239,23 @@ export class ProjectionDialogComponent implements OnInit {
     return bondLevelOf(mount, entry.bondLevel ?? fallback)?.level ?? null;
   }
 
-  /** For classes with class levels, the unit levels where the next class level kicks in. */
   levelGates(entry: PlanEntry): { gates: readonly number[]; mountMultiplier: number } | null {
     const config = CLASS_LEVEL_CONFIGS[this.classOf(entry)?.name ?? ''];
 
     return config ? { gates: config.levels, mountMultiplier: config.mountMultiplier } : null;
   }
 
-  // Extra classes can only switch in strictly after the tier starts and before the next tier.
   setFromLevel(tierIndex: number, id: number, event: Event): void {
     const field = event.target as HTMLInputElement;
-    const tier = this.tiers[tierIndex];
+    const { start, end } = this.tierRange(tierIndex);
     const level = Math.round(Number(field.value));
 
     if (field.value.trim() === '' || !Number.isFinite(level)) {
-      field.value = String(this.plan()[tierIndex].find((entry) => entry.id === id)?.fromLevel ?? tier.start + 1);
+      field.value = String(this.plan()[tierIndex].find((entry) => entry.id === id)?.fromLevel ?? start + 1);
       return;
     }
 
-    const clamped = Math.min(tier.end - 1, Math.max(tier.start + 1, level));
+    const clamped = Math.min(end - 1, Math.max(start + 1, level));
     field.value = String(clamped);
     this.patch(tierIndex, id, { fromLevel: clamped });
   }
@@ -210,20 +268,23 @@ export class ProjectionDialogComponent implements OnInit {
     );
   }
 
-  // Tiers left empty keep the class from before.
-  private readonly steps = computed<ResolvedStep[]>(() =>
-    this.plan()
-      .flat()
-      .flatMap((entry) => {
-        const unitClass = this.classOf(entry);
+  private readonly steps = computed<ResolvedStep[]>(() => {
+    const joining = this.joiningEntry();
+    const planned = this.visibleTiers().flatMap((tier) =>
+      (this.plan()[tier.index] ?? []).map((entry, entryIndex) => ({
+        ...entry,
+        fromLevel: entryIndex === 0 ? tier.start : this.switchLevel(tier, entry),
+      })),
+    );
 
-        return unitClass
-          ? [{ fromLevel: entry.fromLevel, unitClass, mount: this.mountOf(entry), bondLevel: this.bondLevelOf(entry) }]
-          : [];
-      }),
-  );
+    return [...(joining ? [joining] : []), ...planned].flatMap((entry) => {
+      const unitClass = this.classOf(entry);
 
-  readonly startLevel = computed(() => this.chapter()?.level ?? 1);
+      return unitClass
+        ? [{ fromLevel: entry.fromLevel, unitClass, mount: this.mountOf(entry), bondLevel: this.bondLevelOf(entry) }]
+        : [];
+    });
+  });
 
   private readonly endStep = computed(() => stepAtLevel(this.steps(), this.endLevel()));
 

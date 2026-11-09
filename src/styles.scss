@@ -44,3 +44,15 @@ body {
     font-size: 16px !important;
   }
 }
+
+[role='dialog'],
+[role='dialog'] * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+[role='dialog']::-webkit-scrollbar,
+[role='dialog'] *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}

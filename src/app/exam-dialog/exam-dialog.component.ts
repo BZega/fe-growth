@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, HostListener, input, OnInit, output, signal } from '@angular/core';
-import { describeBounds, knownOutcome, RollBounds } from '../models/seed-roll';
+import { describeBounds, RollBounds } from '../models/seed-roll';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
 import { ExamDraft } from '../services/seed-mapper-state.service';
 
@@ -18,7 +18,7 @@ export class ExamDialogComponent implements OnInit {
   readonly reclassContext = input('');
   readonly classGroups = input<readonly SelectItemGroup[]>([]);
   readonly reclassGroups = input<readonly SelectItemGroup[]>([]);
-  readonly initial = input<{ classId: number | null; chance: number; passed: boolean } | null>(
+  readonly initial = input<{ classId: number | null; chance: number; passed: boolean; keepClass?: boolean } | null>(
     null,
   );
   readonly initialMode = input<BranchMode>('exam');
@@ -33,6 +33,8 @@ export class ExamDialogComponent implements OnInit {
   readonly classId = signal<number | null>(null);
   readonly chanceText = signal('');
   readonly passed = signal<boolean | null>(null);
+  /** On a pass, whether the unit moves into the exam class or only unlocks it. */
+  readonly switchClass = signal(true);
 
   readonly reclassing = computed(() => this.mode() === 'reclass');
 
@@ -51,13 +53,8 @@ export class ExamDialogComponent implements OnInit {
 
   readonly knownRange = computed(() => describeBounds(this.strBounds()));
 
-  readonly forced = computed(() => {
-    const chance = this.chance();
-
-    return chance === null ? null : knownOutcome(this.strBounds(), chance);
-  });
-
-  readonly outcome = computed(() => this.forced() ?? this.passed());
+  // The roll an exam checks may depend on the class, so the known Str roll never decides the result.
+  readonly outcome = computed(() => this.passed());
 
   readonly canConfirm = computed(() =>
     this.reclassing()
@@ -74,6 +71,7 @@ export class ExamDialogComponent implements OnInit {
       this.classId.set(initial.classId);
       this.chanceText.set(String(initial.chance));
       this.passed.set(initial.passed);
+      this.switchClass.set(!initial.keepClass);
     }
   }
 
@@ -99,7 +97,7 @@ export class ExamDialogComponent implements OnInit {
     const passed = this.outcome();
 
     if (classId !== null && chance !== null && passed !== null) {
-      this.confirmed.emit({ classId, chance, passed, reclass: false });
+      this.confirmed.emit({ classId, chance, passed, reclass: false, keepClass: passed && !this.switchClass() });
     }
   }
 

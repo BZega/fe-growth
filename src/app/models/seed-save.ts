@@ -27,6 +27,8 @@ export interface ExamSnapshot {
   classId: number | null;
   chance: number;
   passed: boolean;
+  reclass?: boolean;
+  keepClass?: boolean;
 }
 
 export interface ReclassSnapshot {
@@ -39,6 +41,7 @@ export interface InlineExamSnapshot {
   classId: number | null;
   chance: number;
   passed: boolean;
+  keepClass?: boolean;
 }
 
 export interface ReclassDto {
@@ -51,6 +54,8 @@ export interface InlineExamDto {
   unitClass: string | null;
   chance: number;
   passed: boolean;
+  /** A pass that stayed in the current class; absent in older saves. */
+  keepClass?: boolean;
 }
 
 export interface SectionSnapshot {
@@ -87,6 +92,10 @@ export interface ExamDto {
   unitClass: string | null;
   chance: number;
   passed: boolean;
+  /** A branch that reclasses instead of taking an exam; absent in older saves. */
+  reclass?: boolean;
+  /** A pass that stayed in the current class; absent in older saves. */
+  keepClass?: boolean;
 }
 
 export interface SectionDto {
@@ -319,6 +328,8 @@ function readExam(raw: unknown, earlier: readonly SectionDto[]): ExamDto | null 
     unitClass: readName(raw['unitClass']),
     chance,
     passed: raw['passed'],
+    ...(raw['reclass'] === true ? { reclass: true } : {}),
+    ...(raw['keepClass'] === true && raw['passed'] ? { keepClass: true } : {}),
   };
 }
 
@@ -343,7 +354,17 @@ function readInlineExams(raw: unknown, rowCount: number): InlineExamDto[] {
       typeof chance === 'number' && Number.isFinite(chance) && chance >= 0 && chance <= 100 &&
       typeof passed === 'boolean';
 
-    return valid ? [{ row, unitClass: readName(entry['unitClass']), chance, passed }] : [];
+    return valid
+      ? [
+          {
+            row,
+            unitClass: readName(entry['unitClass']),
+            chance,
+            passed,
+            ...(entry['keepClass'] === true && passed ? { keepClass: true } : {}),
+          },
+        ]
+      : [];
   });
 }
 

@@ -8,12 +8,13 @@ import { estimateRoll, RollBounds, rollBounds, RollEstimate, RollObservation } f
 import { CURRENT_SAVE_VERSION, migrateSave, newSaveId, SeedSave } from '../models/seed-save';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
 import { HelpDialogComponent } from '../help-dialog/help-dialog.component';
-import { RngSection, SeedRngDialogComponent } from '../seed-rng-dialog/seed-rng-dialog.component';
+import { SeedRngDialogComponent, RngSection } from '../seed-rng-dialog/seed-rng-dialog.component';
+import { SeedTimelineComponent } from '../seed-timeline/seed-timeline.component';
 import { GrowthDataService } from '../services/growth-data.service';
 import { SeedSaveStorageService } from '../services/seed-save-storage.service';
 import { SeedSerializerService } from '../services/seed-serializer.service';
 import { SpoilerService } from '../services/spoiler.service';
-import { ALWAYS_AVAILABLE_CLASS, availableClassIds, effectiveClassId, ExamDraft, InlineExam, MAX_LEVEL, MIN_LEVEL, rowSwitchesTo, SeedComparator, SeedMapperStateService, SeedRow, SeedSection } from '../services/seed-mapper-state.service';
+import { ALWAYS_AVAILABLE_CLASS, availableClassIds, effectiveClassId, ExamDraft, InlineExam, MAX_LEVEL, MIN_LEVEL, rowSwitchesTo, SeedComparator, SeedMapperStateService, SeedRow, SeedSection, switchesClass } from '../services/seed-mapper-state.service';
 
 interface PendingAction {
   kind: 'load' | 'upload' | 'overwrite' | 'delete' | 'reset';
@@ -37,6 +38,8 @@ export interface SectionView {
   growth: GrowthRates;
   parentTitle: string | null;
   exam: { slot: number; level: number } | null;
+  /** Branched off by reclassing rather than an exam, so no roll was used. */
+  reclass: boolean;
   firstSlot: number;
   firstLevel: number;
 }
@@ -103,7 +106,7 @@ interface ExamDialogState {
   reclassContext: string;
   classGroups: SelectItemGroup[];
   reclassGroups: SelectItemGroup[];
-  initial: { classId: number | null; chance: number; passed: boolean } | null;
+  initial: { classId: number | null; chance: number; passed: boolean; keepClass?: boolean } | null;
   initialMode: BranchMode;
   canSwitchMode: boolean;
   strBounds: RollBounds;
@@ -114,6 +117,8 @@ interface ExamDialogState {
   reclassRowId: number | null;
   /** From Exam / Reclass: an exam is added inline at the end of the section instead of branching. */
   inline: boolean;
+  /** From the timeline: exams and reclasses become branches beside any already at this level. */
+  branch?: boolean;
 }
 
 const STR_INDEX = STAT_KEYS.indexOf('str');
@@ -129,6 +134,7 @@ const NO_ROLLS: RollEstimate[] = STAT_KEYS.map(() => estimateRoll([]));
     PickerDialogComponent,
     SearchableSelectComponent,
     SeedRngDialogComponent,
+    SeedTimelineComponent,
   ],
   templateUrl: './seed-mapper-page.component.html',
   styleUrl: './seed-mapper-page.component.scss',
@@ -142,6 +148,8 @@ export class SeedMapperPageComponent {
   private readonly spoilers = inject(SpoilerService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+
+  readonly timelineView = signal(false);
 
   readonly seedMap = this.state.seedMap;
   readonly saves = this.storage.saves;
@@ -366,6 +374,7 @@ export class SeedMapperPageComponent {
     const views: SectionView[] = [];
     const byId = new Map<number, SectionView>();
     let examNumber = 0;
+    let reclassNumber = 0;
 
     for (const section of map.sections) {
       const classId = effectiveClassId(map.sections, section);
@@ -382,17 +391,20 @@ export class SeedMapperPageComponent {
         }
 
         const from = this.positionAfter(parent, section.exam.afterRowId);
+        const reclass = section.exam.reclass === true;
 
+        // An exam uses the next roll itself; a reclass leaves it to the next level up.
         view = {
           section,
-          title: `Exam ${++examNumber}`,
+          title: reclass ? `Reclass ${++reclassNumber}` : `Exam ${++examNumber}`,
           classId,
           mount,
           mountLevel,
           growth,
           parentTitle: parent.title,
-          exam: { slot: from.slot + 1, level: from.level },
-          firstSlot: from.slot + 2,
+          exam: reclass ? null : { slot: from.slot + 1, level: from.level },
+          reclass,
+          firstSlot: from.slot + (reclass ? 1 : 2),
           firstLevel: from.level + 1,
         };
       } else {
@@ -405,6 +417,7 @@ export class SeedMapperPageComponent {
           growth,
           parentTitle: null,
           exam: null,
+          reclass: false,
           firstSlot: 0,
           firstLevel: map.statsLevel + 1,
         };
@@ -900,7 +913,7 @@ export class SeedMapperPageComponent {
         const parentView = views.find((candidate) => candidate.section.id === exam.parentId);
         const until = parentView?.section.rows.findIndex((row) => row.id === exam.afterRowId) ?? -1;
         const carried = (until >= 0 ? parent?.after[until] : undefined) ?? parent?.start ?? NO_START;
-        const examBoost = exam.passed ? this.floorBoost(exam.classId, carried.gains) : ZERO_GROWTH;
+        const examBoost = switchesClass(exam) && !exam.reclass ? this.floorBoost(exam.classId, carried.gains) : ZERO_GROWTH;
 
         start = {
           gains: sumGrowth(carried.gains, examBoost),
@@ -915,7 +928,7 @@ export class SeedMapperPageComponent {
       const boosts: GrowthRates[] = [];
 
       view.section.rows.forEach((row, rowIndex) => {
-        const boost = row.exam?.passed ? this.floorBoost(row.exam.classId, gains) : ZERO_GROWTH;
+        const boost = row.exam && switchesClass(row.exam) ? this.floorBoost(row.exam.classId, gains) : ZERO_GROWTH;
         const { marks } = this.effectiveRow(this.rowGrowth(view, rowIndex), row, this.slotOf(view, rowIndex));
 
         gains = sumGrowth(gains, boost, toGrowth(marks));
@@ -1261,6 +1274,80 @@ export class SeedMapperPageComponent {
     }
   }
 
+  /** The newest branch made from the timeline, so it can be brought into focus. */
+  readonly createdBranchId = signal<number | null>(null);
+
+  /** Opens the exam / reclass dialog to branch in place of (or, for a reclass, from) the level up at `rowIndex`. */
+  openBranchAt(view: SectionView, rowIndex: number): void {
+    if (!this.canTakeExam(view)) {
+      return;
+    }
+
+    const row = this.rowBefore(view, rowIndex);
+    const from = this.positionAfter(view, row?.id ?? null);
+
+    this.examDialog.set({
+      title: `Branch at Lv ${from.level + 1}`,
+      context: describeExam(view.title, from),
+      reclassContext: `Switches class from the Lv ${from.level + 1} level up on, as a branch of ${view.title}. No roll is used.`,
+      classGroups: this.examClassGroups(view),
+      reclassGroups: this.reclassOptions(view, rowIndex),
+      initial: null,
+      initialMode: 'exam',
+      canSwitchMode: true,
+      strBounds: this.strBoundsAt(from.slot + 1, null),
+      parentId: view.section.id,
+      afterRowId: row?.id ?? null,
+      sectionId: null,
+      reclassRowId: null,
+      inline: false,
+      branch: true,
+    });
+  }
+
+  // --- shared rolls --------------------------------------------------------
+
+  private growthKey(view: SectionView, rowIndex: number): string {
+    const growth = this.rowGrowth(view, rowIndex);
+
+    return `${this.slotOf(view, rowIndex)}|${growth === null ? 'none' : this.statKeys.map((stat) => growth[stat]).join(',')}`;
+  }
+
+  // Level ups with the same roll and growth rates rise the same way: the first one (in section
+  // order) holds the marks and the rest follow it.
+  private readonly rowOwners = computed(() => {
+    const owners = new Map<string, { view: SectionView; rowIndex: number }>();
+    const sharers = new Map<string, { sectionId: number; rowId: number }[]>();
+
+    for (const view of this.sectionViews()) {
+      view.section.rows.forEach((row, rowIndex) => {
+        const key = this.growthKey(view, rowIndex);
+
+        if (!owners.has(key)) {
+          owners.set(key, { view, rowIndex });
+        }
+
+        sharers.set(key, [...(sharers.get(key) ?? []), { sectionId: view.section.id, rowId: row.id }]);
+      });
+    }
+
+    return { owners, sharers };
+  });
+
+  /** The level up whose marks this one follows; itself when it holds its own. */
+  rowOwner(view: SectionView, rowIndex: number): { view: SectionView; rowIndex: number } {
+    return this.rowOwners().owners.get(this.growthKey(view, rowIndex)) ?? { view, rowIndex };
+  }
+
+  /** Marks a stat on a level up and on every other level up with the same roll and growth rates. */
+  setSharedMark(view: SectionView, rowIndex: number, stat: StatKey, risen: boolean): void {
+    const targets = this.rowOwners().sharers.get(this.growthKey(view, rowIndex)) ?? [
+      { sectionId: view.section.id, rowId: view.section.rows[rowIndex].id },
+    ];
+
+    this.state.setMarks(targets, stat, risen ? 1 : 0);
+  }
+
   // From +, an exam branches off in place of the level up at `rowIndex`; from Exam / Reclass it's
   // added inline as a new level. A reclass always starts on that level, in the same section.
   private openExam(view: SectionView, rowIndex: number, inline: boolean): void {
@@ -1299,7 +1386,7 @@ export class SeedMapperPageComponent {
       reclassContext: '',
       classGroups: this.examClassGroups(parent),
       reclassGroups: [],
-      initial: { classId: exam.classId, chance: exam.chance, passed: exam.passed },
+      initial: { classId: exam.classId, chance: exam.chance, passed: exam.passed, keepClass: exam.keepClass },
       initialMode: 'exam',
       canSwitchMode: false,
       strBounds: this.strBoundsAt(view.exam.slot, view.section.id),
@@ -1321,6 +1408,11 @@ export class SeedMapperPageComponent {
     this.examDialog.set(null);
     this.loadMounts(draft.classId);
 
+    if (dialog.branch) {
+      this.createdBranchId.set(this.state.addBranch(dialog.parentId, dialog.afterRowId, draft));
+      return;
+    }
+
     if (draft.reclass) {
       if (dialog.reclassRowId === null) {
         this.state.addReclassLevel(dialog.parentId, draft.classId);
@@ -1340,6 +1432,7 @@ export class SeedMapperPageComponent {
         classId: draft.classId,
         chance: draft.chance,
         passed: draft.passed,
+        ...(draft.passed && draft.keepClass ? { keepClass: true } : {}),
       });
       return;
     }
@@ -1441,7 +1534,11 @@ export class SeedMapperPageComponent {
   }
 
   onInlineExamPassed(view: SectionView, row: SeedRow, passed: boolean): void {
-    this.updateInlineExam(view, row, { passed });
+    this.updateInlineExam(view, row, { passed, keepClass: passed ? row.exam?.keepClass : undefined });
+  }
+
+  onInlineExamSwitch(view: SectionView, row: SeedRow, switchClass: boolean): void {
+    this.updateInlineExam(view, row, { keepClass: switchClass ? undefined : true });
   }
 
   removeInlineExam(view: SectionView, row: SeedRow): void {

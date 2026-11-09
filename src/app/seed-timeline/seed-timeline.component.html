@@ -1,0 +1,133 @@
+@let focus = focused();
+
+@if (focus) {
+  @let mapperRef = mapper();
+
+  <section class="timeline" aria-label="Timeline">
+    <header class="timeline__bar">
+      <label class="timeline__picker">
+        <span class="timeline__picker-label">Timeline</span>
+        <select class="timeline__select" (change)="onTimelineChange($any($event.target).value)">
+          @for (option of timelines(); track option.id) {
+            <option [value]="option.id" [selected]="option.id === focus.section.id">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+
+      <div class="timeline__actions">
+        <button type="button" class="ghost-button" (click)="mapperRef.openAbilityPicker(focus)">
+          Abilities ({{ mapperRef.equippedAbilities(focus).length }}/{{ mapperRef.maxAbilities }})
+        </button>
+
+        @if (focus.section.exam) {
+          <button
+            type="button"
+            class="ghost-button ghost-button--danger"
+            [disabled]="!mapperRef.canRemoveSection(focus)"
+            [title]="mapperRef.canRemoveSection(focus) ? 'Remove this branch' : 'Remove the branches taken from it first'"
+            (click)="removeBranch(focus)"
+          >
+            Remove branch
+          </button>
+        }
+      </div>
+    </header>
+
+    <div class="tgrid" [style.--stat-count]="statKeys.length">
+      <div class="tgrid__corner"></div>
+      @for (stat of statKeys; track stat) {
+        <div class="tgrid__head">{{ statLabels[stat] }}</div>
+      }
+      <div class="tgrid__corner"></div>
+
+      @for (item of items(); track item.key) {
+        @if (asFork(item); as fork) {
+          <div class="tgrid__fork" role="group" [attr.aria-label]="'Branches at Lv ' + fork.level">
+            <span class="tgrid__fork-level">Lv {{ fork.level }}</span>
+            @for (option of fork.options; track option.sectionId) {
+              <button
+                type="button"
+                class="chip"
+                [class.chip--active]="option.active"
+                [attr.aria-pressed]="option.active"
+                (click)="focusBranch(option.sectionId)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        }
+
+        @if (asBranch(item); as branch) {
+          <div class="tgrid__branch">
+            <span class="tgrid__branch-label">{{ branch.label }}</span>
+            <span class="tgrid__branch-detail">{{ branch.detail }}</span>
+          </div>
+        }
+
+        @if (asLevel(item); as level) {
+          <div class="tgrid__label" [title]="level.className">
+            <span class="tgrid__level">Lv {{ level.level }}</span>
+            <span class="tgrid__class">{{ level.className }}</span>
+          </div>
+
+          @for (stat of statKeys; track stat) {
+            <button
+              type="button"
+              class="cell"
+              [class.cell--on]="level.marks[stat] > 0"
+              [class.cell--auto]="level.auto[stat]"
+              [class.cell--locked]="!level.editable"
+              [disabled]="!level.editable"
+              [title]="level.source ?? ''"
+              [attr.aria-label]="statLabels[stat] + ' at Lv ' + level.level"
+              (click)="toggle(level, stat)"
+            >
+              {{ level.marks[stat] }}
+            </button>
+          }
+
+          <button
+            type="button"
+            class="tgrid__add"
+            [title]="'Branch at Lv ' + level.level + ': take an exam or reclass'"
+            [attr.aria-label]="'Branch at Lv ' + level.level"
+            (click)="branchFrom(level)"
+          >
+            +
+          </button>
+
+          @if (level.note) {
+            <div class="tgrid__note">{{ level.note }}</div>
+          }
+        }
+      }
+
+      <div class="tgrid__caption">Lv {{ mapperRef.endLevelOf(focus) }} stats</div>
+      <div class="tgrid__label">Stats</div>
+      @for (total of endTotals(focus); track $index) {
+        <div class="tgrid__total" [title]="mapperRef.statTotalTitle(total)">{{ total.value ?? '—' }}</div>
+      }
+      <div class="tgrid__corner"></div>
+    </div>
+
+    <footer class="timeline__footer">
+      <button
+        type="button"
+        class="ghost-button"
+        [disabled]="!mapperRef.canAddLevel(focus)"
+        (click)="addLevel(focus)"
+      >
+        + Lv {{ mapperRef.endLevelOf(focus) + 1 }}
+      </button>
+      <button
+        type="button"
+        class="ghost-button"
+        [disabled]="focus.section.rows.length <= 1"
+        (click)="removeLastLevel(focus)"
+      >
+        Remove Lv {{ mapperRef.endLevelOf(focus) }}
+      </button>
+    </footer>
+  </section>
+}

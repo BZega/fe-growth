@@ -1,0 +1,297 @@
+:host {
+  display: block;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem 1.1rem 1.2rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+}
+
+.timeline__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.timeline__picker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.timeline__picker-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.timeline__select {
+  flex: 1;
+  min-width: 0;
+  background: #1d222c;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: inherit;
+  font-size: 0.88rem;
+  padding: 0.4rem 0.5rem;
+
+  &:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+}
+
+.timeline__actions,
+.timeline__footer {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.tgrid {
+  display: grid;
+  grid-template-columns: 6.5rem repeat(var(--stat-count), minmax(0, 1fr)) 1.9rem;
+  gap: 0.2rem;
+}
+
+.tgrid__corner {
+  background: transparent;
+}
+
+.tgrid__head {
+  display: grid;
+  place-items: center;
+  background: #232b3a;
+  color: var(--accent);
+  border-radius: 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.25rem 0;
+}
+
+.tgrid__label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  font-size: 0.72rem;
+}
+
+.tgrid__level {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tgrid__class {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.66rem;
+  opacity: 0.6;
+}
+
+.tgrid__fork,
+.tgrid__branch,
+.tgrid__note,
+.tgrid__caption {
+  grid-column: 1 / -1;
+}
+
+.tgrid__fork {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.4rem 0 0.1rem;
+  padding: 0.35rem 0.5rem;
+  border-left: 3px solid var(--accent);
+  background: rgb(240 192 74 / 6%);
+  border-radius: 0 6px 6px 0;
+}
+
+.tgrid__fork-level {
+  margin-right: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.chip {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.7rem;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+}
+
+.chip--active,
+.chip--active:hover {
+  background: rgb(240 192 74 / 18%);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tgrid__branch {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  margin-bottom: 0.25rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  background: #232b3a;
+}
+
+.tgrid__branch-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.tgrid__branch-detail,
+.tgrid__note {
+  font-size: 0.7rem;
+  opacity: 0.65;
+}
+
+.tgrid__note {
+  padding-left: 6.7rem;
+  margin-top: -0.1rem;
+}
+
+.cell {
+  background: #1d222c;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.35rem 0;
+
+  &:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
+}
+
+.cell--on {
+  background: #1d6f3a;
+  border-color: #2f9e4f;
+  color: #e8fff0;
+}
+
+.cell--auto {
+  background: rgb(29 111 58 / 45%);
+  border-style: dashed;
+  border-color: #2f9e4f;
+  color: #b8f0c8;
+}
+
+// Shared rows show their marks but are edited in the branch that owns them.
+.cell--locked {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.tgrid__add {
+  background: transparent;
+  border: 1px dashed var(--panel-border);
+  border-radius: 4px;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+
+  &:hover {
+    border-color: var(--accent);
+    background: rgb(240 192 74 / 10%);
+  }
+}
+
+.tgrid__caption {
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.tgrid__total {
+  display: grid;
+  place-items: center;
+  background: #232b3a;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.3rem 0;
+}
+
+.ghost-button {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.9rem;
+
+  &:hover:not(:disabled) {
+    background: rgb(255 255 255 / 10%);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.ghost-button--danger:hover:not(:disabled) {
+  background: rgb(255 141 141 / 18%);
+  border-color: #ff8d8d;
+  color: #ff8d8d;
+}
+
+@media (max-width: 720px) {
+  .timeline {
+    padding: 0.75rem 0.6rem 0.9rem;
+  }
+
+  .tgrid {
+    grid-template-columns: 3.6rem repeat(var(--stat-count), minmax(0, 1fr)) 1.5rem;
+    gap: 0.12rem;
+  }
+
+  .tgrid__class {
+    display: none;
+  }
+
+  .tgrid__note {
+    padding-left: 3.8rem;
+  }
+
+  .cell {
+    font-size: 0.75rem;
+    padding: 0.3rem 0;
+  }
+}

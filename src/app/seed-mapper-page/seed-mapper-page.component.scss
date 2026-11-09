@@ -664,6 +664,15 @@
   color: #ff8d8d;
 }
 
+.switch-class {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .saves {
   background: var(--panel);
   border: 1px solid var(--panel-border);

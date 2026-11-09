@@ -104,14 +104,6 @@
               }
             </div>
           }
-
-          @if (levelGates(resolved); as gates) {
-            <p class="tier__gates">
-              Class level rises with unit level: Lv {{ gates.gates.join(' / ') }}{{
-                gates.mountMultiplier > 1 ? ' · mount growth ×' + gates.mountMultiplier : ''
-              }}
-            </p>
-          }
         }
 
         @if (canAddClass()) {

@@ -35,6 +35,8 @@ export class SeedSerializerService {
           unitClass: this.nameOf(this.classes(), section.exam.classId),
           chance: section.exam.chance,
           passed: section.exam.passed,
+          ...(section.exam.reclass ? { reclass: true } : {}),
+          ...(section.exam.keepClass ? { keepClass: true } : {}),
         },
         unitClass: this.nameOf(this.classes(), section.classId),
         mount: this.nameOf(this.mounts(), section.mountId),
@@ -51,6 +53,7 @@ export class SeedSerializerService {
           unitClass: this.nameOf(this.classes(), exam.classId),
           chance: exam.chance,
           passed: exam.passed,
+          ...(exam.keepClass ? { keepClass: true } : {}),
         })),
         comparators: section.comparators.map((comparator) => ({
           unitClass: this.nameOf(this.classes(), comparator.classId),
@@ -78,6 +81,8 @@ export class SeedSerializerService {
           classId: this.idOf(this.classes(), section.exam.unitClass),
           chance: section.exam.chance,
           passed: section.exam.passed,
+          ...(section.exam.reclass ? { reclass: true } : {}),
+          ...(section.exam.keepClass ? { keepClass: true } : {}),
         },
         classId: this.idOf(this.classes(), section.unitClass),
         mountId: this.idOf(this.mounts(), section.mount),
@@ -94,6 +99,7 @@ export class SeedSerializerService {
           classId: this.idOf(this.classes(), exam.unitClass),
           chance: exam.chance,
           passed: exam.passed,
+          ...(exam.keepClass ? { keepClass: true } : {}),
         })),
         comparators: section.comparators.map((comparator) => ({
           classId: this.idOf(this.classes(), comparator.unitClass),

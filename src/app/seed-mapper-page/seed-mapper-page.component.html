@@ -21,6 +21,20 @@
     <button
       type="button"
       class="ghost-button"
+      [attr.aria-pressed]="timelineView()"
+      [title]="
+        timelineView()
+          ? 'Show every section and comparator'
+          : 'One Lv 1–99 timeline at a time, with branches at each exam or reclass'
+      "
+      (click)="timelineView.set(!timelineView())"
+    >
+      {{ timelineView() ? 'Section view' : 'Timeline view' }}
+    </button>
+
+    <button
+      type="button"
+      class="ghost-button"
       [disabled]="!canOpenRng()"
       [title]="
         canOpenRng()
@@ -45,7 +59,11 @@
 </header>
 
 <div class="seeds">
-  @for (view of sectionViews(); track view.section.id) {
+  @if (timelineView()) {
+    <app-seed-timeline [mapper]="this" />
+  }
+
+  @for (view of timelineView() ? [] : sectionViews(); track view.section.id) {
     @let section = view.section;
     @let exam = section.exam;
 
@@ -58,13 +76,21 @@
         <header class="seed__header">
           <h2>{{ view.title }}</h2>
 
-          @if (exam) {
+          @if (exam && view.reclass) {
+            <span class="tag">Reclass</span>
+            <span class="seed__summary">
+              {{ className(exam.classId) }} from Lv {{ view.firstLevel }} in {{ view.parentTitle }}
+            </span>
+          } @else if (exam) {
             <span class="tag" [class.tag--pass]="exam.passed" [class.tag--fail]="!exam.passed">
               {{ exam.passed ? 'Passed' : 'Failed' }}
             </span>
             <span class="seed__summary">
               {{ className(exam.classId) }} exam · {{ exam.chance }}% · in place of Lv
               {{ (view.exam?.level ?? 0) + 1 }} in {{ view.parentTitle }}
+              @if (exam.passed && exam.keepClass) {
+                · stayed in {{ className(view.classId) }}
+              }
             </span>
             <button type="button" class="ghost-button" (click)="editExam(view)">
               Edit exam
@@ -335,6 +361,16 @@
                     >
                       {{ inlineExam.passed ? 'Passed' : 'Failed' }}
                     </button>
+                    @if (inlineExam.passed) {
+                      <label class="switch-class" title="Untick to unlock the class but stay in the current one">
+                        <input
+                          type="checkbox"
+                          [checked]="!inlineExam.keepClass"
+                          (change)="onInlineExamSwitch(view, row, $any($event.target).checked)"
+                        />
+                        Switch class
+                      </label>
+                    }
                   </div>
                   <button
                     type="button"
@@ -358,7 +394,7 @@
                     <div class="grid__corner"></div>
                   }
 
-                  @if (inlineExam.passed) {
+                  @if (inlineExam.passed && !inlineExam.keepClass) {
                     <div class="grid__label">Growth</div>
                     @for (stat of statKeys; track stat) {
                       <div class="grid__growth" [class.negative]="(rowGrowths?.[stat] ?? 0) < 0">

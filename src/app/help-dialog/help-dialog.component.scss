@@ -53,7 +53,7 @@
 .dialog {
   position: relative;
   width: min(560px, 100%);
-  max-height: min(75vh, 42rem);
+  max-height: min(80vh, 42rem);
   overflow: auto;
   overscroll-behavior: contain;
   background: var(--panel);

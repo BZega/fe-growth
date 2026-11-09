@@ -24,100 +24,98 @@
         </select>
       </label>
 
-      @for (tier of visibleTiers(); track tier.index) {
-        @let tierIndex = tier.index;
-        <fieldset class="tier">
-          <legend class="field__label">{{ tier.label }}</legend>
+      <fieldset class="tier">
+        <legend class="field__label">Classes</legend>
 
-          @for (entry of plan()[tierIndex]; track entry.id; let entryIndex = $index) {
-            <div class="tier__row">
+        @for (entry of plan(); track entry.id; let entryIndex = $index) {
+          @let resolved = entryIndex === 0 ? startEntry()! : entry;
+          <div class="tier__row">
+            @if (entryIndex === 0) {
+              <span class="tier__from">Lv {{ rowLevels()[0] }}</span>
+              <app-searchable-select
+                class="plan__picker"
+                label="Starting class"
+                [groups]="rowClassItems()[0]"
+                [value]="startClassId()"
+                [clearable]="false"
+                (valueChange)="pickClass(entry.id, $event)"
+              />
+            } @else {
+              @let bounds = switchBounds(entryIndex);
+              <label class="tier__level">
+                Lv
+                <input
+                  type="number"
+                  inputmode="numeric"
+                  [min]="bounds.min"
+                  [max]="bounds.max"
+                  [value]="rowLevels()[entryIndex]"
+                  aria-label="Reclass level"
+                  (change)="setFromLevel(entry.id, $event)"
+                />
+              </label>
+              <app-searchable-select
+                class="plan__picker"
+                label="Reclass to"
+                placeholder="— Select a class —"
+                [groups]="rowClassItems()[entryIndex]"
+                [value]="entry.classId"
+                [clearable]="false"
+                (valueChange)="pickClass(entry.id, $event)"
+              />
+              <button
+                type="button"
+                class="tier__remove"
+                aria-label="Remove this reclass"
+                title="Remove this reclass"
+                (click)="removeClass(entry.id)"
+              >
+                &times;
+              </button>
+            }
+          </div>
+
+          @if (mountsFor(resolved).length > 0) {
+            @let mount = mountOf(resolved);
+            <div class="tier__row tier__row--sub">
               <select
                 class="plan__select"
-                [attr.aria-label]="tier.label + ' class'"
-                [value]="entry.classId ?? ''"
-                (change)="setClass(tierIndex, entry.id, $any($event.target).value)"
+                aria-label="Mount"
+                [value]="mount?.id"
+                (change)="setMount(entry.id, $any($event.target).value)"
               >
-                <option value="" [selected]="entry.classId === null">
-                  {{ entryIndex === 0 ? '— Keep the previous class —' : '— Select a class —' }}
-                </option>
-                @for (group of switchClassGroups(tierIndex, entry); track group.rank) {
-                  <optgroup [label]="group.rank">
-                    @for (option of group.classes; track option.id) {
-                      <option [value]="option.id" [selected]="option.id === entry.classId">{{ option.name }}</option>
-                    }
-                  </optgroup>
+                @for (option of mountChoices(resolved, mount?.id); track option.id) {
+                  <option [value]="option.id" [selected]="option.id === mount?.id">{{ option.name }}</option>
                 }
               </select>
-
-              @if (entryIndex > 0) {
-                <label class="tier__level">
-                  from Lv
-                  <input
-                    type="number"
-                    inputmode="numeric"
-                    [min]="tier.start + 1"
-                    [max]="tier.end - 1"
-                    [value]="switchLevel(tier, entry)"
-                    [attr.aria-label]="'Switch level for ' + tier.label"
-                    (change)="setFromLevel(tierIndex, entry.id, $event)"
-                  />
-                </label>
-                <button
-                  type="button"
-                  class="tier__remove"
-                  aria-label="Remove this class"
-                  title="Remove this class"
-                  (click)="removeClass(tierIndex, entry.id)"
-                >
-                  &times;
-                </button>
-              } @else {
-                <span class="tier__from">Lv {{ tier.start }}</span>
-              }
-            </div>
-
-            @if (mountsFor(entry).length > 0) {
-              @let mount = mountOf(entry);
-              <div class="tier__row tier__row--sub">
+              @if (mount && mount.bondLevels.length > 0) {
                 <select
-                  class="plan__select"
-                  aria-label="Mount"
-                  [value]="mount?.id"
-                  (change)="setMount(tierIndex, entry.id, $any($event.target).value)"
+                  class="plan__select tier__bond"
+                  aria-label="Bond level"
+                  [value]="bondLevelOf(resolved)"
+                  (change)="setBondLevel(entry.id, $any($event.target).value)"
                 >
-                  @for (option of mountChoices(entry, mount?.id); track option.id) {
-                    <option [value]="option.id" [selected]="option.id === mount?.id">{{ option.name }}</option>
+                  @for (bond of mount.bondLevels; track bond.level) {
+                    <option [value]="bond.level" [selected]="bond.level === bondLevelOf(resolved)">Bond Lv {{ bond.level }}</option>
                   }
                 </select>
-                @if (mount && mount.bondLevels.length > 0) {
-                  <select
-                    class="plan__select tier__bond"
-                    aria-label="Bond level"
-                    [value]="bondLevelOf(entry)"
-                    (change)="setBondLevel(tierIndex, entry.id, $any($event.target).value)"
-                  >
-                    @for (bond of mount.bondLevels; track bond.level) {
-                      <option [value]="bond.level" [selected]="bond.level === bondLevelOf(entry)">Bond Lv {{ bond.level }}</option>
-                    }
-                  </select>
-                }
-              </div>
-            }
-
-            @if (levelGates(entry); as gates) {
-              <p class="tier__gates">
-                Class level rises with unit level: Lv {{ gates.gates.join(' / ') }}{{
-                  gates.mountMultiplier > 1 ? ' · mount growth ×' + gates.mountMultiplier : ''
-                }}
-              </p>
-            }
+              }
+            </div>
           }
 
-          @if (canAddClass(tierIndex)) {
-            <button type="button" class="tier__add" (click)="addClass(tierIndex)">+ Switch to another class in this tier</button>
+          @if (levelGates(resolved); as gates) {
+            <p class="tier__gates">
+              Class level rises with unit level: Lv {{ gates.gates.join(' / ') }}{{
+                gates.mountMultiplier > 1 ? ' · mount growth ×' + gates.mountMultiplier : ''
+              }}
+            </p>
           }
-        </fieldset>
-      }
+        }
+
+        @if (canAddClass()) {
+          <button type="button" class="tier__add" (click)="addClass()">+ Reclass</button>
+        }
+      </fieldset>
 
       <footer class="dialog__footer">
         <button type="button" class="button" (click)="close()">Cancel</button>

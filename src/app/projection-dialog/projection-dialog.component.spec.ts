@@ -83,50 +83,61 @@ describe('ProjectionDialogComponent', () => {
 
     return { fixture, dialog: fixture.componentInstance, host: fixture.nativeElement as HTMLElement, unit };
   };
-  const legends = (host: HTMLElement) =>
-    Array.from(host.querySelectorAll('.tier legend')).map((legend) => legend.textContent!.trim());
+  const reclass = (dialog: ProjectionDialogComponent, level: number, className: string) => {
+    dialog.addClass();
+    const entry = dialog.plan().at(-1)!;
+    dialog.setReclassLevel(entry.id, level);
+    dialog.setClass(entry.id, String(byName(className).id));
+    return dialog.plan().at(-1)!;
+  };
+  const names = (groups: { classes: UnitClass[] }[]) => groups.flatMap((group) => group.classes.map((unitClass) => unitClass.name));
+  const gatedRanks = (groups: { rank: string; classes: UnitClass[] }[]) =>
+    groups
+      .filter((group) => group.rank !== 'Divine' && group.classes.some((unitClass) => unitClass.name !== 'Dancer'))
+      .map((group) => group.rank);
 
-  it('offers only the ranks each tier allows, including the ranks below it', () => {
+  it('unlocks each rank 5 levels before its old gate', () => {
     const { dialog } = open('Cai');
-    const ranks = (tier: number) => dialog.classGroups(tier).map((group) => group.rank);
+    const ranks = (level: number) => gatedRanks(dialog.classGroups(level));
 
-    expect(ranks(0)).toEqual(['Base']);
     expect(ranks(1)).toEqual(['Base', 'Beginner']);
-    expect(ranks(2)).toEqual(['Base', 'Beginner', 'Speciality']);
-    expect(ranks(3)).toEqual(['Base', 'Beginner', 'Speciality', 'Advanced']);
-    expect(ranks(4)).toEqual(jasmine.arrayContaining(['Advanced', 'Master', 'Divine']));
-    expect(dialog.tiers.map((tier) => [tier.start, tier.end])).toEqual([[1, 5], [5, 20], [20, 35], [35, 45], [45, 99]]);
+    expect(ranks(14)).toEqual(['Base', 'Beginner']);
+    expect(ranks(15)).toEqual(['Base', 'Beginner', 'Speciality']);
+    expect(ranks(30)).toEqual(['Base', 'Beginner', 'Speciality', 'Advanced']);
+    expect(ranks(40)).toEqual(['Base', 'Beginner', 'Speciality', 'Advanced', 'Master']);
   });
 
-  it('leaves out the Lv 1–5 Base tier, since the starting class is implied', () => {
-    const { host } = open('Cai');
+  it('offers every Divine class and Dancer from Lv 1', () => {
+    const { dialog } = open('Cai');
+    const anyLevel = classes.filter((unitClass) => unitClass.rank === 'Divine' || unitClass.name === 'Dancer');
+    const usable = names(dialog.classGroups(99)).filter((name) => anyLevel.some((unitClass) => unitClass.name === name));
 
-    expect(host.querySelector('.tier__fixed')).toBeNull();
-    expect(legends(host)).toEqual([
-      'Lv 5–20 · Beginner',
-      'Lv 20–35 · Speciality',
-      'Lv 35–45 · Advanced',
-      'Lv 45–99 · Master / Divine',
-    ]);
+    expect(usable.length).toBeGreaterThan(0);
+    expect(names(dialog.classGroups(1))).toEqual(jasmine.arrayContaining(usable));
   });
 
-  it('only shows the tiers still ahead of the joining level, starting the first one there', () => {
-    const { dialog, fixture, host } = open('Cai', { ...chapter, chapter: 20, level: 40 });
+  it('keeps Dancer on a reclass moved below Lv 30', () => {
+    const { dialog } = open('Cai');
+    dialog.addClass();
+    const entry = dialog.plan()[1];
+    dialog.setClass(entry.id, String(byName('Dancer').id));
+    dialog.setReclassLevel(entry.id, 5);
 
-    expect(legends(host)).toEqual(['Lv 40–45 · Advanced', 'Lv 45–99 · Master / Divine']);
-    expect(host.querySelector('.tier__from')!.textContent!.trim()).toBe('from Lv 40');
+    expect(dialog.plan()[1].classId).toBe(byName('Dancer').id);
+  });
 
-    dialog.addClass(3);
+  it("starts at the chapter's level and class, with no fixed level gate sections", () => {
+    const { fixture, host } = open('Cai', { ...chapter, chapter: 20, level: 40, className: 'Swordmaster' });
     fixture.detectChanges();
-    const levelBox = host.querySelector<HTMLInputElement>('.tier__level input')!;
-    expect(levelBox.value).toBe('41');
 
-    levelBox.value = '36';
-    levelBox.dispatchEvent(new Event('change'));
-    expect(levelBox.value).toBe('41');
+    expect(host.querySelectorAll('fieldset.tier').length).toBe(1);
+    expect(host.querySelector('.tier__from')!.textContent!.trim()).toBe('Lv 40');
+    expect(host.querySelector('select[aria-label="Starting class"]')).toBeNull();
+    expect(host.querySelector<HTMLInputElement>('input[aria-label="Starting class"]')!.value).toBe('Swordmaster');
+    expect(host.querySelector('input[aria-label="Reclass to"]')).toBeNull();
   });
 
-  it("projects from the joining chapter's class until a tier's class takes over", () => {
+  it("projects from the joining chapter's class until a reclass takes over", () => {
     const swordmaster = byName('Swordmaster');
     const { dialog, unit } = open('Cai', { ...chapter, chapter: 20, level: 40, className: swordmaster.name });
     dialog.setEndLevel('44');
@@ -135,57 +146,107 @@ describe('ProjectionDialogComponent', () => {
     expect(dialog.projection().find((row) => row.stat === 'mag')!.total).toBeCloseTo(expectedMag, 10);
   });
 
-  it('adds extra classes inside the tier and keeps their switch level within it', () => {
-    const { dialog, fixture, host } = open('Cai');
+  it('adds each reclass at the next rank unlock, then one level after the last', () => {
+    const { dialog } = open('Cai');
+    const levels: number[] = [];
 
-    dialog.addClass(1);
-    fixture.detectChanges();
-    const levelBox = host.querySelector<HTMLInputElement>('.tier__level input')!;
-    levelBox.value = '40';
-    levelBox.dispatchEvent(new Event('change'));
+    for (const name of ['Gladiator', 'Charioteer', 'Gladiator', 'Charioteer']) {
+      dialog.addClass();
+      const entry = dialog.plan().at(-1)!;
+      dialog.setClass(entry.id, String(byName(name).id));
+      levels.push(dialog.rowLevels().at(-1)!);
+    }
 
-    expect(dialog.plan()[1][1].fromLevel).toBe(19);
-    expect(levelBox.value).toBe('19');
+    expect(levels).toEqual([15, 30, 40, 41]);
   });
 
-  it("doesn't offer the class the unit is already in when switching", () => {
+  it('only offers ranks unlocked at the reclass level, and clears a class moved below its unlock', () => {
     const { dialog } = open('Cai');
-    const names = (tierIndex: number, entryIndex: number) =>
-      dialog
-        .switchClassGroups(tierIndex, dialog.plan()[tierIndex][entryIndex])
-        .flatMap((group) => group.classes.map((unitClass) => unitClass.name));
-    const offered = dialog.classGroups(2).flatMap((group) => group.classes);
-    const [first, second] = offered.filter((unitClass) => unitClass.rank !== 'Base');
+    const entry = reclass(dialog, 15, 'Charioteer');
+    const position = dialog.plan().indexOf(entry);
 
-    // The joining class (Noble/Commoner) carries on while the Beginner tier is left empty.
-    expect(names(1, 0)).not.toContain('Noble/Commoner');
-    dialog.addClass(1);
-    expect(names(1, 1)).not.toContain('Noble/Commoner');
+    // Noble/Commoner, the only Base class, is the class being left, so Base isn't offered.
+    expect(gatedRanks(dialog.reclassGroups(position))).toEqual(['Beginner', 'Speciality']);
 
-    dialog.setClass(2, dialog.plan()[2][0].id, String(first.id));
-    expect(names(3, 0)).not.toContain(first.name);
-    dialog.addClass(2);
-    expect(names(2, 1)).not.toContain(first.name);
-    expect(names(2, 1)).toContain(second.name);
+    dialog.setReclassLevel(entry.id, 14);
+    expect(dialog.plan()[position].classId).toBeNull();
+    expect(gatedRanks(dialog.reclassGroups(position))).toEqual(['Beginner']);
+  });
 
-    // A switch already set to that class keeps it listed.
-    dialog.setClass(2, dialog.plan()[2][1].id, String(first.id));
-    expect(names(2, 1)).toContain(first.name);
+  it("doesn't offer the class the unit is already in when reclassing", () => {
+    const { dialog } = open('Cai');
+
+    dialog.addClass();
+    expect(names(dialog.reclassGroups(1))).not.toContain('Noble/Commoner');
+    dialog.setClass(dialog.plan()[1].id, String(byName('Gladiator').id));
+
+    dialog.addClass();
+    expect(names(dialog.reclassGroups(2))).not.toContain('Gladiator');
+    expect(names(dialog.reclassGroups(2))).toContain('Noble/Commoner');
+
+    // A reclass already set to that class keeps it listed.
+    dialog.setClass(dialog.plan()[2].id, String(byName('Gladiator').id));
+    expect(names(dialog.reclassGroups(2))).toContain('Gladiator');
+  });
+
+  it('hides + Reclass until the new reclass has a class', () => {
+    const { dialog, fixture, host } = open('Cai');
+    const addButton = () => host.querySelector<HTMLButtonElement>('.tier__add');
+
+    expect(addButton()).not.toBeNull();
+
+    addButton()!.click();
+    fixture.detectChanges();
+    expect(addButton()).toBeNull();
+
+    dialog.addClass();
+    expect(dialog.plan().length).toBe(2);
+
+    dialog.setClass(dialog.plan()[1].id, String(byName('Gladiator').id));
+    fixture.detectChanges();
+    expect(addButton()).not.toBeNull();
+  });
+
+  it('gives every reclass its own level between its neighbours', () => {
+    const { dialog, fixture, host } = open('Cai');
+    const levelBoxes = () => Array.from(host.querySelectorAll<HTMLInputElement>('.tier__level input'));
+    const setLevel = (box: HTMLInputElement, value: string) => {
+      box.value = value;
+      box.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+    };
+
+    reclass(dialog, 10, 'Gladiator');
+    reclass(dialog, 20, 'Noble/Commoner');
+    fixture.detectChanges();
+
+    setLevel(levelBoxes()[0], '3');
+    expect(levelBoxes()[0].value).toBe('5');
+    setLevel(levelBoxes()[0], '25');
+    expect(levelBoxes()[0].value).toBe('19');
+    setLevel(levelBoxes()[1], '10');
+    expect(levelBoxes()[1].value).toBe('20');
+
+    // No reclass fits after Lv 98.
+    setLevel(levelBoxes()[1], '98');
+    expect(dialog.canAddClass()).toBeFalse();
+    dialog.addClass();
+    expect(dialog.plan().length).toBe(3);
   });
 
   it('shows the projected final stats on a new page after Submit, to two decimals', () => {
     const { dialog, fixture, host, unit } = open('Cai');
     const gladiator = byName('Gladiator');
-    dialog.setClass(1, dialog.plan()[1][0].id, String(gladiator.id));
+    reclass(dialog, 5, 'Gladiator');
     fixture.detectChanges();
 
     host.querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
 
-    expect(host.querySelector('h2')!.textContent!.trim()).toBe('Projected final stats');
+    expect(host.querySelector('h2')!.textContent!.trim()).toBe('Projected Final Stats');
     expect(host.querySelector('form')).toBeNull();
 
-    // Lv 4 -> 5 as Noble/Commoner, then Lv 5 -> 99 as Gladiator (no later tier set, so it's kept).
+    // Lv 4 -> 5 as Noble/Commoner, then Lv 5 -> 99 as Gladiator.
     const noble = byName('Noble/Commoner');
     const expectedMag = 3 + (unit.mag + noble.mag) / 100 + (94 * (unit.mag + gladiator.mag)) / 100 + gladiator.bonusStats.mag;
     const mag = dialog.projection().find((row) => row.stat === 'mag')!;
@@ -205,7 +266,7 @@ describe('ProjectionDialogComponent', () => {
     const at20 = dialog.projection().find((row) => row.stat === 'hp')!.total;
 
     expect(at20).toBeLessThan(at99);
-    expect(host.querySelector('.results__summary')!.textContent).toContain('Lv 20');
+    expect(host.querySelector<HTMLInputElement>('.results__level-input')!.value).toBe('20');
 
     dialog.setEndLevel('1');
     expect(dialog.endLevel()).toBe(4);
@@ -248,11 +309,9 @@ describe('ProjectionDialogComponent', () => {
 
   it('offers a mount and bond level for mounted classes, and shows the class level gates', () => {
     const { dialog, fixture, host } = open('Cai');
-    const charioteer = byName('Charioteer');
-    dialog.setClass(2, dialog.plan()[2][0].id, String(charioteer.id));
+    const entry = reclass(dialog, 20, 'Charioteer');
     fixture.detectChanges();
 
-    const entry = dialog.plan()[2][0];
     expect(dialog.mountsFor(entry).length).toBeGreaterThan(0);
     expect(dialog.mountOf(entry)).toBe(dialog.mountsFor(entry)[0]);
     expect(host.querySelector('select[aria-label="Mount"]')).not.toBeNull();
@@ -264,13 +323,12 @@ describe('ProjectionDialogComponent', () => {
     const { dialog, unit } = open('Cai');
     const noble = byName('Noble/Commoner');
     const charioteer = byName('Charioteer');
-    dialog.setClass(2, dialog.plan()[2][0].id, String(charioteer.id));
-    const entry = dialog.plan()[2][0];
+    const entry = reclass(dialog, 20, 'Charioteer');
     const mount = dialog.mountsFor(entry).find((option) => option.bondLevels.length > 1) ?? dialog.mountsFor(entry)[0];
-    dialog.setMount(2, entry.id, String(mount.id));
+    dialog.setMount(entry.id, String(mount.id));
     const bond = mount.bondLevels.at(-1)?.level ?? null;
     if (bond !== null) {
-      dialog.setBondLevel(2, entry.id, String(bond));
+      dialog.setBondLevel(entry.id, String(bond));
     }
     dialog.submit();
 

@@ -45,8 +45,14 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 
-  .plan__select {
+  .plan__select,
+  .plan__picker {
     flex: 1 1 12rem;
+    min-width: 0;
+  }
+
+  .plan__picker {
+    --dropdown-height: 12rem;
   }
 }
 

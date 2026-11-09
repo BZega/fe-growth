@@ -27,6 +27,8 @@ export class SearchableSelectComponent {
   readonly label = input('');
   readonly disabled = input(false);
   readonly clearable = input(true);
+  /** False keeps phones from opening the on-screen keyboard; the list is picked from by tapping. */
+  readonly keyboard = input(true);
 
   readonly valueChange = output<number | null>();
 

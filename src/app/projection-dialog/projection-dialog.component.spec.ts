@@ -137,6 +137,27 @@ describe('ProjectionDialogComponent', () => {
     expect(host.querySelector('input[aria-label="Reclass to"]')).toBeNull();
   });
 
+  it("doesn't open the on-screen keyboard for the class pickers", () => {
+    const { dialog, fixture, host } = open('Cai');
+    dialog.addClass();
+    fixture.detectChanges();
+
+    for (const label of ['Starting class', 'Reclass to']) {
+      expect(host.querySelector(`input[aria-label="${label}"]`)!.getAttribute('inputmode')).toBe('none');
+    }
+    expect(host.querySelector('input[aria-label="Reclass level"]')!.getAttribute('inputmode')).toBe('numeric');
+  });
+
+  it('moves the modal up by the height of the on-screen keyboard', () => {
+    const { fixture } = open('Cai');
+    const host = fixture.nativeElement as HTMLElement;
+    const before = parseFloat(getComputedStyle(host).paddingBottom);
+
+    host.style.setProperty('--keyboard-inset', '300px');
+
+    expect(parseFloat(getComputedStyle(host).paddingBottom)).toBe(before + 300);
+  });
+
   it("projects from the joining chapter's class until a reclass takes over", () => {
     const swordmaster = byName('Swordmaster');
     const { dialog, unit } = open('Cai', { ...chapter, chapter: 20, level: 40, className: swordmaster.name });

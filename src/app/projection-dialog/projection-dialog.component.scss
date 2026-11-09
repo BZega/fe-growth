@@ -1,6 +1,11 @@
+// While the on-screen keyboard is open (e.g. for a reclass level), centre the modal in the space above it.
+:host {
+  padding-bottom: calc(1.5rem + var(--keyboard-inset, 0px));
+}
+
 .dialog--projection {
   width: min(560px, 100%);
-  max-height: 80vh;
+  max-height: min(80vh, calc(100dvh - 3rem - var(--keyboard-inset, 0px)));
   overflow-y: auto;
 }
 

@@ -14,6 +14,7 @@
     autocapitalize="off"
     spellcheck="false"
     [attr.aria-label]="label() || null"
+    [attr.inputmode]="keyboard() ? null : 'none'"
     [attr.aria-expanded]="open()"
     aria-haspopup="listbox"
     [disabled]="disabled()"

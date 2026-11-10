@@ -37,6 +37,12 @@ describe('ProjectionPickerComponent', () => {
     expect(expected).not.toContain('Mu*');
   });
 
+  it("doesn't open the on-screen keyboard for the character picker", () => {
+    const { host } = open();
+
+    expect(host.querySelector('input[aria-label="Character"]')!.getAttribute('inputmode')).toBe('none');
+  });
+
   it('picks the route and chapter, then opens the projection for them', () => {
     const { fixture, picker, host } = open();
     const next = () => host.querySelector<HTMLButtonElement>('.button--primary')!;

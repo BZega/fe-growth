@@ -185,7 +185,7 @@ export class AppComponent {
       return;
     }
 
-    const predicted = beforeKeyboard && inset === 0;
+    const predicted = beforeKeyboard && inset === 0 && opensKeyboard(field);
 
     if (!predicted && inset > 0 && inset !== this.keyboardInset) {
       this.keyboardInset = inset;
@@ -231,13 +231,15 @@ export class AppComponent {
     }
 
     const inset = this.updateKeyboardInset(viewport);
-    const visible = this.visibleArea(viewport, scroller, inset === 0);
+    const visible = this.visibleArea(viewport, scroller, inset === 0 && opensKeyboard(input));
     const top = input.getBoundingClientRect().top;
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     // The list opens 0.25rem below the field, at most --dropdown-height tall (see searchable-select).
     const panelTop = select.getBoundingClientRect().bottom + 0.25 * rem;
-    const listHeight = (parseFloat(getComputedStyle(select).getPropertyValue('--dropdown-height')) || 13) * rem;
-    const height = Math.min(listHeight, capDropdown(select, visible, panelTop - top));
+    const style = getComputedStyle(select);
+    const listHeight = (parseFloat(style.getPropertyValue('--dropdown-height')) || 13) * rem;
+    const minHeight = (parseFloat(style.getPropertyValue('--dropdown-min-height')) || 8) * rem;
+    const height = Math.min(listHeight, Math.max(minHeight, capDropdown(select, visible, panelTop - top)));
     const bottom = panelTop + height;
     let delta = 0;
 
@@ -400,6 +402,11 @@ function capDropdown(select: HTMLElement, visible: VisibleArea, listOffset: numb
   select.style.setProperty('--dropdown-max-height', `${room}px`);
 
   return room;
+}
+
+// Pickers with inputmode="none" never bring up the keyboard, so no room is kept for it.
+function opensKeyboard(field: HTMLElement): boolean {
+  return field.getAttribute('inputmode') !== 'none';
 }
 
 // The search box of a not-yet-focused, enabled dropdown field under the tap, if any.

@@ -98,6 +98,7 @@ export class SearchableSelectComponent {
 
     this.open.set(true);
     this.query.set('');
+    this.measureRoom();
 
     const selected = this.flattened().findIndex(
       (item) => item.id === this.value(),
@@ -111,6 +112,16 @@ export class SearchableSelectComponent {
     if (element) {
       element.value = '';
     }
+  }
+
+  // Room below the field to the bottom of the screen, so the list doesn't run off the page.
+  private measureRoom(): void {
+    const host = this.host.nativeElement as HTMLElement;
+    const viewport = window.visualViewport;
+    const bottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+    const room = Math.floor(bottom - host.getBoundingClientRect().bottom - LIST_GAP);
+
+    host.style.setProperty('--dropdown-room', `${room}px`);
   }
 
   onFieldPointerDown(): void {
@@ -265,3 +276,6 @@ export class SearchableSelectComponent {
 function clamp(index: number, length: number): number {
   return Math.min(Math.max(index, 0), Math.max(length - 1, 0));
 }
+
+// The list's 0.25rem offset below the field plus a little breathing room above the screen edge.
+const LIST_GAP = 12;

@@ -1,6 +1,8 @@
 :host {
   // Tallest the option list gets; app.component reads it to place the list before it opens.
   --dropdown-height: 16rem;
+  // Shortest the list gets, however little room is left.
+  --dropdown-min-height: 8rem;
   position: relative;
   display: block;
   width: 100%;
@@ -85,7 +87,13 @@
   right: 0;
   display: flex;
   flex-direction: column;
-  max-height: min(var(--dropdown-height), var(--dropdown-max-height, var(--dropdown-height)));
+  max-height: min(
+    var(--dropdown-height),
+    max(
+      var(--dropdown-min-height),
+      min(var(--dropdown-max-height, var(--dropdown-height)), var(--dropdown-room, var(--dropdown-height)))
+    )
+  );
   background: #161b24;
   border: 1px solid var(--accent);
   border-radius: 8px;

@@ -35,6 +35,7 @@
             class="compact summary__pick"
             placeholder="— Unit —"
             [label]="'Unit of the ' + name + ' build'"
+            [keyboard]="false"
             [items]="editor.units()"
             [clearable]="!editor.lockUnit()"
             [disabled]="editor.lockUnit()"
@@ -45,6 +46,7 @@
             class="compact summary__pick"
             placeholder="— Class —"
             [label]="'Class of the ' + name + ' build'"
+            [keyboard]="false"
             [groups]="editor.classGroups()"
             [value]="editor.selectedClassId()"
             (valueChange)="editor.onClassChange($event)"
@@ -67,6 +69,7 @@
             <app-searchable-select
               class="compact summary__pick"
               [label]="editor.mountType() + ' mount of the ' + name + ' build'"
+              [keyboard]="false"
               [items]="editor.mountOptions()"
               [clearable]="false"
               [value]="editor.mount()?.id ?? null"

@@ -46,6 +46,7 @@
       @if (reclassGroups().length > 0) {
         <app-searchable-select
           label="Reclass to"
+          [keyboard]="false"
           placeholder="— Select an available class —"
           [groups]="reclassGroups()"
           [value]="classId()"
@@ -71,6 +72,7 @@
         <span class="field__label">Exam class</span>
         <app-searchable-select
           label="Exam class"
+          [keyboard]="false"
           placeholder="— Select a class —"
           [groups]="classGroups()"
           [value]="classId()"

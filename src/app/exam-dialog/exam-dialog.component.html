@@ -111,6 +111,7 @@
           class="outcome__option outcome__option--pass"
           [class.outcome__option--selected]="outcome() === true"
           [attr.aria-checked]="outcome() === true"
+          [disabled]="forced() === false"
           (click)="passed.set(true)"
         >
           Pass
@@ -121,6 +122,7 @@
           class="outcome__option outcome__option--fail"
           [class.outcome__option--selected]="outcome() === false"
           [attr.aria-checked]="outcome() === false"
+          [disabled]="forced() === true"
           (click)="passed.set(false)"
         >
           Fail
@@ -139,17 +141,22 @@
       </label>
     }
 
-    <p class="hint">
-      @if (outcome() === true) {
+    <p class="hint" [class.hint--locked]="forced() !== null">
+      @if (forced() === true) {
+        The Str roll is {{ knownRange() }}, so a {{ chance() }}% exam has to pass.
+      } @else if (forced() === false) {
+        The Str roll is {{ knownRange() }}, so a {{ chance() }}% exam has to fail.
+      } @else if (outcome() === true) {
         @if (switchClass()) {
-          A pass switches to the new class.
+          A pass switches to the new class and means the Str roll was at or below the chance.
         } @else {
-          A pass unlocks the class but stays in the current one.
+          A pass unlocks the class but stays in the current one; the Str roll was at or below the chance.
         }
       } @else if (outcome() === false) {
-        A fail keeps the current class.
+        A fail keeps the current class and means the Str roll was above the chance.
       } @else {
-        The exam uses this level's roll instead of levelling up.
+        The exam uses this level's Str roll instead of levelling up. Level ups that raised 2 stats or fewer
+        don't count towards the known roll, since the guaranteed minimum may have added stats.
       }
     </p>
   }

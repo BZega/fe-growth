@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, HostListener, input, OnInit, output, signal } from '@angular/core';
-import { describeBounds, RollBounds } from '../models/seed-roll';
+import { describeBounds, knownOutcome, RollBounds } from '../models/seed-roll';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
 import { ExamDraft } from '../services/seed-mapper-state.service';
 
@@ -53,8 +53,14 @@ export class ExamDialogComponent implements OnInit {
 
   readonly knownRange = computed(() => describeBounds(this.strBounds()));
 
-  // The roll an exam checks may depend on the class, so the known Str roll never decides the result.
-  readonly outcome = computed(() => this.passed());
+  // Bounds only come from reliable level ups (more than 2 stats) and other exams, so they can decide it.
+  readonly forced = computed(() => {
+    const chance = this.chance();
+
+    return chance === null ? null : knownOutcome(this.strBounds(), chance);
+  });
+
+  readonly outcome = computed(() => this.forced() ?? this.passed());
 
   readonly canConfirm = computed(() =>
     this.reclassing()

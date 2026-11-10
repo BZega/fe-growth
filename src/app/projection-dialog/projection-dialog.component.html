@@ -37,6 +37,7 @@
                 label="Starting class"
                 [keyboard]="false"
                 [groups]="rowClassItems()[0]"
+                [focusGroup]="rowFocusRanks()[0]"
                 [value]="startClassId()"
                 [clearable]="false"
                 (valueChange)="pickClass(entry.id, $event)"
@@ -52,6 +53,7 @@
                   [max]="bounds.max"
                   [value]="rowLevels()[entryIndex]"
                   aria-label="Reclass level"
+                  (focus)="selectValue($event)"
                   (change)="setFromLevel(entry.id, $event)"
                 />
               </label>
@@ -61,6 +63,7 @@
                 [keyboard]="false"
                 placeholder="— Select a class —"
                 [groups]="rowClassItems()[entryIndex]"
+                [focusGroup]="rowFocusRanks()[entryIndex]"
                 [value]="entry.classId"
                 [clearable]="false"
                 (valueChange)="pickClass(entry.id, $event)"
@@ -136,6 +139,7 @@
           [max]="maxLevel"
           [value]="endLevel()"
           aria-label="End level"
+          (focus)="selectValue($event)"
           (change)="setEndLevel($any($event.target).value); $any($event.target).value = endLevel()"
         />
       </label>

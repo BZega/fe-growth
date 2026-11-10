@@ -4,7 +4,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { BranchMode, ExamDialogComponent } from '../exam-dialog/exam-dialog.component';
 import { PickerDialogComponent, PickerGroup } from '../picker-dialog/picker-dialog.component';
 import { bondLevelOf, characterKey, ClassAbility, CLASS_RANK_ORDER, ClassRank, GrowthRates, MAX_EQUIPPED_ABILITIES, Mount, MountBondLevel, mountBonusAt, mountGrowthAt, SKILL_LABELS, STAT_KEYS, STAT_LABELS, StatBoostAbility, StatKey, sumGrowth, toGrowth, Unit, UnitClass, WEAPON_KEYS, ZERO_GROWTH } from '../models/growth.models';
-import { estimateRoll, RollBounds, rollBounds, RollEstimate, RollObservation } from '../models/seed-roll';
+import { estimateRoll, MAX_UNRELIABLE_GAINS, MIN_READINGS_TO_FILL, RollBounds, rollBounds, RollEstimate, RollObservation, UNKNOWN_ROLL } from '../models/seed-roll';
 import { CURRENT_SAVE_VERSION, migrateSave, newSaveId, SeedSave } from '../models/seed-save';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
 import { HelpDialogComponent } from '../help-dialog/help-dialog.component';
@@ -739,6 +739,7 @@ export class SeedMapperPageComponent {
 
   private readonly hitCeilings = computed(() => {
     const ceilings = new Map<number, (number | null)[]>();
+    const readings = new Map<number, number>();
 
     const lower = (slot: number, statIndex: number, growth: number) => {
       let perStat = ceilings.get(slot);
@@ -754,13 +755,20 @@ export class SeedMapperPageComponent {
 
     for (const view of this.sectionViews()) {
       for (const block of this.blocksOf(view)) {
-        block.rows.forEach((row, rowIndex) =>
+        block.rows.forEach((row, rowIndex) => {
+          if (!isReliable(row)) {
+            return;
+          }
+
+          const slot = this.slotOf(view, rowIndex);
+          readings.set(slot, (readings.get(slot) ?? 0) + 1);
+
           this.statKeys.forEach((stat, statIndex) => {
             if (row.marks[stat] > 0) {
-              lower(this.slotOf(view, rowIndex), statIndex, block.growthOf(rowIndex)[stat]);
+              lower(slot, statIndex, block.growthOf(rowIndex)[stat]);
             }
-          }),
-        );
+          });
+        });
       }
 
       view.section.rows.forEach((row, rowIndex) => {
@@ -776,11 +784,13 @@ export class SeedMapperPageComponent {
       }
     }
 
-    return ceilings;
+    return { ceilings, readings };
   });
 
+  // Only fills in a stat once enough reliable level ups share the roll to make the ceiling trustworthy.
   effectiveRow(growth: GrowthRates | null, row: SeedRow, slot: number): EffectiveRow {
-    const ceilings = this.hitCeilings().get(slot);
+    const { ceilings: bySlot, readings } = this.hitCeilings();
+    const ceilings = (readings.get(slot) ?? 0) >= MIN_READINGS_TO_FILL ? bySlot.get(slot) : undefined;
     const marks = { ...row.marks };
     const auto = {} as Record<StatKey, boolean>;
 
@@ -801,6 +811,7 @@ export class SeedMapperPageComponent {
 
   private readonly observationsBySlot = computed(() => {
     const observations = new Map<number, TaggedObservation[][]>();
+    const uncertain = new Set<number>();
 
     const add = (slot: number, statIndex: number, observation: TaggedObservation) => {
       let perStat = observations.get(slot);
@@ -817,6 +828,13 @@ export class SeedMapperPageComponent {
       for (const block of this.blocksOf(view)) {
         block.rows.forEach((row, rowIndex) => {
           const slot = this.slotOf(view, rowIndex);
+
+          // A bad level up may have had stats added by the guaranteed minimum, so it says nothing about the roll.
+          if (!isReliable(row)) {
+            uncertain.add(slot);
+            return;
+          }
+
           const growth = block.growthOf(rowIndex);
           const { marks } = this.effectiveRow(growth, row, slot);
 
@@ -852,14 +870,24 @@ export class SeedMapperPageComponent {
       });
     }
 
-    return observations;
+    return { observations, uncertain };
   });
 
   private readonly rollsBySlot = computed(() => {
     const rolls = new Map<number, RollEstimate[]>();
+    const { observations, uncertain } = this.observationsBySlot();
 
-    for (const [slot, perStat] of this.observationsBySlot()) {
-      rolls.set(slot, perStat.map((list) => estimateRoll(list)));
+    for (const [slot, perStat] of observations) {
+      rolls.set(
+        slot,
+        perStat.map((list) => (list.length === 0 && uncertain.has(slot) ? UNKNOWN_ROLL : estimateRoll(list))),
+      );
+    }
+
+    for (const slot of uncertain) {
+      if (!rolls.has(slot)) {
+        rolls.set(slot, this.statKeys.map(() => UNKNOWN_ROLL));
+      }
     }
 
     return rolls;
@@ -870,7 +898,7 @@ export class SeedMapperPageComponent {
   }
 
   private strBoundsAt(slot: number, ignoreExamOf: number | null): RollBounds {
-    const readings = this.observationsBySlot().get(slot)?.[STR_INDEX] ?? [];
+    const readings = this.observationsBySlot().observations.get(slot)?.[STR_INDEX] ?? [];
 
     return rollBounds(
       readings.filter((reading) => ignoreExamOf === null || reading.examOf !== ignoreExamOf),
@@ -1946,6 +1974,11 @@ export class SeedMapperPageComponent {
 
 function branchKey(sectionId: number, rowId: number | null): string {
   return `${sectionId}:${rowId ?? 'exam'}`;
+}
+
+/** A level up that raised more stats than the guaranteed minimum could have added. */
+function isReliable(row: SeedRow): boolean {
+  return STAT_KEYS.filter((stat) => row.marks[stat] > 0).length > MAX_UNRELIABLE_GAINS;
 }
 
 function levelSlot(firstSlot: number, rows: readonly SeedRow[], rowIndex: number): number {

@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import unitClassData from '../data/unit-classes.json';
 import unitData from '../data/units.json';
-import { Unit, UnitClass } from '../models/growth.models';
+import { STAT_KEYS, StatKey, Unit, UnitClass, ZERO_GROWTH } from '../models/growth.models';
 import { SeedMapperStateService } from '../services/seed-mapper-state.service';
 import { SeedSerializerService } from '../services/seed-serializer.service';
 import { SeedMapperPageComponent } from '../seed-mapper-page/seed-mapper-page.component';
@@ -123,6 +123,51 @@ describe('Seed timeline branches', () => {
 
     expect(state.seedMap().sections[1].exam!.keepClass).toBeTrue();
     expect(seed().rows.at(-1)!.exam!.keepClass).toBeTrue();
+  });
+
+  describe('bad level ups', () => {
+    const str = STAT_KEYS.indexOf('str');
+    const mark = (sectionId: number, rowIndex: number, ...stats: StatKey[]) => {
+      const row = state.seedMap().sections.find((section) => section.id === sectionId)!.rows[rowIndex];
+      stats.forEach((stat) => state.toggleStat(sectionId, row.id, stat));
+    };
+    // The seed's Lv 13 (row 11) uses the roll an exam at Lv 12 would take.
+    const lv13Slot = () => page.slotOf(seedView(), 11);
+
+    it("shows '?' for a roll only a 1–2 stat level up used, and doesn't force an exam on it", () => {
+      // Str didn't rise, but only 2 stats did, so the guaranteed minimum may have picked them.
+      mark(seed().id, 11, 'hp', 'def');
+
+      expect(page.rollsAt(lv13Slot())[str].text).toBe('?');
+      page.openBranchAt(seedView(), 11);
+      expect(page.examDialog()!.strBounds).toEqual({ lower: null, upper: null });
+
+      // A third stat makes it a reliable level up: Str stayed above its growth.
+      mark(seed().id, 11, 'spd');
+      const strGrowth = page.rowGrowth(seedView(), 11)!.str;
+
+      expect(page.rollsAt(lv13Slot())[str].text).toBe(`>${strGrowth}%`);
+      page.openBranchAt(seedView(), 11);
+      expect(page.examDialog()!.strBounds).toEqual({ lower: strGrowth, upper: null });
+    });
+
+    it('only fills marks in automatically once 3 reliable level ups share the roll', () => {
+      const easyStr = { ...ZERO_GROWTH, str: 100 };
+      const blank = { id: -1, marks: { ...ZERO_GROWTH } };
+      const autoStr = () => page.effectiveRow(easyStr, blank, lv13Slot()).auto.str;
+
+      mark(seed().id, 11, 'str', 'hp', 'def');
+      expect(autoStr()).toBeFalse();
+
+      for (const name of ['Gladiator', 'Hunter']) {
+        state.addAvailableClass(classId(name));
+        const branch = state.addBranch(seed().id, lv12(), { classId: classId(name), chance: 0, passed: true, reclass: true })!;
+        mark(branch, 0, 'hp', 'def', 'res');
+      }
+
+      expect(page.slotOf(page.sectionViews().at(-1)!, 0)).toBe(lv13Slot());
+      expect(autoStr()).toBeTrue();
+    });
   });
 });
 

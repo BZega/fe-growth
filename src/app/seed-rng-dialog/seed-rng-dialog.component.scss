@@ -193,6 +193,13 @@
   opacity: 0.3;
 }
 
+// Only bad level ups (2 stats or fewer) saw this roll, so nothing is known about it.
+.roll--unknown {
+  border-style: dashed;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
 .roll--below {
   background: #1d6f3a;
   border-color: #2f9e4f;

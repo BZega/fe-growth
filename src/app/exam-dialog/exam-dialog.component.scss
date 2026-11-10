@@ -186,6 +186,11 @@
   opacity: 1;
 }
 
+.hint--locked {
+  color: var(--accent);
+  opacity: 1;
+}
+
 .switch-class {
   display: flex;
   align-items: center;

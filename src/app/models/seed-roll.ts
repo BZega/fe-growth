@@ -1,5 +1,6 @@
 export type RollState =
   | 'none'
+  | 'unknown'
   | 'below'
   | 'above'
   | 'range'
@@ -34,6 +35,35 @@ export function rollBounds(observations: readonly RollObservation[]): RollBounds
   }
 
   return { lower, upper };
+}
+
+/**
+ * A level up that raised this few stats may have had stats added by the guaranteed minimum
+ * (2 in Part I, 1 later), so its marks say nothing reliable about the roll.
+ */
+export const MAX_UNRELIABLE_GAINS = 2;
+
+/** How many reliable level ups must share a roll before its marks are filled in automatically. */
+export const MIN_READINGS_TO_FILL = 3;
+
+export const UNKNOWN_ROLL: RollEstimate = { state: 'unknown', text: '?' };
+
+export function knownOutcome(bounds: RollBounds, chance: number): boolean | null {
+  const { lower, upper } = bounds;
+
+  if (lower !== null && upper !== null && lower >= upper) {
+    return null;
+  }
+
+  if (upper !== null && upper <= chance) {
+    return true;
+  }
+
+  if (lower !== null && lower >= chance) {
+    return false;
+  }
+
+  return null;
 }
 
 export function describeBounds({ lower, upper }: RollBounds): string | null {

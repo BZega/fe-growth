@@ -57,6 +57,7 @@ body {
   height: 0;
 }
 
-.dialog--projection:has(app-searchable-select .field--open) {
+// An open dropdown hangs below its modal instead of being cut off by the modal's scroll area.
+[role='dialog']:has(app-searchable-select .field--open) {
   overflow: visible;
 }

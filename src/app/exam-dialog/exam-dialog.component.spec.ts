@@ -44,20 +44,26 @@ describe('ExamDialogComponent reclass mode', () => {
     expect(dialog.classId()).toBeNull();
   });
 
-  it("shows the known Str roll but doesn't let it decide the result", () => {
-    // Str failed to rise at 55%, yet a 47% exam can still pass.
+  it('forces the result only when the known Str roll settles it, and leaves both open otherwise', () => {
     open({ strBounds: { lower: 55, upper: null } });
     dialog.classId.set(9);
     dialog.chanceText.set('47');
     fixture.detectChanges();
 
-    const buttons = Array.from(host().querySelectorAll<HTMLButtonElement>('.outcome__option'));
-    expect(buttons.every((button) => !button.disabled)).toBeTrue();
+    const buttons = () => Array.from(host().querySelectorAll<HTMLButtonElement>('.outcome__option'));
     expect(host().querySelector('.known')!.textContent).toContain('above 55%');
+    expect(buttons().map((button) => button.disabled)).toEqual([true, false]);
+    expect(dialog.outcome()).toBeFalse();
 
-    buttons[0].click();
+    // With no reliable reading (e.g. only a 1–2 stat level up), nothing is forced.
+    open();
+    dialog.classId.set(9);
+    dialog.chanceText.set('47');
+    fixture.detectChanges();
+
+    expect(buttons().every((button) => !button.disabled)).toBeTrue();
+    buttons()[0].click();
     dialog.confirm();
-
     expect(confirmed!.passed).toBeTrue();
   });
 

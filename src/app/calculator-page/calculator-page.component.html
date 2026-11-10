@@ -21,6 +21,9 @@
           Compare Builds
         </button>
       }
+      <button type="button" class="ghost-button" aria-haspopup="dialog" (click)="projectionOpen.set(true)">
+        Projected Stats
+      </button>
       <button type="button" class="ghost-button" (click)="add()">
         + Add Calculator
       </button>
@@ -66,4 +69,8 @@
     [editorB]="active.editorB"
     (closed)="closeComparison()"
   />
+}
+
+@if (projectionOpen()) {
+  <app-projection-picker (closed)="projectionOpen.set(false)" />
 }

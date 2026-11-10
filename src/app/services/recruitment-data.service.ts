@@ -106,6 +106,11 @@ export class RecruitmentDataService {
   forUnit(unitName: string): UnitRecruitment | null {
     return this.byUnit.get(characterKey(unitName)) ?? null;
   }
+
+  /** Routes that list at least one chapter, i.e. ones a stat projection can start from. */
+  routesWithChapters(unitName: string): readonly RecruitmentRoute[] {
+    return this.forUnit(unitName)?.routes.filter((route) => route.chapters.length > 0) ?? [];
+  }
 }
 
 function toRecruitment(file: RawRecruitment): UnitRecruitment {

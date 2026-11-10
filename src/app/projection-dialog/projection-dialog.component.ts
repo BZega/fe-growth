@@ -21,7 +21,16 @@ export function classUnlockLevel(unitClass: UnitClass): number {
   return ANY_LEVEL_CLASS_NAMES.has(unitClass.name) ? 1 : RANK_UNLOCK_LEVELS[unitClass.rank];
 }
 
-const RECLASS_GATES = [...new Set(Object.values(RANK_UNLOCK_LEVELS))].filter((level) => level > 1).sort((a, b) => a - b);
+// Levels players usually reclass at; ranks become available earlier (RANK_UNLOCK_LEVELS).
+const USUAL_RECLASS_LEVELS: readonly number[] = [5, 20, 35, 45];
+
+// The rank a class list opens at for a level, highest first; falls back down when a rank has no classes.
+const SNAP_RANKS: readonly { rank: ClassRank; from: number }[] = [
+  { rank: 'Master', from: 45 },
+  { rank: 'Advanced', from: 35 },
+  { rank: 'Speciality', from: 20 },
+  { rank: 'Beginner', from: 1 },
+];
 
 export const MAX_PROJECTION_LEVEL = 99;
 
@@ -68,7 +77,6 @@ export class ProjectionDialogComponent implements OnInit {
 
   readonly page = signal<'plan' | 'results'>('plan');
   readonly chapterNumber = signal<number | null>(null);
-  /** The starting class first (null follows the chapter's class), then each reclass in level order. */
   readonly plan = signal<PlanEntry[]>([]);
   readonly endLevel = signal(MAX_PROJECTION_LEVEL);
 
@@ -92,7 +100,6 @@ export class ProjectionDialogComponent implements OnInit {
 
   readonly startClassId = computed(() => this.plan()[0]?.classId ?? this.joiningClassId());
 
-  /** The starting row with its class filled in, for mounts and class level gates. */
   readonly startEntry = computed<PlanEntry | null>(() => {
     const first = this.plan()[0];
 
@@ -121,7 +128,6 @@ export class ProjectionDialogComponent implements OnInit {
     return { id: this.nextId++, classId, fromLevel, mountId: null, bondLevel: null };
   }
 
-  /** Classes unlocked at a level, by rank; `keepId` stays listed so a current choice never vanishes. */
   classGroups(level: number, excludeId: number | null = null, keepId: number | null = null): { rank: ClassRank; classes: UnitClass[] }[] {
     const keep = this.classes().find((unitClass) => unitClass.id === keepId);
     const pool = keep && !this.usableClasses().includes(keep) ? [...this.usableClasses(), keep] : this.usableClasses();
@@ -140,7 +146,6 @@ export class ProjectionDialogComponent implements OnInit {
     return this.classGroups(this.startLevel(), null, this.startClassId());
   }
 
-  // One list per row, kept as signals so the dropdowns only rebuild when their options change.
   readonly rowClassItems = computed<SelectItemGroup[][]>(() =>
     this.plan().map((_, position) =>
       (position === 0 ? this.startClassGroups() : this.reclassGroups(position)).map((group) => ({
@@ -150,11 +155,20 @@ export class ProjectionDialogComponent implements OnInit {
     ),
   );
 
+  readonly rowFocusRanks = computed(() =>
+    this.rowClassItems().map((groups, position) => {
+      const level = this.rowLevels()[position];
+
+      return (
+        SNAP_RANKS.find(({ rank, from }) => level >= from && groups.some((group) => group.label === rank))?.rank ?? null
+      );
+    }),
+  );
+
   pickClass(id: number, classId: number | null): void {
     this.setClass(id, classId === null ? '' : String(classId));
   }
 
-  /** Everything unlocked at the reclass level except the class the unit is already in. */
   reclassGroups(position: number): { rank: ClassRank; classes: UnitClass[] }[] {
     const entry = this.plan()[position];
     const previous = this.classBefore(position);
@@ -180,14 +194,13 @@ export class ProjectionDialogComponent implements OnInit {
     return !this.hasPendingReclass() && (this.rowLevels().at(-1) ?? MAX_PROJECTION_LEVEL) < MAX_PROJECTION_LEVEL - 1;
   }
 
-  // Starts at the next rank unlock after the last row, or the next level when every rank is open.
   addClass(): void {
     if (!this.canAddClass()) {
       return;
     }
 
     const last = this.rowLevels().at(-1)!;
-    const next = RECLASS_GATES.find((gate) => gate > last) ?? last + 1;
+    const next = USUAL_RECLASS_LEVELS.find((level) => level > last) ?? last + 1;
 
     this.plan.update((plan) => [...plan, this.newEntry(null, Math.min(next, MAX_PROJECTION_LEVEL - 1))]);
   }
@@ -354,6 +367,17 @@ export class ProjectionDialogComponent implements OnInit {
 
   fixed(value: number): string {
     return value.toFixed(2);
+  }
+
+  // Deferred: mobile browsers place the caret after focus, which would undo an immediate select.
+  selectValue(event: FocusEvent): void {
+    const field = event.target as HTMLInputElement;
+
+    setTimeout(() => {
+      if (document.activeElement === field) {
+        field.select();
+      }
+    });
   }
 
   @HostListener('document:keydown.escape')

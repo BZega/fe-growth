@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import unitClassData from '../data/unit-classes.json';
 import unitData from '../data/units.json';
 import { CLASS_LEVEL_CONFIGS, Mount, mountBonusAt, mountGrowthAt, scaleGrowth, STAT_KEYS, sumGrowth, toGrowth, Unit, UnitClass } from '../models/growth.models';
@@ -167,18 +167,19 @@ describe('ProjectionDialogComponent', () => {
     expect(dialog.projection().find((row) => row.stat === 'mag')!.total).toBeCloseTo(expectedMag, 10);
   });
 
-  it('adds each reclass at the next rank unlock, then one level after the last', () => {
+  it('adds each reclass at the next usual gate (5/20/35/45), then one level after the last', () => {
     const { dialog } = open('Cai');
     const levels: number[] = [];
 
-    for (const name of ['Gladiator', 'Charioteer', 'Gladiator', 'Charioteer']) {
+    for (const name of ['Gladiator', 'Charioteer', 'Gladiator', 'Charioteer', 'Gladiator']) {
       dialog.addClass();
       const entry = dialog.plan().at(-1)!;
       dialog.setClass(entry.id, String(byName(name).id));
       levels.push(dialog.rowLevels().at(-1)!);
     }
 
-    expect(levels).toEqual([15, 30, 40, 41]);
+    // Cai joins at Lv 4.
+    expect(levels).toEqual([5, 20, 35, 45, 46]);
   });
 
   it('only offers ranks unlocked at the reclass level, and clears a class moved below its unlock', () => {
@@ -192,6 +193,23 @@ describe('ProjectionDialogComponent', () => {
     dialog.setReclassLevel(entry.id, 14);
     expect(dialog.plan()[position].classId).toBeNull();
     expect(gatedRanks(dialog.reclassGroups(position))).toEqual(['Beginner']);
+  });
+
+  it('opens the reclass list at the rank usually taken at that level', () => {
+    const { dialog } = open('Cai');
+    dialog.addClass();
+    const entry = dialog.plan()[1];
+    const rankAt = (level: number) => {
+      dialog.setReclassLevel(entry.id, level);
+      return dialog.rowFocusRanks()[1];
+    };
+
+    expect([5, 19, 20, 34, 35, 44, 45, 80].map(rankAt)).toEqual([
+      'Beginner', 'Beginner', 'Speciality', 'Speciality', 'Advanced', 'Advanced', 'Master', 'Master',
+    ]);
+
+    TestBed.inject(SpoilerService).setHidden('salvation', true);
+    expect(rankAt(45)).toBe('Advanced');
   });
 
   it("doesn't offer the class the unit is already in when reclassing", () => {
@@ -297,6 +315,30 @@ describe('ProjectionDialogComponent', () => {
     expect(host.querySelector('form')).not.toBeNull();
   });
 
+  it('selects the whole value when a level box gets focus, so typing replaces it', fakeAsync(() => {
+    const { dialog, fixture, host } = open('Cai');
+    dialog.addClass();
+    fixture.detectChanges();
+
+    const check = (label: string) => {
+      const box = host.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`)!;
+      const select = spyOn(box, 'select').and.callThrough();
+
+      box.focus();
+      tick();
+
+      expect(select).toHaveBeenCalled();
+      box.blur();
+    };
+
+    document.body.appendChild(host);
+    check('Reclass level');
+    dialog.submit();
+    fixture.detectChanges();
+    check('End level');
+    host.remove();
+  }));
+
   it('every stat is included', () => {
     const { dialog } = open('Cai');
 
@@ -328,7 +370,7 @@ describe('ProjectionDialogComponent', () => {
     expect(hp.value.right).toBe(left[0].value.right);
   });
 
-  it('offers a mount and bond level for mounted classes, and shows the class level gates', () => {
+  it('offers a mount and bond level for mounted classes', () => {
     const { dialog, fixture, host } = open('Cai');
     const entry = reclass(dialog, 20, 'Charioteer');
     fixture.detectChanges();
@@ -336,8 +378,6 @@ describe('ProjectionDialogComponent', () => {
     expect(dialog.mountsFor(entry).length).toBeGreaterThan(0);
     expect(dialog.mountOf(entry)).toBe(dialog.mountsFor(entry)[0]);
     expect(host.querySelector('select[aria-label="Mount"]')).not.toBeNull();
-    expect(host.querySelector('.tier__gates')!.textContent).toContain('Lv 20 / 35 / 45');
-    expect(host.querySelector('.tier__gates')!.textContent).toContain('mount growth ×2');
   });
 
   it('projects a Charioteer through its class levels with doubled mount growth, plus the mount bonus at the end', () => {

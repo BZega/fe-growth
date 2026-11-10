@@ -29,6 +29,8 @@ export class SearchableSelectComponent {
   readonly clearable = input(true);
   /** False keeps phones from opening the on-screen keyboard; the list is picked from by tapping. */
   readonly keyboard = input(true);
+  /** Group the list opens at when nothing is selected yet. */
+  readonly focusGroup = input<string | null>(null);
 
   readonly valueChange = output<number | null>();
 
@@ -100,8 +102,9 @@ export class SearchableSelectComponent {
     const selected = this.flattened().findIndex(
       (item) => item.id === this.value(),
     );
-    this.activeIndex.set(Math.max(selected, 0));
-    this.scrollActiveIntoView();
+    const focus = selected < 0 ? this.groupStart(this.focusGroup()) : -1;
+    this.activeIndex.set(Math.max(selected, focus, 0));
+    this.scrollActiveIntoView(focus >= 0);
 
     const element = this.searchBox()?.nativeElement;
 
@@ -198,14 +201,36 @@ export class SearchableSelectComponent {
     this.scrollActiveIntoView();
   }
 
+  private groupStart(label: string | null): number {
+    let start = 0;
+
+    for (const group of this.filtered()) {
+      if (group.label === label) {
+        return start;
+      }
+
+      start += group.items.length;
+    }
+
+    return -1;
+  }
+
   // Scroll only the option list; scrollIntoView would also drag the page on mobile.
-  private scrollActiveIntoView(): void {
+  private scrollActiveIntoView(groupToTop = false): void {
     afterNextRender(
       () => {
         const list = this.host.nativeElement.querySelector('.panel__list') as HTMLElement | null;
         const option = list?.querySelector('.option--active') as HTMLElement | null;
 
         if (!list || !option) {
+          return;
+        }
+
+        const header = option.closest('li')?.previousElementSibling as HTMLElement | null;
+
+        if (groupToTop && header?.classList.contains('option-group')) {
+          list.scrollTop = header.offsetTop - list.offsetTop;
+
           return;
         }
 

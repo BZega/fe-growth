@@ -39,7 +39,14 @@ interface TimelineBranch {
   detail: string;
 }
 
-type TimelineItem = TimelineLevel | TimelineFork | TimelineBranch;
+interface TimelineGrowth {
+  kind: 'growth';
+  key: string;
+  className: string;
+  growth: GrowthRates;
+}
+
+type TimelineItem = TimelineLevel | TimelineFork | TimelineBranch | TimelineGrowth;
 
 interface TimelineOption {
   id: number;
@@ -195,6 +202,25 @@ export class SeedTimelineComponent {
     const mapper = this.mapper();
     const chain = this.chainOf(focused);
     const items: TimelineItem[] = [];
+    let shownGrowth: string | null = null;
+
+    // Growth rates are shown at the start and again wherever a class change alters them.
+    const pushLevel = (view: SectionView, rowIndex: number) => {
+      const growth = mapper.rowGrowth(view, rowIndex);
+      const growthKey = growth && this.statKeys.map((stat) => growth[stat]).join(',');
+
+      if (growth && growthKey !== shownGrowth) {
+        shownGrowth = growthKey;
+        items.push({
+          kind: 'growth',
+          key: `growth-${view.section.id}-${view.section.rows[rowIndex].id}`,
+          className: mapper.className(mapper.rowClassId(view, rowIndex)),
+          growth,
+        });
+      }
+
+      items.push(this.levelItem(view, rowIndex, focused));
+    };
 
     chain.forEach((view, linkIndex) => {
       const next = chain[linkIndex + 1];
@@ -209,7 +235,7 @@ export class SeedTimelineComponent {
           items.push(this.fork(view, before, mapper.levelOf(view, rowIndex), view.section.id));
         }
 
-        items.push(this.levelItem(view, rowIndex, focused));
+        pushLevel(view, rowIndex);
       }
 
       if (next) {
@@ -246,6 +272,10 @@ export class SeedTimelineComponent {
 
   asBranch(item: TimelineItem): TimelineBranch | null {
     return item.kind === 'branch' ? item : null;
+  }
+
+  asGrowth(item: TimelineItem): TimelineGrowth | null {
+    return item.kind === 'growth' ? item : null;
   }
 
   focusBranch(sectionId: number): void {

@@ -13,16 +13,18 @@
 
   @if (page() === 'plan') {
     <form class="plan" (submit)="$event.preventDefault(); submit()">
-      <label class="field">
-        <span class="field__label">Starting chapter</span>
-        <select class="plan__select" [value]="chapter()?.chapter" (change)="chapterNumber.set(+$any($event.target).value)">
-          @for (option of chapters(); track option.chapter) {
-            <option [value]="option.chapter" [selected]="option.chapter === chapter()?.chapter">
-              Chapter {{ option.chapter }} · Lv {{ option.level }} {{ option.className }}
-            </option>
-          }
-        </select>
-      </label>
+      @if (chapterPicker()) {
+        <label class="field">
+          <span class="field__label">Starting chapter</span>
+          <select class="plan__select" [value]="chapter()?.chapter" (change)="chapterNumber.set(+$any($event.target).value)">
+            @for (option of chapters(); track option.chapter) {
+              <option [value]="option.chapter" [selected]="option.chapter === chapter()?.chapter">
+                Chapter {{ option.chapter }} · Lv {{ option.level }} {{ option.className }}
+              </option>
+            }
+          </select>
+        </label>
+      }
 
       <fieldset class="tier">
         <legend class="field__label">Classes</legend>

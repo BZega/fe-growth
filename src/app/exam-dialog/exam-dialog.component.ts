@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, HostListener, input, OnInit, output, signal } from '@angular/core';
 import { describeBounds, knownOutcome, RollBounds } from '../models/seed-roll';
+import { snapRank } from '../projection-dialog/projection-dialog.component';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
 import { ExamDraft } from '../services/seed-mapper-state.service';
 
@@ -25,6 +26,17 @@ export class ExamDialogComponent implements OnInit {
   /** Off when editing, since an exam and a reclass sit on different rolls. */
   readonly canSwitchMode = input(true);
   readonly strBounds = input<RollBounds>({ lower: null, upper: null });
+  /** The level the new class applies from; the class lists open at the rank usual for it. */
+  readonly level = input<number | null>(null);
+
+  readonly classFocus = computed(() => this.focusFor(this.classGroups()));
+  readonly reclassFocus = computed(() => this.focusFor(this.reclassGroups()));
+
+  private focusFor(groups: readonly SelectItemGroup[]): string | null {
+    const level = this.level();
+
+    return level === null ? null : snapRank(level, groups);
+  }
 
   readonly confirmed = output<ExamDraft>();
   readonly closed = output<void>();

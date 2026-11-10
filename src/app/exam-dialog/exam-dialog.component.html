@@ -49,6 +49,7 @@
           [keyboard]="false"
           placeholder="— Select an available class —"
           [groups]="reclassGroups()"
+          [focusGroup]="reclassFocus()"
           [value]="classId()"
           (valueChange)="classId.set($event)"
         />
@@ -75,6 +76,7 @@
           [keyboard]="false"
           placeholder="— Select a class —"
           [groups]="classGroups()"
+          [focusGroup]="classFocus()"
           [value]="classId()"
           (valueChange)="classId.set($event)"
         />

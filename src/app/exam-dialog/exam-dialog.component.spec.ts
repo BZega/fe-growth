@@ -22,6 +22,17 @@ describe('ExamDialogComponent reclass mode', () => {
   };
   const host = () => fixture.nativeElement as HTMLElement;
 
+  it('opens the class lists at the rank usual for the level', () => {
+    const groups = ['Beginner', 'Speciality', 'Advanced'].map((label, id) => ({ label, items: [{ id, name: label }] }));
+
+    open({ classGroups: groups, reclassGroups: groups, level: 25 });
+    expect(dialog.classFocus()).toBe('Speciality');
+    expect(dialog.reclassFocus()).toBe('Speciality');
+
+    fixture.componentRef.setInput('level', 50);
+    expect(dialog.classFocus()).toBe('Advanced');
+  });
+
   it('only needs a class to reclass, and emits a passed, no-roll branch', () => {
     open();
     dialog.setMode('reclass');

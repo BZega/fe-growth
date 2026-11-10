@@ -151,23 +151,75 @@ describe('Seed timeline branches', () => {
       expect(page.examDialog()!.strBounds).toEqual({ lower: strGrowth, upper: null });
     });
 
-    it('only fills marks in automatically once 3 reliable level ups share the roll', () => {
+    it('fills the other level ups on a roll in once one reliable (3+ stat) level up used it', () => {
       const easyStr = { ...ZERO_GROWTH, str: 100 };
       const blank = { id: -1, marks: { ...ZERO_GROWTH } };
       const autoStr = () => page.effectiveRow(easyStr, blank, lv13Slot()).auto.str;
 
-      mark(seed().id, 11, 'str', 'hp', 'def');
+      // Only 2 stats: the guaranteed minimum may have picked them, so nothing is filled in.
+      mark(seed().id, 11, 'str', 'def');
       expect(autoStr()).toBeFalse();
 
-      for (const name of ['Gladiator', 'Hunter']) {
-        state.addAvailableClass(classId(name));
-        const branch = state.addBranch(seed().id, lv12(), { classId: classId(name), chance: 0, passed: true, reclass: true })!;
-        mark(branch, 0, 'hp', 'def', 'res');
-      }
+      // A Hunter branch on the same roll rising 3 stats is reliable, so it fills the others in.
+      state.addAvailableClass(classId('Hunter'));
+      const hunter = state.addBranch(seed().id, lv12(), { classId: classId('Hunter'), chance: 0, passed: true, reclass: true })!;
+      mark(hunter, 0, 'str', 'dex', 'def');
 
-      expect(page.slotOf(page.sectionViews().at(-1)!, 0)).toBe(lv13Slot());
+      expect(page.slotOf(view(hunter), 0)).toBe(lv13Slot());
       expect(autoStr()).toBeTrue();
     });
+  });
+
+  it("doesn't offer a class another branch at the same level already took", () => {
+    exam('Ornius Rider');
+    page.openBranchAt(seedView(), 11);
+    const names = page.examDialog()!.classGroups.flatMap((group) => group.items.map((item) => item.name));
+
+    expect(names).not.toContain('Ornius Rider');
+    expect(names).toContain('Diviner');
+  });
+
+  it('only offers exam classes unlocked by the level, and tells the dialog that level', () => {
+    const ranks = () => page.examDialog()!.classGroups.map((group) => group.label);
+
+    page.openBranchAt(seedView(), 11);
+    expect(page.examDialog()!.level).toBe(13);
+    expect(ranks()).not.toContain('Speciality');
+
+    for (let index = 0; index < 4; index++) {
+      state.addLevel(seed().id);
+    }
+
+    // Seed row 14 is Lv 16, past the Speciality unlock at Lv 15.
+    page.openBranchAt(seedView(), 14);
+    expect(page.examDialog()!.level).toBe(16);
+    expect(ranks()).toContain('Speciality');
+  });
+
+  it('lets the section view + add another exam at a level that already branches', () => {
+    exam('Diviner');
+
+    expect(page.canTakeExamAtRow(seedView(), 11)).toBeTrue();
+    page.openExamAt(seedView(), 11);
+    page.onExamConfirmed({ classId: classId('Gladiator'), chance: 40, passed: true });
+
+    const branches = state.seedMap().sections.filter((section) => section.exam?.afterRowId === lv12());
+    expect(branches.map((section) => section.exam!.classId)).toEqual([classId('Diviner'), classId('Gladiator')]);
+  });
+
+  it('projects stats from the end of a branch, in the class it ends in', () => {
+    STAT_KEYS.forEach((stat) => state.setStartStat(stat, 10));
+    state.toggleStat(seed().id, seed().rows[0].id, 'str');
+    const branch = view(exam('Gladiator'));
+
+    expect(page.canProject(branch)).toBeTrue();
+    page.openProjection(branch);
+
+    const start = page.projection()!.start;
+    expect(page.projection()!.unit.name).toBe('Cai');
+    expect(start.level).toBe(page.endLevelOf(branch));
+    expect(start.className).toBe('Gladiator');
+    expect(start.stats.str).toBe(11 + page.examBoostOf(branch).str);
   });
 });
 
@@ -192,22 +244,23 @@ describe('SeedTimelineComponent', () => {
 
     return { fixture, page: fixture.componentInstance, host: fixture.nativeElement as HTMLElement };
   };
-  const toggleButton = (host: HTMLElement) =>
+  const toggleButton = (host: HTMLElement, label: string) =>
     Array.from(host.querySelectorAll<HTMLButtonElement>('.page-header button')).find((button) =>
-      button.textContent!.includes('Timeline view'),
+      button.textContent!.includes(label),
     );
 
-  it('has a Timeline view toggle in the page header that swaps it with the section view', () => {
+  it('opens in the timeline view, with a Section view toggle in the page header', () => {
     const { fixture, host } = render();
-
-    expect(host.querySelector('.seed-group')).not.toBeNull();
-
-    toggleButton(host)!.click();
-    fixture.detectChanges();
 
     expect(host.querySelector('app-seed-timeline')).not.toBeNull();
     expect(host.querySelector('.seed-group')).toBeNull();
-    expect(toggleButton(host)).toBeUndefined();
+
+    toggleButton(host, 'Section view')!.click();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.seed-group')).not.toBeNull();
+    expect(host.querySelector('app-seed-timeline')).toBeNull();
+    expect(toggleButton(host, 'Timeline view')).toBeDefined();
   });
 
   it('shows one timeline with a switcher where exams branch off, locking rows the branch shares', () => {
@@ -217,7 +270,6 @@ describe('SeedTimelineComponent', () => {
     state.addBranch(seed().id, afterRow, { classId: classId('Diviner'), chance: 40, passed: true });
     state.addBranch(seed().id, afterRow, { classId: classId('Gladiator'), chance: 40, passed: true });
 
-    toggleButton(host)!.click();
     fixture.detectChanges();
 
     expect(host.querySelector('app-seed-timeline')).not.toBeNull();
@@ -247,5 +299,21 @@ describe('SeedTimelineComponent', () => {
     fixture.detectChanges();
 
     expect(page.sectionViews()[2].section.rows[0].marks.str).toBe(1);
+  });
+
+  it('shows growth rates at the start and again where a branch changes class', () => {
+    const { fixture, host } = render();
+    state.addBranch(seed().id, seed().rows[0].id, { classId: classId('Gladiator'), chance: 40, passed: true });
+    fixture.detectChanges();
+
+    const timeline = fixture.debugElement.query(By.directive(SeedTimelineComponent)).componentInstance as SeedTimelineComponent;
+    timeline.focusBranch(state.seedMap().sections[1].id);
+    fixture.detectChanges();
+
+    const labels = Array.from(host.querySelectorAll('.tgrid__label')).map((label) =>
+      Array.from(label.children).map((part) => part.textContent!.trim()).join(' '),
+    );
+    expect(labels.filter((label) => label.startsWith('Growth'))).toEqual(['Growth Noble/Commoner', 'Growth Gladiator']);
+    expect(host.querySelectorAll('.tgrid__growth').length).toBe(2 * STAT_KEYS.length);
   });
 });

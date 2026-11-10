@@ -237,6 +237,21 @@
   opacity: 0.75;
 }
 
+.tgrid__growth {
+  display: grid;
+  place-items: center;
+  background: #1f5fa9;
+  color: #ffffff;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 0.3rem 0;
+
+  &.negative {
+    background: #9c2b2b;
+  }
+}
+
 .tgrid__total {
   display: grid;
   place-items: center;
@@ -293,5 +308,9 @@
   .cell {
     font-size: 0.75rem;
     padding: 0.3rem 0;
+  }
+
+  .tgrid__growth {
+    font-size: 0.6rem;
   }
 }

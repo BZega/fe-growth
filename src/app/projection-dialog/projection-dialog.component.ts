@@ -32,6 +32,11 @@ const SNAP_RANKS: readonly { rank: ClassRank; from: number }[] = [
   { rank: 'Beginner', from: 1 },
 ];
 
+/** The rank group a class list opens at for a level, among the groups (labelled by rank) on offer. */
+export function snapRank(level: number, groups: readonly { label: string }[]): ClassRank | null {
+  return SNAP_RANKS.find(({ rank, from }) => level >= from && groups.some((group) => group.label === rank))?.rank ?? null;
+}
+
 export const MAX_PROJECTION_LEVEL = 99;
 
 interface PlanEntry {
@@ -63,6 +68,8 @@ export class ProjectionDialogComponent implements OnInit {
   readonly unit = input.required<Unit>();
   readonly chapters = input.required<readonly RecruitmentChapter[]>();
   readonly initialChapter = input<number | null>(null);
+  /** False when the start isn't a recruitment chapter (e.g. the Seed Mapper's current stats). */
+  readonly chapterPicker = input(true);
 
   readonly closed = output<void>();
 
@@ -156,13 +163,7 @@ export class ProjectionDialogComponent implements OnInit {
   );
 
   readonly rowFocusRanks = computed(() =>
-    this.rowClassItems().map((groups, position) => {
-      const level = this.rowLevels()[position];
-
-      return (
-        SNAP_RANKS.find(({ rank, from }) => level >= from && groups.some((group) => group.label === rank))?.rank ?? null
-      );
-    }),
+    this.rowClassItems().map((groups, position) => snapRank(this.rowLevels()[position], groups)),
   );
 
   pickClass(id: number, classId: number | null): void {

@@ -98,6 +98,22 @@
   .block {
     max-width: 100%;
   }
+
+  // The narrow card's header drops counts and uses short button labels (titles keep the detail).
+  .seed__header {
+    .label-count,
+    .label-long {
+      display: none;
+    }
+
+    .label-short {
+      display: inline;
+    }
+  }
+}
+
+.label-short {
+  display: none;
 }
 
 .seed {

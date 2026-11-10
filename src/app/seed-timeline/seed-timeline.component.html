@@ -15,6 +15,15 @@
       </label>
 
       <div class="timeline__actions">
+        <button
+          type="button"
+          class="ghost-button"
+          [disabled]="!mapperRef.canProject(focus)"
+          [title]="mapperRef.projectionHint(focus)"
+          (click)="mapperRef.openProjection(focus)"
+        >
+          Projected Stats
+        </button>
         <button type="button" class="ghost-button" (click)="mapperRef.openAbilityPicker(focus)">
           Abilities ({{ mapperRef.equippedAbilities(focus).length }}/{{ mapperRef.maxAbilities }})
         </button>
@@ -63,6 +72,17 @@
             <span class="tgrid__branch-label">{{ branch.label }}</span>
             <span class="tgrid__branch-detail">{{ branch.detail }}</span>
           </div>
+        }
+
+        @if (asGrowth(item); as growthRow) {
+          <div class="tgrid__label" [title]="growthRow.className + ' growth rates'">
+            <span class="tgrid__level">Growth</span>
+            <span class="tgrid__class">{{ growthRow.className }}</span>
+          </div>
+          @for (stat of statKeys; track stat) {
+            <div class="tgrid__growth" [class.negative]="growthRow.growth[stat] < 0">{{ growthRow.growth[stat] }}%</div>
+          }
+          <div class="tgrid__corner"></div>
         }
 
         @if (asLevel(item); as level) {

@@ -2466,10 +2466,10 @@
     },
     "classFloorStats": {
       "hp": 0,
-      "str": 0,
+      "str": 13,
       "mag": 0,
       "spd": 16,
-      "dex": 0,
+      "dex": 15,
       "def": 0,
       "res": 0,
       "lck": 0,
@@ -2535,11 +2535,11 @@
     },
     "classFloorStats": {
       "hp": 0,
-      "str": 0,
+      "str": 13,
       "mag": 10,
       "spd": 16,
-      "dex": 0,
-      "def": 0,
+      "dex": 15,
+      "def": 10,
       "res": 0,
       "lck": 0,
       "cha": 0
@@ -2605,8 +2605,8 @@
       "mov": 1
     },
     "classFloorStats": {
-      "hp": 0,
-      "str": 0,
+      "hp": 36,
+      "str": 16,
       "mag": 0,
       "spd": 0,
       "dex": 0,
@@ -2674,8 +2674,8 @@
       "mov": 1
     },
     "classFloorStats": {
-      "hp": 0,
-      "str": 0,
+      "hp": 36,
+      "str": 16,
       "mag": 0,
       "spd": 0,
       "dex": 0,
@@ -2747,8 +2747,8 @@
       "str": 0,
       "mag": 0,
       "spd": 13,
-      "dex": 0,
-      "def": 0,
+      "dex": 16,
+      "def": 8,
       "res": 0,
       "lck": 0,
       "cha": 0
@@ -2816,8 +2816,8 @@
       "str": 0,
       "mag": 0,
       "spd": 13,
-      "dex": 0,
-      "def": 0,
+      "dex": 16,
+      "def": 8,
       "res": 0,
       "lck": 0,
       "cha": 0
@@ -2887,9 +2887,9 @@
       "str": 0,
       "mag": 0,
       "spd": 16,
-      "dex": 0,
+      "dex": 15,
       "def": 0,
-      "res": 0,
+      "res": 6,
       "lck": 0,
       "cha": 0
     },
@@ -2953,12 +2953,12 @@
     },
     "classFloorStats": {
       "hp": 0,
-      "str": 0,
+      "str": 15,
       "mag": 10,
       "spd": 0,
       "dex": 0,
-      "def": 0,
-      "res": 0,
+      "def": 15,
+      "res": 10,
       "lck": 0,
       "cha": 0
     },
@@ -3021,12 +3021,12 @@
       "mov": 0
     },
     "classFloorStats": {
-      "hp": 0,
-      "str": 0,
+      "hp": 30,
+      "str": 15,
       "mag": 0,
       "spd": 0,
       "dex": 0,
-      "def": 0,
+      "def": 17,
       "res": 0,
       "lck": 0,
       "cha": 0
@@ -3090,13 +3090,13 @@
       "mov": 3
     },
     "classFloorStats": {
-      "hp": 0,
-      "str": 0,
+      "hp": 33,
+      "str": 14,
       "mag": 0,
       "spd": 14,
-      "dex": 0,
-      "def": 0,
-      "res": 0,
+      "dex": 14,
+      "def": 14,
+      "res": 6,
       "lck": 0,
       "cha": 0
     },
@@ -3161,14 +3161,14 @@
       "mov": 2
     },
     "classFloorStats": {
-      "hp": 0,
-      "str": 0,
+      "hp": 34,
+      "str": 15,
       "mag": 0,
       "spd": 13,
-      "dex": 0,
-      "def": 0,
+      "dex": 14,
+      "def": 14,
       "res": 0,
-      "lck": 0,
+      "lck": 11,
       "cha": 0
     },
     "skills": {
@@ -3233,13 +3233,13 @@
     },
     "classFloorStats": {
       "hp": 0,
-      "str": 0,
+      "str": 12,
       "mag": 8,
       "spd": 0,
       "dex": 0,
-      "def": 0,
-      "res": 0,
-      "lck": 0,
+      "def": 8,
+      "res": 14,
+      "lck": 14,
       "cha": 0
     },
     "skills": {
@@ -3304,13 +3304,13 @@
     },
     "classFloorStats": {
       "hp": 0,
-      "str": 0,
+      "str": 12,
       "mag": 8,
       "spd": 15,
-      "dex": 0,
-      "def": 0,
-      "res": 0,
-      "lck": 0,
+      "dex": 14,
+      "def": 8,
+      "res": 14,
+      "lck": 14,
       "cha": 0
     },
     "skills": {
@@ -3378,10 +3378,10 @@
       "str": 0,
       "mag": 16,
       "spd": 14,
-      "dex": 0,
+      "dex": 15,
       "def": 0,
-      "res": 0,
-      "lck": 0,
+      "res": 12,
+      "lck": 12,
       "cha": 0
     },
     "skills": {
@@ -3446,11 +3446,11 @@
       "hp": 0,
       "str": 0,
       "mag": 15,
-      "spd": 0,
+      "spd": 8,
       "dex": 0,
       "def": 0,
-      "res": 0,
-      "lck": 0,
+      "res": 15,
+      "lck": 16,
       "cha": 0
     },
     "skills": {
@@ -3519,7 +3519,7 @@
       "dex": 0,
       "def": 0,
       "res": 15,
-      "lck": 0,
+      "lck": 15,
       "cha": 0
     },
     "skills": {
@@ -3859,8 +3859,8 @@
       "mov": 2
     },
     "classFloorStats": {
-      "hp": 0,
-      "str": 0,
+      "hp": 31,
+      "str": 15,
       "mag": 0,
       "spd": 19,
       "dex": 18,
@@ -3928,8 +3928,8 @@
       "mov": 2
     },
     "classFloorStats": {
-      "hp": 0,
-      "str": 0,
+      "hp": 30,
+      "str": 15,
       "mag": 0,
       "spd": 20,
       "dex": 17,
@@ -4002,7 +4002,7 @@
       "mag": 0,
       "spd": 10,
       "dex": 0,
-      "def": 0,
+      "def": 8,
       "res": 0,
       "lck": 0,
       "cha": 0
@@ -4208,7 +4208,7 @@
       "str": 17,
       "mag": 11,
       "spd": 0,
-      "dex": 0,
+      "dex": 11,
       "def": 18,
       "res": 13,
       "lck": 0,
@@ -4277,10 +4277,10 @@
       "str": 17,
       "mag": 0,
       "spd": 17,
-      "dex": 0,
+      "dex": 16,
       "def": 16,
       "res": 8,
-      "lck": 0,
+      "lck": 13,
       "cha": 0
     },
     "skills": {

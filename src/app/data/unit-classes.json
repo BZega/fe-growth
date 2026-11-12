@@ -585,7 +585,7 @@
       "mag": 0,
       "spd": 10,
       "dex": 0,
-      "def": 0,
+      "def": 5,
       "res": 0,
       "lck": 0,
       "cha": 0
@@ -654,7 +654,7 @@
       "mag": 0,
       "spd": 8,
       "dex": 10,
-      "def": 0,
+      "def": 5,
       "res": 0,
       "lck": 0,
       "cha": 0
@@ -1074,7 +1074,7 @@
       "mag": 0,
       "spd": 10,
       "dex": 10,
-      "def": 0,
+      "def": 5,
       "res": 10,
       "lck": 10,
       "cha": 0
@@ -1278,7 +1278,7 @@
       "mov": 1
     },
     "classFloorStats": {
-      "hp": 0,
+      "hp": 27,
       "str": 11,
       "mag": 0,
       "spd": 13,
@@ -1352,7 +1352,7 @@
       "mag": 0,
       "spd": 16,
       "dex": 15,
-      "def": 0,
+      "def": 5,
       "res": 0,
       "lck": 0,
       "cha": 0
@@ -1559,7 +1559,7 @@
       "mag": 0,
       "spd": 10,
       "dex": 13,
-      "def": 0,
+      "def": 6,
       "res": 4,
       "lck": 0,
       "cha": 0
@@ -1628,7 +1628,7 @@
       "mag": 0,
       "spd": 10,
       "dex": 13,
-      "def": 0,
+      "def": 6,
       "res": 4,
       "lck": 0,
       "cha": 0
@@ -1763,7 +1763,7 @@
       "mov": 1
     },
     "classFloorStats": {
-      "hp": 0,
+      "hp": 27,
       "str": 12,
       "mag": 8,
       "spd": 0,
@@ -1832,7 +1832,7 @@
       "mov": 0
     },
     "classFloorStats": {
-      "hp": 0,
+      "hp": 27,
       "str": 12,
       "mag": 0,
       "spd": 0,
@@ -2044,11 +2044,11 @@
     },
     "classFloorStats": {
       "hp": 0,
-      "str": 0,
+      "str": 12,
       "mag": 0,
       "spd": 0,
-      "dex": 0,
-      "def": 0,
+      "dex": 13,
+      "def": 10,
       "res": 0,
       "lck": 0,
       "cha": 0
@@ -2185,12 +2185,12 @@
       "mov": 2
     },
     "classFloorStats": {
-      "hp": 0,
+      "hp": 27,
       "str": 9,
       "mag": 6,
       "spd": 13,
       "dex": 12,
-      "def": 0,
+      "def": 6,
       "res": 12,
       "lck": 12,
       "cha": 0

@@ -89,6 +89,25 @@ export class SearchableSelectComponent {
         element.value = this.selectedName() ?? '';
       }
     });
+
+    // While open in a modal, the floating list follows its field as the modal scrolls or the window resizes.
+    effect((onCleanup) => {
+      if (!this.open() || !this.inDialog()) {
+        return;
+      }
+
+      const follow = () => this.measureRoom();
+      document.addEventListener('scroll', follow, true);
+      window.addEventListener('resize', follow);
+      onCleanup(() => {
+        document.removeEventListener('scroll', follow, true);
+        window.removeEventListener('resize', follow);
+      });
+    });
+  }
+
+  private inDialog(): boolean {
+    return (this.host.nativeElement as HTMLElement).closest('[role="dialog"]') !== null;
   }
 
   openPanel(): void {
@@ -114,14 +133,23 @@ export class SearchableSelectComponent {
     }
   }
 
-  // Room below the field to the bottom of the screen, so the list doesn't run off the page.
+  // Room below the field to the bottom of the screen, so the list doesn't run off the page. In a modal the
+  // list floats over it (fixed) at the field, so it isn't clipped by the modal's scroll area.
   private measureRoom(): void {
     const host = this.host.nativeElement as HTMLElement;
     const viewport = window.visualViewport;
     const bottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
-    const room = Math.floor(bottom - host.getBoundingClientRect().bottom - LIST_GAP);
+    const field = host.getBoundingClientRect();
+    const room = Math.floor(bottom - field.bottom - LIST_GAP);
 
     host.style.setProperty('--dropdown-room', `${room}px`);
+
+    if (this.inDialog()) {
+      host.setAttribute('data-floating', '');
+      host.style.setProperty('--panel-top', `${field.bottom + 4}px`);
+      host.style.setProperty('--panel-left', `${field.left}px`);
+      host.style.setProperty('--panel-width', `${field.width}px`);
+    }
   }
 
   onFieldPointerDown(): void {

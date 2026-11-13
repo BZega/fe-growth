@@ -1,0 +1,123 @@
+.dialog--compare {
+  width: min(720px, 100%);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.compare {
+  width: 100%;
+  margin-top: 0.75rem;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th,
+  td {
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--panel-border);
+    text-align: left;
+  }
+
+  thead th {
+    font-size: 0.72rem;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  tbody th {
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  td small {
+    display: block;
+    font-size: 0.7rem;
+    opacity: 0.6;
+  }
+}
+
+.compare__best strong {
+  color: var(--accent);
+}
+
+.compare__difference {
+  white-space: nowrap;
+  opacity: 0.7;
+}
+
+.compare__difference--up {
+  color: #81e6a1;
+  opacity: 1;
+}
+
+.compare__difference--down {
+  color: #ff9e80;
+  opacity: 1;
+}
+
+.versus {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.versus__bar {
+  display: flex;
+  width: 5.5rem;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ff9e80;
+}
+
+.legend__lose {
+  background: #ff9e80;
+}
+
+.versus__win,
+.legend__win {
+  background: #81e6a1;
+}
+
+.versus__tie,
+.legend__tie {
+  background: rgb(255 255 255 / 40%);
+}
+
+.versus__text {
+  font-size: 0.72rem;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0.75rem 0 0;
+  font-size: 0.72rem;
+  opacity: 0.85;
+
+  i {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.5rem;
+    margin-right: 0.3rem;
+    border-radius: 999px;
+  }
+}
+
+@media (max-width: 560px) {
+  .compare {
+    font-size: 0.78rem;
+
+    th,
+    td {
+      padding: 0.35rem 0.25rem;
+    }
+  }
+
+  .versus__bar {
+    width: 3.5rem;
+  }
+}

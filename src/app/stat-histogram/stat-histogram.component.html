@@ -1,0 +1,33 @@
+<figure class="histogram" [attr.aria-label]="statLabel() + ' distribution'">
+  <div class="histogram__plot">
+    <span class="histogram__axis">{{ percent(tallest()) }}</span>
+    <div class="histogram__bars">
+      @for (bar of bars(); track bar.value) {
+        <div
+          class="histogram__bar"
+          [class.histogram__bar--middle]="bar.middle"
+          [class.histogram__bar--actual]="bar.actual"
+          [title]="statLabel() + ' ' + bar.value + ': ' + percent(bar.chance)"
+        >
+          <span class="histogram__fill" [style.height.%]="bar.height"></span>
+        </div>
+      }
+      <span class="histogram__mean" [style.left.%]="meanAt()" [title]="'Average ' + summary().mean.toFixed(2)"></span>
+    </div>
+
+    <span></span>
+    <div class="histogram__labels" aria-hidden="true">
+      @for (bar of bars(); track bar.value) {
+        <span [class.histogram__label--actual]="bar.actual">{{ bar.label ? bar.value : '' }}</span>
+      }
+    </div>
+  </div>
+
+  <figcaption class="histogram__legend">
+    <span class="key key--middle">Middle 50% ({{ summary().p25 }}–{{ summary().p75 }})</span>
+    <span class="key key--mean">Average {{ summary().mean.toFixed(2) }}</span>
+    @if (actual() !== null) {
+      <span class="key key--actual">Actual {{ actual() }}{{ actualOutside() ? ' (not possible with this plan)' : '' }}</span>
+    }
+  </figcaption>
+</figure>

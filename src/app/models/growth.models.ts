@@ -1,3 +1,5 @@
+import baseStatData from '../data/base-stats.json';
+
 export type StatKey =
   | 'hp'
   | 'str'
@@ -121,6 +123,13 @@ const CHARACTER_ALIASES: Readonly<Record<string, string>> = {
 
 export function characterKey(unitName: string): string {
   return CHARACTER_ALIASES[unitName] ?? unitName;
+}
+
+const BASE_STATS = baseStatData as Readonly<Record<string, GrowthRates>>;
+
+/** A unit's Lv 1 base stats (gender and boosted variants share their character's), if known. */
+export function baseStatsOf(unitName: string): GrowthRates | null {
+  return BASE_STATS[characterKey(unitName)] ?? null;
 }
 
 /** Characters whose recruitment growths come from a boosted variant, shown as the base unit's plus a bonus. */

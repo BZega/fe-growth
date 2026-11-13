@@ -23,6 +23,7 @@ export class AppComponent {
 
   readonly links = [
     { path: '/calculator', label: 'Calculator' },
+    { path: '/projected-stats', label: 'Projected Stats' },
     { path: '/seed-mapper', label: 'Seed Mapper' },
     { path: '/characters', label: 'Characters' },
     { path: '/classes', label: 'Classes' },

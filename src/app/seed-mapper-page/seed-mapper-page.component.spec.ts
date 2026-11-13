@@ -40,6 +40,20 @@ describe('SeedMapperPageComponent starting stats', () => {
     expect(baseStats()).toEqual(STAT_KEYS.map((_, index) => 10 + index));
   });
 
+  it("fills the starting stats with the character's Lv 1 base stats, but not from another starting level", () => {
+    component.onUnitChange(unitId('Cai'));
+    expect(state.seedMap().startStats).toEqual({ hp: 27, str: 10, mag: 7, spd: 8, dex: 8, def: 6, res: 5, lck: 6, cha: 5 });
+
+    // Gender variants use their character's row.
+    component.onUnitChange(unitId('Eshmel (F)'));
+    expect(state.seedMap().startStats.str).toBe(12);
+
+    state.setStatsLevel(10);
+    state.setStartStat('str', 20);
+    component.onUnitChange(unitId('Peter'));
+    expect(state.seedMap().startStats.str).toBe(20);
+  });
+
   it('adds the class bonus stats when the base section switches from Noble/Commoner to Gladiator', () => {
     state.addAvailableClass(gladiator.id);
     state.setClass(state.seedMap().sections[0].id, gladiator.id);

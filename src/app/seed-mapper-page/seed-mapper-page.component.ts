@@ -3,9 +3,10 @@ import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyR
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { BranchMode, ExamDialogComponent } from '../exam-dialog/exam-dialog.component';
 import { PickerDialogComponent, PickerGroup } from '../picker-dialog/picker-dialog.component';
-import { classUnlockLevel, ProjectionDialogComponent, snapRank } from '../projection-dialog/projection-dialog.component';
+import { classUnlockLevel, snapRank } from '../class-plan/class-plan.component';
+import { ProjectionDialogComponent } from '../projection-dialog/projection-dialog.component';
 import { RecruitmentChapter } from '../models/recruitment.models';
-import { bondLevelOf, characterKey, ClassAbility, CLASS_RANK_ORDER, ClassRank, GrowthRates, MAX_EQUIPPED_ABILITIES, Mount, MountBondLevel, mountBonusAt, mountGrowthAt, SKILL_LABELS, STAT_KEYS, STAT_LABELS, StatBoostAbility, StatKey, sumGrowth, toGrowth, Unit, UnitClass, WEAPON_KEYS, ZERO_GROWTH } from '../models/growth.models';
+import { baseStatsOf, bondLevelOf, characterKey, ClassAbility, CLASS_RANK_ORDER, ClassRank, GrowthRates, MAX_EQUIPPED_ABILITIES, Mount, MountBondLevel, mountBonusAt, mountGrowthAt, SKILL_LABELS, STAT_KEYS, STAT_LABELS, StatBoostAbility, StatKey, sumGrowth, toGrowth, Unit, UnitClass, WEAPON_KEYS, ZERO_GROWTH } from '../models/growth.models';
 import { estimateRoll, MAX_UNRELIABLE_GAINS, MIN_READINGS_TO_FILL, RollBounds, rollBounds, RollEstimate, RollObservation, UNKNOWN_ROLL } from '../models/seed-roll';
 import { CURRENT_SAVE_VERSION, migrateSave, newSaveId, SeedSave } from '../models/seed-save';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
@@ -1207,8 +1208,16 @@ export class SeedMapperPageComponent {
 
   // --- events ------------------------------------------------------------
 
+  // At Lv 1 a picked character starts from their base stats; from another level the stats are entered by hand.
   onUnitChange(id: number | null): void {
     this.state.setUnit(id);
+
+    const unit = this.allUnits().find((candidate) => candidate.id === id);
+    const base = unit ? baseStatsOf(unit.name) : null;
+
+    if (base && this.seedMap().statsLevel === MIN_LEVEL) {
+      this.state.setStartStats(base);
+    }
   }
 
   onClassChange(view: SectionView, classId: number | null): void {

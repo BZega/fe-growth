@@ -1,0 +1,79 @@
+@let a = buildA();
+@let b = buildB();
+
+<div class="backdrop" (click)="close()"></div>
+
+<div class="dialog dialog--compare" role="dialog" aria-modal="true" aria-labelledby="projection-compare-title">
+  <header class="dialog__header">
+    <div>
+      <p class="dialog__eyebrow">Projected Stats</p>
+      <h2 id="projection-compare-title">{{ a.label }} vs {{ b.label }}</h2>
+    </div>
+    <button type="button" class="dialog__close" aria-label="Close" (click)="close()">&times;</button>
+  </header>
+
+  <p class="dialog__context">
+    Averages with the middle 50% of outcomes
+    @if (a.level === b.level) {
+      at Lv {{ a.level }}.
+    } @else {
+      at Lv {{ a.level }} and Lv {{ b.level }} (a build can't be projected below the level it starts at).
+    }
+  </p>
+
+  <table class="compare">
+    <thead>
+      <tr>
+        <th scope="col">Stat</th>
+        <th scope="col">{{ a.label }}</th>
+        <th scope="col">{{ b.label }}</th>
+        <th scope="col">Difference</th>
+        <th scope="col">Chance higher</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.stat) {
+        <tr>
+          <th scope="row">{{ row.label }}</th>
+          <td [class.compare__best]="row.difference > 1e-9">
+            <strong>{{ fixed(row.a.mean) }}</strong>
+            <small>{{ row.a.p25 }}–{{ row.a.p75 }}</small>
+          </td>
+          <td [class.compare__best]="row.difference < -1e-9">
+            <strong>{{ fixed(row.b.mean) }}</strong>
+            <small>{{ row.b.p25 }}–{{ row.b.p75 }}</small>
+          </td>
+          <td
+            class="compare__difference"
+            [class.compare__difference--up]="row.difference > 1e-9"
+            [class.compare__difference--down]="row.difference < -1e-9"
+          >
+            {{ signed(row.difference) }}
+          </td>
+          <td>
+            <span
+              class="versus"
+              [title]="a.label + ' higher ' + percent(row.win) + ', tied ' + percent(row.tie) + ', ' + b.label + ' higher ' + percent(row.lose)"
+            >
+              <span class="versus__bar">
+                <span class="versus__win" [style.width.%]="row.win * 100"></span>
+                <span class="versus__tie" [style.width.%]="row.tie * 100"></span>
+              </span>
+              <span class="versus__text">{{ percent(row.win) }} · {{ percent(row.lose) }}</span>
+            </span>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <p class="legend">
+    <span><i class="legend__win"></i>{{ a.label }} higher</span>
+    <span><i class="legend__tie"></i>Tie</span>
+    <span><i class="legend__lose"></i>{{ b.label }} higher</span>
+  </p>
+
+  <footer class="dialog__footer">
+    <button type="button" class="button button--primary" (click)="close()">Done</button>
+  </footer>
+</div>

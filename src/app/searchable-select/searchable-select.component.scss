@@ -101,6 +101,14 @@
   overflow: hidden;
 }
 
+:host([data-floating]) .panel {
+  position: fixed;
+  top: var(--panel-top);
+  left: var(--panel-left);
+  right: auto;
+  width: var(--panel-width);
+}
+
 .panel__list {
   flex: 1;
   min-height: 0;

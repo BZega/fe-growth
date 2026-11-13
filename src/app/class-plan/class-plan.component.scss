@@ -1,0 +1,154 @@
+:host {
+  display: block;
+}
+
+.tier__legend {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.plan__select,
+.tier__level input {
+  min-width: 0;
+  background: #1d222c;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: inherit;
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 0.35rem 0.5rem;
+
+  &:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+}
+
+.tier {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem 0.7rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.tier__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  .plan__select,
+  .plan__picker {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+
+  .plan__picker {
+    --dropdown-height: 12rem;
+  }
+}
+
+.tier__row--sub {
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--panel-border);
+}
+
+.tier__add--sub {
+  margin-left: 0.75rem;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+}
+
+// Phones: every row stays on one line, with the pickers shrinking instead of wrapping.
+@media (max-width: 560px) {
+  .tier {
+    padding: 0.5rem 0.5rem 0.6rem;
+  }
+
+  .tier__row {
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+
+    .plan__select,
+    .plan__picker {
+      flex: 1 1 0;
+    }
+
+    .tier__bond {
+      flex: 0 1 auto;
+    }
+  }
+
+  .tier__row--sub {
+    padding-left: 0.4rem;
+  }
+
+  .tier__level input {
+    width: 2.6rem;
+    margin-left: 0.2rem;
+    padding: 0.35rem 0.1rem;
+  }
+
+  .plan__select {
+    padding: 0.35rem 0.3rem;
+  }
+
+  .tier__remove {
+    flex: none;
+    padding: 0 0.15rem;
+  }
+
+  .tier__add--sub {
+    margin-left: 0.4rem;
+  }
+}
+
+.tier__row .tier__bond {
+  flex: 0 0 auto;
+}
+
+.tier__from,
+.tier__level {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.tier__level input {
+  width: 4rem;
+  margin-left: 0.3rem;
+  text-align: center;
+}
+
+.tier__remove {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.1rem;
+  opacity: 0.5;
+
+  &:hover {
+    color: #ff8d8d;
+    opacity: 1;
+  }
+}
+
+.tier__add {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px dashed var(--panel-border);
+  border-radius: 6px;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+
+  &:hover {
+    border-color: var(--accent);
+  }
+}

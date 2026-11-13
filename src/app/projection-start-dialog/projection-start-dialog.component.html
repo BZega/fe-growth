@@ -1,0 +1,204 @@
+<div class="backdrop" (click)="close()"></div>
+
+<div class="dialog dialog--start" role="dialog" aria-modal="true" aria-labelledby="projection-start-title">
+  <header class="dialog__header">
+    <div>
+      @if (eyebrow()) {
+        <p class="dialog__eyebrow">{{ eyebrow() }}</p>
+      }
+      <h2 id="projection-start-title">{{ heading() }}</h2>
+    </div>
+    <button type="button" class="dialog__close" aria-label="Close" (click)="close()">&times;</button>
+  </header>
+
+  <div class="mode" role="group" aria-label="Starting stats from">
+    <button
+      type="button"
+      class="mode__option"
+      [class.mode__option--selected]="source() === 'chapter'"
+      [attr.aria-pressed]="source() === 'chapter'"
+      (click)="setSource('chapter')"
+    >
+      Recruitment
+    </button>
+    <button
+      type="button"
+      class="mode__option"
+      [class.mode__option--selected]="source() === 'manual'"
+      [attr.aria-pressed]="source() === 'manual'"
+      (click)="setSource('manual')"
+    >
+      Manual
+    </button>
+  </div>
+
+  @if (source() === 'chapter') {
+    <div class="start-fields">
+      <div class="field">
+        <span class="field__label">Character</span>
+        <app-searchable-select
+          label="Character"
+          placeholder="— Select a character —"
+          [keyboard]="false"
+          [items]="characters()"
+          [value]="unitId()"
+          [clearable]="false"
+          (valueChange)="unitId.set($event)"
+        />
+      </div>
+
+      @if (unit()) {
+        <label class="field">
+          <span class="field__label">Route</span>
+          <select class="start-select" aria-label="Route" (change)="routeKey.set($any($event.target).value)">
+            @for (option of routes(); track option.key) {
+              <option [value]="option.key" [selected]="option.key === routeKey()">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+
+        @if (route(); as active) {
+          <label class="field">
+            <span class="field__label">Chapter</span>
+            <select class="start-select" aria-label="Chapter" (change)="chapterNumber.set(+$any($event.target).value)">
+              @for (option of active.chapters; track option.chapter) {
+                <option [value]="option.chapter" [selected]="option.chapter === chapterNumber()">
+                  Chapter {{ option.chapter }} · Lv {{ option.level }} {{ option.className }}
+                </option>
+              }
+            </select>
+          </label>
+        }
+      }
+    </div>
+  } @else {
+    <div class="start-fields">
+      <div class="start-row">
+        <div class="field field--grow">
+          <span class="field__label">Character</span>
+          <app-searchable-select
+            label="Character"
+            placeholder="— Select a character —"
+            [keyboard]="false"
+            [items]="manualUnits()"
+            [value]="manualUnitId()"
+            [clearable]="false"
+            (valueChange)="pickManualUnit($event)"
+          />
+        </div>
+        <label class="field field--level">
+          <span class="field__label">Level</span>
+          <input
+            class="start-select"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            [max]="maxLevel - 1"
+            aria-label="Starting level"
+            [value]="manualLevel()"
+            (change)="setManualLevel($event)"
+          />
+        </label>
+      </div>
+
+      <div class="start-stats" [style.--stat-count]="statKeys.length">
+        <span class="start-stats__caption">
+          @if (manualLevelEdited()) {
+            Stats at Lv {{ manualLevel() }}, as shown in game
+          } @else {
+            Lv 1 base stats (enter a level to use your own)
+          }
+          @if (manualLevelEdited() && hasBaseStats()) {
+            <button type="button" class="link-button" (click)="useBaseStats()">Use Lv 1 base stats</button>
+          }
+        </span>
+        @for (stat of statKeys; track stat) {
+          <label class="start-stat">
+            <span>{{ statLabels[stat] }}</span>
+            <input
+              type="number"
+              inputmode="numeric"
+              min="0"
+              placeholder="—"
+              [attr.aria-label]="'Starting ' + statLabels[stat]"
+              [value]="manualStats()[stat] ?? ''"
+              (change)="setStat(stat, $event)"
+            />
+          </label>
+        }
+      </div>
+    </div>
+  }
+
+  @if (planStart(); as from) {
+    @if (showOptions()) {
+      @let settings = options();
+      <fieldset class="start-options">
+        <legend class="field__label">Projection</legend>
+
+        <label class="start-options__level">
+          <span>Level</span>
+          <input
+            type="range"
+            [min]="from.level"
+            [max]="maxLevel"
+            [value]="settings.level"
+            aria-label="Projection level slider"
+            (input)="setLevelOption($any($event.target), 'level')"
+          />
+          <input
+            class="start-select start-options__number"
+            type="number"
+            inputmode="numeric"
+            [min]="from.level"
+            [max]="maxLevel"
+            [value]="settings.level"
+            aria-label="Projection level"
+            (change)="setLevelOption($any($event.target), 'level')"
+          />
+        </label>
+
+        <div class="start-options__toggles">
+          <label title="Extra stats on level ups that raise too few; which stats the game picks is approximated">
+            <input type="checkbox" [checked]="settings.minimum" (change)="setOption('minimum', $any($event.target).checked)" />
+            Guaranteed minimum
+          </label>
+
+          @if (settings.minimum) {
+            <label title="Level ups before this level guarantee 2 stats; later ones guarantee 1">
+              Part I ends at Lv
+              <input
+                class="start-select start-options__number"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                [max]="maxLevel"
+                [value]="settings.partOneEndLevel"
+                aria-label="Part I ends at level"
+                (change)="setLevelOption($any($event.target), 'partOneEndLevel')"
+              />
+            </label>
+          }
+
+          <label>
+            <input type="checkbox" [checked]="settings.wideRange" (change)="setOption('wideRange', $any($event.target).checked)" />
+            Show middle 80% (10th–90th)
+          </label>
+        </div>
+      </fieldset>
+    }
+
+    <app-class-plan
+      class="start-plan"
+      [unit]="from.unit"
+      [startLevel]="from.level"
+      [joiningClassName]="from.className"
+      [initialPlan]="initial()?.plan ?? null"
+    />
+  }
+
+  <footer class="dialog__footer">
+    <button type="button" class="button" (click)="close()">Cancel</button>
+    <button type="button" class="button button--primary" [disabled]="!start()" (click)="confirm()">{{ confirmLabel() }}</button>
+  </footer>
+</div>

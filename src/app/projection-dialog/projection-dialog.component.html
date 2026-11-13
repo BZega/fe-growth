@@ -11,117 +11,31 @@
     </button>
   </header>
 
-  @if (page() === 'plan') {
-    <form class="plan" (submit)="$event.preventDefault(); submit()">
-      @if (chapterPicker()) {
-        <label class="field">
-          <span class="field__label">Starting chapter</span>
-          <select class="plan__select" [value]="chapter()?.chapter" (change)="chapterNumber.set(+$any($event.target).value)">
-            @for (option of chapters(); track option.chapter) {
-              <option [value]="option.chapter" [selected]="option.chapter === chapter()?.chapter">
-                Chapter {{ option.chapter }} · Lv {{ option.level }} {{ option.className }}
-              </option>
-            }
-          </select>
-        </label>
-      }
-
-      <fieldset class="tier">
-        <legend class="field__label">Classes</legend>
-
-        @for (entry of plan(); track entry.id; let entryIndex = $index) {
-          @let resolved = entryIndex === 0 ? startEntry()! : entry;
-          <div class="tier__row">
-            @if (entryIndex === 0) {
-              <span class="tier__from">Lv {{ rowLevels()[0] }}</span>
-              <app-searchable-select
-                class="plan__picker"
-                label="Starting class"
-                [keyboard]="false"
-                [groups]="rowClassItems()[0]"
-                [focusGroup]="rowFocusRanks()[0]"
-                [value]="startClassId()"
-                [clearable]="false"
-                (valueChange)="pickClass(entry.id, $event)"
-              />
-            } @else {
-              @let bounds = switchBounds(entryIndex);
-              <label class="tier__level">
-                Lv
-                <input
-                  type="number"
-                  inputmode="numeric"
-                  [min]="bounds.min"
-                  [max]="bounds.max"
-                  [value]="rowLevels()[entryIndex]"
-                  aria-label="Reclass level"
-                  (focus)="selectValue($event)"
-                  (change)="setFromLevel(entry.id, $event)"
-                />
-              </label>
-              <app-searchable-select
-                class="plan__picker"
-                label="Reclass to"
-                [keyboard]="false"
-                placeholder="— Select a class —"
-                [groups]="rowClassItems()[entryIndex]"
-                [focusGroup]="rowFocusRanks()[entryIndex]"
-                [value]="entry.classId"
-                [clearable]="false"
-                (valueChange)="pickClass(entry.id, $event)"
-              />
-              <button
-                type="button"
-                class="tier__remove"
-                aria-label="Remove this reclass"
-                title="Remove this reclass"
-                (click)="removeClass(entry.id)"
-              >
-                &times;
-              </button>
-            }
-          </div>
-
-          @if (mountsFor(resolved).length > 0) {
-            @let mount = mountOf(resolved);
-            <div class="tier__row tier__row--sub">
-              <select
-                class="plan__select"
-                aria-label="Mount"
-                [value]="mount?.id"
-                (change)="setMount(entry.id, $any($event.target).value)"
-              >
-                @for (option of mountChoices(resolved, mount?.id); track option.id) {
-                  <option [value]="option.id" [selected]="option.id === mount?.id">{{ option.name }}</option>
-                }
-              </select>
-              @if (mount && mount.bondLevels.length > 0) {
-                <select
-                  class="plan__select tier__bond"
-                  aria-label="Bond level"
-                  [value]="bondLevelOf(resolved)"
-                  (change)="setBondLevel(entry.id, $any($event.target).value)"
-                >
-                  @for (bond of mount.bondLevels; track bond.level) {
-                    <option [value]="bond.level" [selected]="bond.level === bondLevelOf(resolved)">Bond Lv {{ bond.level }}</option>
-                  }
-                </select>
-              }
-            </div>
+  @if (!plannedSteps()) {
+  <form class="plan" [hidden]="page() !== 'plan'" (submit)="$event.preventDefault(); submit()">
+    @if (chapterPicker()) {
+      <label class="field">
+        <span class="field__label">Starting chapter</span>
+        <select class="plan__select" [value]="chapter()?.chapter" (change)="chapterNumber.set(+$any($event.target).value)">
+          @for (option of chapters(); track option.chapter) {
+            <option [value]="option.chapter" [selected]="option.chapter === chapter()?.chapter">
+              Chapter {{ option.chapter }} · Lv {{ option.level }} {{ option.className }}
+            </option>
           }
-        }
+        </select>
+      </label>
+    }
 
-        @if (canAddClass()) {
-          <button type="button" class="tier__add" (click)="addClass()">+ Reclass</button>
-        }
-      </fieldset>
+    <app-class-plan [unit]="unit()" [startLevel]="startLevel()" [joiningClassName]="chapter()?.className ?? null" />
 
-      <footer class="dialog__footer">
-        <button type="button" class="button" (click)="close()">Cancel</button>
-        <button type="submit" class="button button--primary" [disabled]="!chapter()">Submit</button>
-      </footer>
-    </form>
-  } @else {
+    <footer class="dialog__footer">
+      <button type="button" class="button" (click)="close()">Cancel</button>
+      <button type="submit" class="button button--primary" [disabled]="!chapter()">Submit</button>
+    </footer>
+  </form>
+  }
+
+  @if (page() === 'results') {
     <div class="results">
       <label class="results__level">
         <span class="field__label">End level</span>
@@ -159,7 +73,7 @@
       </ul>
 
       <footer class="dialog__footer">
-        <button type="button" class="button" (click)="page.set('plan')">Back</button>
+        <button type="button" class="button" (click)="goBack()">Back</button>
         <button type="button" class="button button--primary" (click)="close()">Done</button>
       </footer>
     </div>

@@ -1,0 +1,66 @@
+<header class="page-header">
+  <div class="page-header__title">
+    <h1>Projected Stats</h1>
+    <app-help-dialog heading="Projected Stats" [paragraphs]="helpText" />
+  </div>
+
+  <div class="header-actions">
+    @if (selectionMode()) {
+      <span class="hint">Pick {{ remainingPicks() }} more {{ remainingPicks() === 1 ? 'build' : 'builds' }}</span>
+      <button type="button" class="ghost-button" (click)="cancelCompare()">Cancel</button>
+    } @else {
+      @if (canCompare()) {
+        <button type="button" class="compare-button" (click)="startCompare()">Compare Builds</button>
+      }
+      <button type="button" class="ghost-button" aria-haspopup="dialog" (click)="openStart()">+ Build</button>
+    }
+  </div>
+</header>
+
+@if (builds().length > 0) {
+  <div class="panels">
+    @for (build of builds(); track build.id; let index = $index) {
+      <div class="panel" [class.panel--picked]="isPicked(build.id)">
+        <app-projection-build
+          [heading]="headings()[index]"
+          [start]="build.start"
+          (editRequested)="editStart(build.id)"
+          (levelChange)="setBuildLevel(build.id, $event)"
+          (removeRequested)="removeBuild(build.id)"
+          (resultChange)="onResult(build.id, $event)"
+        />
+
+        @if (selectionMode() && isPickable(build.id)) {
+          <button type="button" class="panel__picker" (click)="togglePick(build.id)">
+            @if (isPicked(build.id)) {
+              <span class="panel__badge">{{ pickNumber(build.id) }}</span>
+              Selected
+            } @else {
+              Select
+            }
+          </button>
+        }
+      </div>
+    }
+  </div>
+} @else {
+  <div class="panels">
+    <app-projection-build class="panel" heading="No Build Yet" />
+  </div>
+}
+
+@if (startDialog(); as dialog) {
+  <app-projection-start-dialog
+    [heading]="dialog.editId === null ? 'Add a Build' : 'Edit Build'"
+    eyebrow="Projected Stats"
+    [confirmLabel]="dialog.editId === null ? 'Add' : 'Save'"
+    [initial]="editing()"
+    [showOptions]="true"
+    (confirmed)="onStartConfirmed($event)"
+    (closed)="startDialog.set(null)"
+  />
+}
+
+@if (comparison(); as active) {
+  <app-projection-comparison-dialog [buildA]="active.a" [buildB]="active.b" (closed)="closeComparison()" />
+}

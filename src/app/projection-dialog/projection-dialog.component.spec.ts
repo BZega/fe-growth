@@ -5,6 +5,7 @@ import { CLASS_LEVEL_CONFIGS, Mount, mountBonusAt, mountGrowthAt, scaleGrowth, S
 import { classAtLevel, classLevelGate, levelUpGrowth, projectStats, RecruitmentChapter } from '../models/recruitment.models';
 import { GrowthDataService } from '../services/growth-data.service';
 import { SpoilerService } from '../services/spoiler.service';
+import { ClassPlanComponent } from '../class-plan/class-plan.component';
 import { ProjectionDialogComponent } from './projection-dialog.component';
 
 const classes = unitClassData as UnitClass[];
@@ -81,14 +82,20 @@ describe('ProjectionDialogComponent', () => {
     fixture.componentRef.setInput('initialChapter', joining.chapter);
     fixture.detectChanges();
 
-    return { fixture, dialog: fixture.componentInstance, host: fixture.nativeElement as HTMLElement, unit };
+    return {
+      fixture,
+      dialog: fixture.componentInstance,
+      plan: fixture.componentInstance.planEditor()!,
+      host: fixture.nativeElement as HTMLElement,
+      unit,
+    };
   };
-  const reclass = (dialog: ProjectionDialogComponent, level: number, className: string) => {
-    dialog.addClass();
-    const entry = dialog.plan().at(-1)!;
-    dialog.setReclassLevel(entry.id, level);
-    dialog.setClass(entry.id, String(byName(className).id));
-    return dialog.plan().at(-1)!;
+  const reclass = (plan: ClassPlanComponent, level: number, className: string) => {
+    plan.addClass();
+    const entry = plan.plan().at(-1)!;
+    plan.setReclassLevel(entry.id, level);
+    plan.setClass(entry.id, String(byName(className).id));
+    return plan.plan().at(-1)!;
   };
   const names = (groups: { classes: UnitClass[] }[]) => groups.flatMap((group) => group.classes.map((unitClass) => unitClass.name));
   const gatedRanks = (groups: { rank: string; classes: UnitClass[] }[]) =>
@@ -97,8 +104,8 @@ describe('ProjectionDialogComponent', () => {
       .map((group) => group.rank);
 
   it('unlocks each rank 5 levels before its old gate', () => {
-    const { dialog } = open('Cai');
-    const ranks = (level: number) => gatedRanks(dialog.classGroups(level));
+    const { plan } = open('Cai');
+    const ranks = (level: number) => gatedRanks(plan.classGroups(level));
 
     expect(ranks(1)).toEqual(['Base', 'Beginner']);
     expect(ranks(14)).toEqual(['Base', 'Beginner']);
@@ -108,22 +115,22 @@ describe('ProjectionDialogComponent', () => {
   });
 
   it('offers every Divine class and Dancer from Lv 1', () => {
-    const { dialog } = open('Cai');
+    const { plan } = open('Cai');
     const anyLevel = classes.filter((unitClass) => unitClass.rank === 'Divine' || unitClass.name === 'Dancer');
-    const usable = names(dialog.classGroups(99)).filter((name) => anyLevel.some((unitClass) => unitClass.name === name));
+    const usable = names(plan.classGroups(99)).filter((name) => anyLevel.some((unitClass) => unitClass.name === name));
 
     expect(usable.length).toBeGreaterThan(0);
-    expect(names(dialog.classGroups(1))).toEqual(jasmine.arrayContaining(usable));
+    expect(names(plan.classGroups(1))).toEqual(jasmine.arrayContaining(usable));
   });
 
   it('keeps Dancer on a reclass moved below Lv 30', () => {
-    const { dialog } = open('Cai');
-    dialog.addClass();
-    const entry = dialog.plan()[1];
-    dialog.setClass(entry.id, String(byName('Dancer').id));
-    dialog.setReclassLevel(entry.id, 5);
+    const { plan } = open('Cai');
+    plan.addClass();
+    const entry = plan.plan()[1];
+    plan.setClass(entry.id, String(byName('Dancer').id));
+    plan.setReclassLevel(entry.id, 5);
 
-    expect(dialog.plan()[1].classId).toBe(byName('Dancer').id);
+    expect(plan.plan()[1].classId).toBe(byName('Dancer').id);
   });
 
   it("starts at the chapter's level and class, with no fixed level gate sections", () => {
@@ -138,8 +145,8 @@ describe('ProjectionDialogComponent', () => {
   });
 
   it("doesn't open the on-screen keyboard for the class pickers", () => {
-    const { dialog, fixture, host } = open('Cai');
-    dialog.addClass();
+    const { plan, fixture, host } = open('Cai');
+    plan.addClass();
     fixture.detectChanges();
 
     for (const label of ['Starting class', 'Reclass to']) {
@@ -168,14 +175,14 @@ describe('ProjectionDialogComponent', () => {
   });
 
   it('adds each reclass at the next usual gate (5/20/35/45), then one level after the last', () => {
-    const { dialog } = open('Cai');
+    const { plan } = open('Cai');
     const levels: number[] = [];
 
     for (const name of ['Gladiator', 'Charioteer', 'Gladiator', 'Charioteer', 'Gladiator']) {
-      dialog.addClass();
-      const entry = dialog.plan().at(-1)!;
-      dialog.setClass(entry.id, String(byName(name).id));
-      levels.push(dialog.rowLevels().at(-1)!);
+      plan.addClass();
+      const entry = plan.plan().at(-1)!;
+      plan.setClass(entry.id, String(byName(name).id));
+      levels.push(plan.rowLevels().at(-1)!);
     }
 
     // Cai joins at Lv 4.
@@ -183,25 +190,25 @@ describe('ProjectionDialogComponent', () => {
   });
 
   it('only offers ranks unlocked at the reclass level, and clears a class moved below its unlock', () => {
-    const { dialog } = open('Cai');
-    const entry = reclass(dialog, 15, 'Charioteer');
-    const position = dialog.plan().indexOf(entry);
+    const { plan } = open('Cai');
+    const entry = reclass(plan, 15, 'Charioteer');
+    const position = plan.plan().indexOf(entry);
 
     // Noble/Commoner, the only Base class, is the class being left, so Base isn't offered.
-    expect(gatedRanks(dialog.reclassGroups(position))).toEqual(['Beginner', 'Speciality']);
+    expect(gatedRanks(plan.reclassGroups(position))).toEqual(['Beginner', 'Speciality']);
 
-    dialog.setReclassLevel(entry.id, 14);
-    expect(dialog.plan()[position].classId).toBeNull();
-    expect(gatedRanks(dialog.reclassGroups(position))).toEqual(['Beginner']);
+    plan.setReclassLevel(entry.id, 14);
+    expect(plan.plan()[position].classId).toBeNull();
+    expect(gatedRanks(plan.reclassGroups(position))).toEqual(['Beginner']);
   });
 
   it('opens the reclass list at the rank usually taken at that level', () => {
-    const { dialog } = open('Cai');
-    dialog.addClass();
-    const entry = dialog.plan()[1];
+    const { plan } = open('Cai');
+    plan.addClass();
+    const entry = plan.plan()[1];
     const rankAt = (level: number) => {
-      dialog.setReclassLevel(entry.id, level);
-      return dialog.rowFocusRanks()[1];
+      plan.setReclassLevel(entry.id, level);
+      return plan.rowFocusRanks()[1];
     };
 
     expect([5, 19, 20, 34, 35, 44, 45, 80].map(rankAt)).toEqual([
@@ -213,23 +220,23 @@ describe('ProjectionDialogComponent', () => {
   });
 
   it("doesn't offer the class the unit is already in when reclassing", () => {
-    const { dialog } = open('Cai');
+    const { plan } = open('Cai');
 
-    dialog.addClass();
-    expect(names(dialog.reclassGroups(1))).not.toContain('Noble/Commoner');
-    dialog.setClass(dialog.plan()[1].id, String(byName('Gladiator').id));
+    plan.addClass();
+    expect(names(plan.reclassGroups(1))).not.toContain('Noble/Commoner');
+    plan.setClass(plan.plan()[1].id, String(byName('Gladiator').id));
 
-    dialog.addClass();
-    expect(names(dialog.reclassGroups(2))).not.toContain('Gladiator');
-    expect(names(dialog.reclassGroups(2))).toContain('Noble/Commoner');
+    plan.addClass();
+    expect(names(plan.reclassGroups(2))).not.toContain('Gladiator');
+    expect(names(plan.reclassGroups(2))).toContain('Noble/Commoner');
 
     // A reclass already set to that class keeps it listed.
-    dialog.setClass(dialog.plan()[2].id, String(byName('Gladiator').id));
-    expect(names(dialog.reclassGroups(2))).toContain('Gladiator');
+    plan.setClass(plan.plan()[2].id, String(byName('Gladiator').id));
+    expect(names(plan.reclassGroups(2))).toContain('Gladiator');
   });
 
   it('hides + Reclass until the new reclass has a class', () => {
-    const { dialog, fixture, host } = open('Cai');
+    const { plan, fixture, host } = open('Cai');
     const addButton = () => host.querySelector<HTMLButtonElement>('.tier__add');
 
     expect(addButton()).not.toBeNull();
@@ -238,16 +245,16 @@ describe('ProjectionDialogComponent', () => {
     fixture.detectChanges();
     expect(addButton()).toBeNull();
 
-    dialog.addClass();
-    expect(dialog.plan().length).toBe(2);
+    plan.addClass();
+    expect(plan.plan().length).toBe(2);
 
-    dialog.setClass(dialog.plan()[1].id, String(byName('Gladiator').id));
+    plan.setClass(plan.plan()[1].id, String(byName('Gladiator').id));
     fixture.detectChanges();
     expect(addButton()).not.toBeNull();
   });
 
   it('gives every reclass its own level between its neighbours', () => {
-    const { dialog, fixture, host } = open('Cai');
+    const { plan, fixture, host } = open('Cai');
     const levelBoxes = () => Array.from(host.querySelectorAll<HTMLInputElement>('.tier__level input'));
     const setLevel = (box: HTMLInputElement, value: string) => {
       box.value = value;
@@ -255,8 +262,8 @@ describe('ProjectionDialogComponent', () => {
       fixture.detectChanges();
     };
 
-    reclass(dialog, 10, 'Gladiator');
-    reclass(dialog, 20, 'Noble/Commoner');
+    reclass(plan, 10, 'Gladiator');
+    reclass(plan, 20, 'Noble/Commoner');
     fixture.detectChanges();
 
     setLevel(levelBoxes()[0], '3');
@@ -268,22 +275,22 @@ describe('ProjectionDialogComponent', () => {
 
     // No reclass fits after Lv 98.
     setLevel(levelBoxes()[1], '98');
-    expect(dialog.canAddClass()).toBeFalse();
-    dialog.addClass();
-    expect(dialog.plan().length).toBe(3);
+    expect(plan.canAddClass()).toBeFalse();
+    plan.addClass();
+    expect(plan.plan().length).toBe(3);
   });
 
   it('shows the projected final stats on a new page after Submit, to two decimals', () => {
-    const { dialog, fixture, host, unit } = open('Cai');
+    const { dialog, plan, fixture, host, unit } = open('Cai');
     const gladiator = byName('Gladiator');
-    reclass(dialog, 5, 'Gladiator');
+    reclass(plan, 5, 'Gladiator');
     fixture.detectChanges();
 
     host.querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
 
     expect(host.querySelector('h2')!.textContent!.trim()).toBe('Projected Final Stats');
-    expect(host.querySelector('form')).toBeNull();
+    expect(host.querySelector('form')!.hidden).toBeTrue();
 
     // Lv 4 -> 5 as Noble/Commoner, then Lv 5 -> 99 as Gladiator.
     const noble = byName('Noble/Commoner');
@@ -310,14 +317,14 @@ describe('ProjectionDialogComponent', () => {
     dialog.setEndLevel('1');
     expect(dialog.endLevel()).toBe(4);
 
-    host.querySelector<HTMLButtonElement>('.dialog__footer .button:not(.button--primary)')!.click();
+    host.querySelector<HTMLButtonElement>('.results .dialog__footer .button:not(.button--primary)')!.click();
     fixture.detectChanges();
-    expect(host.querySelector('form')).not.toBeNull();
+    expect(host.querySelector('form')!.hidden).toBeFalse();
   });
 
   it('selects the whole value when a level box gets focus, so typing replaces it', fakeAsync(() => {
-    const { dialog, fixture, host } = open('Cai');
-    dialog.addClass();
+    const { dialog, plan, fixture, host } = open('Cai');
+    plan.addClass();
     fixture.detectChanges();
 
     const check = (label: string) => {
@@ -370,26 +377,117 @@ describe('ProjectionDialogComponent', () => {
     expect(hp.value.right).toBe(left[0].value.right);
   });
 
-  it('offers a mount and bond level for mounted classes', () => {
-    const { dialog, fixture, host } = open('Cai');
-    const entry = reclass(dialog, 20, 'Charioteer');
+  it('carries the last mount of a mount type into later classes of that type, across other types in between', () => {
+    const { plan } = open('Cai');
+    const api = TestBed.inject(GrowthDataService);
+    expect(api.mountTypeOfClass('Ornius Rider')).toBe(api.mountTypeOfClass('Armored Ornius Rider'));
+    expect(api.mountTypeOfClass('Light Cavalry')).not.toBe(api.mountTypeOfClass('Ornius Rider'));
+
+    const ornius = reclass(plan, 5, 'Ornius Rider');
+    const orniusMounts = plan.mountsFor(ornius).filter((mount) => mount.bondLevels.length > 3);
+    plan.setMount(ornius.id, String(orniusMounts[0].id));
+    plan.addMountChange(plan.plan().indexOf(plan.plan().find((entry) => entry.id === ornius.id)!));
+    const change = plan.mountChangesOf(plan.plan().find((entry) => entry.id === ornius.id)!)[0];
+    plan.setChangeMount(ornius.id, change.id, String(orniusMounts[1].id));
+    plan.setChangeBondLevel(ornius.id, change.id, '4');
+
+    const cavalry = reclass(plan, 20, 'Light Cavalry');
+    const horses = plan.mountsFor(cavalry).filter((mount) => mount.bondLevels.length > 1);
+    plan.setMount(cavalry.id, String(horses[horses.length - 1].id));
+    plan.setBondLevel(cavalry.id, '2');
+
+    const armored = reclass(plan, 35, 'Armored Ornius Rider');
+    expect(plan.mountOf(armored)!.id).toBe(orniusMounts[1].id);
+    expect(plan.bondLevelOf(armored)).toBe(4);
+
+    const backToHorse = reclass(plan, 45, 'Light Cavalry');
+    expect(plan.mountOf(backToHorse)!.id).toBe(horses[horses.length - 1].id);
+    expect(plan.bondLevelOf(backToHorse)).toBe(2);
+
+    // Picking a mount yourself still wins.
+    plan.setMount(armored.id, String(orniusMounts[0].id));
+    expect(plan.mountOf(plan.plan().find((entry) => entry.id === armored.id)!)!.id).toBe(orniusMounts[0].id);
+  });
+
+  it('keeps the bond level when switching to another mount, even through one without bond levels', () => {
+    const { plan } = open('Cai');
+    const entry = reclass(plan, 5, 'Ornius Rider');
+    const withBonds = plan.mountsFor(entry).filter((mount) => mount.bondLevels.length > 2);
+    const plain = plan.mountsFor(entry).find((mount) => mount.bondLevels.length === 0);
+    const current = () => plan.plan().find((candidate) => candidate.id === entry.id)!;
+
+    plan.setMount(entry.id, String(withBonds[0].id));
+    plan.setBondLevel(entry.id, '3');
+    plan.setMount(entry.id, String(withBonds[1].id));
+    expect(plan.bondLevelOf(current())).toBe(3);
+
+    if (plain) {
+      plan.setMount(entry.id, String(plain.id));
+      expect(plan.bondLevelOf(current())).toBeNull();
+      plan.setMount(entry.id, String(withBonds[0].id));
+      expect(plan.bondLevelOf(current())).toBe(3);
+    }
+  });
+
+  it('switches mount or bond level at later levels within a class, and drops changes a reclass moves past', () => {
+    const { dialog, plan, fixture, host } = open('Cai');
+    const entry = reclass(plan, 20, 'Charioteer');
+    const position = plan.plan().indexOf(entry);
+    const mount = plan.mountsFor(entry).find((option) => option.bondLevels.length > 1) ?? plan.mountsFor(entry)[0];
+    plan.setMount(entry.id, String(mount.id));
     fixture.detectChanges();
 
-    expect(dialog.mountsFor(entry).length).toBeGreaterThan(0);
-    expect(dialog.mountOf(entry)).toBe(dialog.mountsFor(entry)[0]);
+    plan.addMountChange(position);
+    fixture.detectChanges();
+    const change = plan.mountChangesOf(plan.plan()[position])[0];
+    expect(change.fromLevel).toBe(21);
+    expect(change.mountId).toBe(mount.id);
+    expect(host.querySelector('input[aria-label="Mount change level"]')).not.toBeNull();
+
+    const topBond = mount.bondLevels.at(-1)?.level ?? null;
+    if (topBond !== null) {
+      plan.setChangeBondLevel(entry.id, change.id, String(topBond));
+    }
+
+    const steps = plan.steps();
+    expect(steps.map((step) => [step.unitClass.name, step.fromLevel])).toEqual([
+      ['Noble/Commoner', 4],
+      ['Charioteer', 20],
+      ['Charioteer', 21],
+    ]);
+    expect(steps[2].bondLevel).toBe(topBond);
+
+    dialog.submit();
+    expect(dialog.endMount()).toEqual({ name: mount.name, bondLevel: topBond });
+
+    // A reclass moved before the change's level takes it out of the Charioteer's range.
+    plan.addClass();
+    const next = plan.plan().at(-1)!;
+    plan.setClass(next.id, String(byName('Gladiator').id));
+    plan.setReclassLevel(next.id, 21);
+    expect(plan.mountChangesOf(plan.plan()[position])).toEqual([]);
+  });
+
+  it('offers a mount and bond level for mounted classes', () => {
+    const { plan, fixture, host } = open('Cai');
+    const entry = reclass(plan, 20, 'Charioteer');
+    fixture.detectChanges();
+
+    expect(plan.mountsFor(entry).length).toBeGreaterThan(0);
+    expect(plan.mountOf(entry)).toBe(plan.mountsFor(entry)[0]);
     expect(host.querySelector('select[aria-label="Mount"]')).not.toBeNull();
   });
 
   it('projects a Charioteer through its class levels with doubled mount growth, plus the mount bonus at the end', () => {
-    const { dialog, unit } = open('Cai');
+    const { dialog, plan, unit } = open('Cai');
     const noble = byName('Noble/Commoner');
     const charioteer = byName('Charioteer');
-    const entry = reclass(dialog, 20, 'Charioteer');
-    const mount = dialog.mountsFor(entry).find((option) => option.bondLevels.length > 1) ?? dialog.mountsFor(entry)[0];
-    dialog.setMount(entry.id, String(mount.id));
+    const entry = reclass(plan, 20, 'Charioteer');
+    const mount = plan.mountsFor(entry).find((option) => option.bondLevels.length > 1) ?? plan.mountsFor(entry)[0];
+    plan.setMount(entry.id, String(mount.id));
     const bond = mount.bondLevels.at(-1)?.level ?? null;
     if (bond !== null) {
-      dialog.setBondLevel(entry.id, String(bond));
+      plan.setBondLevel(entry.id, String(bond));
     }
     dialog.submit();
 

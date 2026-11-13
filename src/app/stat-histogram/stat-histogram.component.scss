@@ -1,0 +1,117 @@
+:host {
+  display: block;
+}
+
+.histogram {
+  margin: 0;
+}
+
+.histogram__plot {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 0.4rem;
+}
+
+.histogram__axis {
+  align-self: start;
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
+
+.histogram__bars {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 9rem;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.histogram__bar {
+  display: flex;
+  align-items: flex-end;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+}
+
+.histogram__fill {
+  width: 100%;
+  min-height: 1px;
+  border-radius: 2px 2px 0 0;
+  background: rgb(255 255 255 / 22%);
+}
+
+.histogram__bar--middle .histogram__fill {
+  background: rgb(240 192 74 / 55%);
+}
+
+.histogram__bar--actual .histogram__fill {
+  background: #4fc3f7;
+  box-shadow: 0 0 0 1px #b3e5fc;
+}
+
+.histogram__mean {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 2px dashed var(--accent);
+  pointer-events: none;
+}
+
+.histogram__labels {
+  display: flex;
+  gap: 2px;
+  font-size: 0.6rem;
+  opacity: 0.7;
+
+  span {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    overflow: visible;
+    white-space: nowrap;
+  }
+}
+
+.histogram__label--actual {
+  color: #4fc3f7;
+  font-weight: 700;
+  opacity: 1;
+}
+
+.histogram__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+}
+
+.key::before {
+  content: '';
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-right: 0.3rem;
+  border-radius: 2px;
+  vertical-align: -0.1rem;
+}
+
+.key--middle::before {
+  background: rgb(240 192 74 / 55%);
+}
+
+.key--mean::before {
+  width: 0;
+  border-left: 2px dashed var(--accent);
+}
+
+.key--actual::before {
+  background: #4fc3f7;
+}
+
+.histogram__total {
+  opacity: 0.6;
+}

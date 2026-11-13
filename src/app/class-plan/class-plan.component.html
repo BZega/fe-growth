@@ -1,0 +1,151 @@
+<fieldset class="tier">
+  <legend class="tier__legend">Classes</legend>
+
+  @for (entry of plan(); track entry.id; let entryIndex = $index) {
+    @let resolved = entryIndex === 0 ? startEntry()! : entry;
+    <div class="tier__row">
+      @if (entryIndex === 0) {
+        <span class="tier__from">Lv {{ rowLevels()[0] }}</span>
+        <app-searchable-select
+          class="plan__picker"
+          label="Starting class"
+          [keyboard]="false"
+          [groups]="rowClassItems()[0]"
+          [focusGroup]="rowFocusRanks()[0]"
+          [value]="startClassId()"
+          [clearable]="false"
+          (valueChange)="pickClass(entry.id, $event)"
+        />
+      } @else {
+        @let bounds = switchBounds(entryIndex);
+        <label class="tier__level">
+          Lv
+          <input
+            type="number"
+            inputmode="numeric"
+            [min]="bounds.min"
+            [max]="bounds.max"
+            [value]="rowLevels()[entryIndex]"
+            aria-label="Reclass level"
+            (focus)="selectValue($event)"
+            (change)="setFromLevel(entry.id, $event)"
+          />
+        </label>
+        <app-searchable-select
+          class="plan__picker"
+          label="Reclass to"
+          [keyboard]="false"
+          placeholder="— Select a class —"
+          [groups]="rowClassItems()[entryIndex]"
+          [focusGroup]="rowFocusRanks()[entryIndex]"
+          [value]="entry.classId"
+          [clearable]="false"
+          (valueChange)="pickClass(entry.id, $event)"
+        />
+        <button
+          type="button"
+          class="tier__remove"
+          aria-label="Remove this reclass"
+          title="Remove this reclass"
+          (click)="removeClass(entry.id)"
+        >
+          &times;
+        </button>
+      }
+    </div>
+
+    @if (mountsFor(resolved).length > 0) {
+      @let mount = mountOf(resolved);
+      <div class="tier__row tier__row--sub">
+        <select
+          class="plan__select"
+          aria-label="Mount"
+          [value]="mount?.id"
+          (change)="setMount(entry.id, $any($event.target).value)"
+        >
+          @for (option of mountChoices(resolved, mount?.id); track option.id) {
+            <option [value]="option.id" [selected]="option.id === mount?.id">{{ option.name }}</option>
+          }
+        </select>
+        @if (mount && mount.bondLevels.length > 0) {
+          <select
+            class="plan__select tier__bond"
+            aria-label="Bond level"
+            [value]="bondLevelOf(resolved)"
+            (change)="setBondLevel(entry.id, $any($event.target).value)"
+          >
+            @for (bond of mount.bondLevels; track bond.level) {
+              <option [value]="bond.level" [selected]="bond.level === bondLevelOf(resolved)">Bond Lv {{ bond.level }}</option>
+            }
+          </select>
+        }
+      </div>
+
+      @for (change of mountChangesOf(entry); track change.id; let changeIndex = $index) {
+        @let changeMount = changeMountOf(resolved, change);
+        @let changeBounds = mountChangeBounds(entryIndex, changeIndex);
+        <div class="tier__row tier__row--change">
+          <label class="tier__level">
+            Lv
+            <input
+              type="number"
+              inputmode="numeric"
+              [min]="changeBounds.min"
+              [max]="changeBounds.max"
+              [value]="change.fromLevel"
+              aria-label="Mount change level"
+              (focus)="selectValue($event)"
+              (change)="setChangeLevel(entryIndex, changeIndex, $event)"
+            />
+          </label>
+          <select
+            class="plan__select"
+            aria-label="Mount from this level"
+            [value]="changeMount?.id"
+            (change)="setChangeMount(entry.id, change.id, $any($event.target).value)"
+          >
+            @for (option of mountChoices(resolved, changeMount?.id); track option.id) {
+              <option [value]="option.id" [selected]="option.id === changeMount?.id">{{ option.name }}</option>
+            }
+          </select>
+          @if (changeMount && changeMount.bondLevels.length > 0) {
+            <select
+              class="plan__select tier__bond"
+              aria-label="Bond level from this level"
+              [value]="changeBondLevelOf(resolved, change)"
+              (change)="setChangeBondLevel(entry.id, change.id, $any($event.target).value)"
+            >
+              @for (bond of changeMount.bondLevels; track bond.level) {
+                <option [value]="bond.level" [selected]="bond.level === changeBondLevelOf(resolved, change)">Bond Lv {{ bond.level }}</option>
+              }
+            </select>
+          }
+          <button
+            type="button"
+            class="tier__remove"
+            aria-label="Remove this mount change"
+            title="Remove this mount change"
+            (click)="removeMountChange(entry.id, change.id)"
+          >
+            &times;
+          </button>
+        </div>
+      }
+
+      @if (canAddMountChange(entryIndex)) {
+        <button
+          type="button"
+          class="tier__add tier__add--sub"
+          title="Switch mount or bond level at a later level, staying in this class"
+          (click)="addMountChange(entryIndex)"
+        >
+          + Mount change
+        </button>
+      }
+    }
+  }
+
+  @if (canAddClass()) {
+    <button type="button" class="tier__add" (click)="addClass()">+ Reclass</button>
+  }
+</fieldset>

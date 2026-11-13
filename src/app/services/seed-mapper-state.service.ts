@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 
-import { DEFAULT_MOUNT_BOND_LEVEL, GrowthRates, MAX_EQUIPPED_ABILITIES, StatKey, WeaponKey, ZERO_GROWTH } from '../models/growth.models';
+import { DEFAULT_MOUNT_BOND_LEVEL, GrowthRates, MAX_EQUIPPED_ABILITIES, STAT_KEYS, StatKey, WeaponKey, ZERO_GROWTH } from '../models/growth.models';
 import { EMPTY_STATS, SeedMapSnapshot, StatValues } from '../models/seed-save';
 import { GrowthDataService } from './growth-data.service';
 
@@ -395,6 +395,14 @@ export class SeedMapperStateService {
     this.mutate((map) => ({
       ...map,
       startStats: { ...map.startStats, [stat]: cleaned },
+    }));
+  }
+
+  /** Fills every starting stat at once (one change), e.g. from a character's base stats. */
+  setStartStats(stats: GrowthRates): void {
+    this.mutate((map) => ({
+      ...map,
+      startStats: Object.fromEntries(STAT_KEYS.map((stat) => [stat, Math.max(0, Math.round(stats[stat]))])) as SeedMap['startStats'],
     }));
   }
 

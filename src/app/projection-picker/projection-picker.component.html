@@ -1,66 +1,18 @@
-@if (projecting()) {
+@if (projecting() && start(); as from) {
   <app-projection-dialog
-    [unit]="growthUnit()!"
-    [chapters]="route()!.chapters"
-    [initialChapter]="chapterNumber()"
+    [unit]="from.unit"
+    [chapters]="chapters()"
+    [initialChapter]="from.chapterNumber"
+    [chapterPicker]="from.source === 'chapter'"
+    [plannedSteps]="from.steps"
+    (back)="projecting.set(false)"
     (closed)="close()"
   />
 } @else {
-  <div class="backdrop" (click)="close()"></div>
-
-  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="projection-picker-title">
-    <header class="dialog__header">
-      <div>
-        <p class="dialog__eyebrow">Growth Rate Calculator</p>
-        <h2 id="projection-picker-title">Projected Stats</h2>
-      </div>
-      <button type="button" class="dialog__close" aria-label="Close" (click)="close()">&times;</button>
-    </header>
-
-    <p class="dialog__context">Pick a character with recruitment stats, then the route and chapter to start from.</p>
-
-    <div class="picker-fields">
-      <div class="field">
-        <span class="field__label">Character</span>
-        <app-searchable-select
-          label="Character"
-          [keyboard]="false"
-          placeholder="— Select a character —"
-          [items]="characters()"
-          [value]="unitId()"
-          [clearable]="false"
-          (valueChange)="unitId.set($event)"
-        />
-      </div>
-
-      @if (unit()) {
-        <label class="field">
-          <span class="field__label">Route</span>
-          <select class="picker-select" aria-label="Route" (change)="routeKey.set($any($event.target).value)">
-            @for (route of routes(); track route.key) {
-              <option [value]="route.key" [selected]="route.key === routeKey()">{{ route.label }}</option>
-            }
-          </select>
-        </label>
-
-        @if (route(); as active) {
-          <label class="field">
-            <span class="field__label">Chapter</span>
-            <select class="picker-select" aria-label="Chapter" (change)="chapterNumber.set(+$any($event.target).value)">
-              @for (chapter of active.chapters; track chapter.chapter) {
-                <option [value]="chapter.chapter" [selected]="chapter.chapter === chapterNumber()">
-                  Chapter {{ chapter.chapter }} · Lv {{ chapter.level }} {{ chapter.className }}
-                </option>
-              }
-            </select>
-          </label>
-        }
-      }
-    </div>
-
-    <footer class="dialog__footer">
-      <button type="button" class="button" (click)="close()">Cancel</button>
-      <button type="button" class="button button--primary" [disabled]="!canProject()" (click)="project()">Next</button>
-    </footer>
-  </div>
+  <app-projection-start-dialog
+    eyebrow="Growth Rate Calculator"
+    [initial]="start()"
+    (confirmed)="start.set($event); projecting.set(true)"
+    (closed)="close()"
+  />
 }

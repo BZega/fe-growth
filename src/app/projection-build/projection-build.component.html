@@ -1,0 +1,158 @@
+<article class="build" [class.build--placeholder]="!start()">
+  <header class="build__header">
+    <div class="build__title">
+      <h2>{{ heading() }}</h2>
+      @if (planSummary()) {
+        <span class="build__start" [title]="startSummary() ?? ''">{{ planSummary() }}</span>
+      }
+    </div>
+    @if (start()) {
+      <button type="button" class="build__edit" (click)="editRequested.emit()">Edit</button>
+      <button type="button" class="build__remove" aria-label="Remove this build" title="Remove this build" (click)="removeRequested.emit()">
+        &times;
+      </button>
+    }
+  </header>
+
+  @if (!start()) {
+    <section class="results" aria-hidden="true">
+      <header class="results__header">
+        <h3>Lv </h3>
+      </header>
+
+      <ul class="rows">
+        @for (stat of statKeys; track stat) {
+          <li class="row">
+            <span class="row__label">{{ statLabels[stat] }}</span>
+            <span class="row__mean">—</span>
+            <span class="row__range">—</span>
+            <span class="row__bar"></span>
+            <span class="row__actual"><input type="number" placeholder="Actual" disabled /></span>
+          </li>
+        }
+      </ul>
+
+      <section class="histogram-panel">
+        <div class="stat-tabs">
+          @for (stat of statKeys; track stat) {
+            <button type="button" disabled [class.stat-tabs--active]="stat === histogramStat()">{{ statLabels[stat] }}</button>
+          }
+        </div>
+        <div class="placeholder-histogram">
+          @for (height of placeholderBars; track $index) {
+            <span [style.height.%]="height"></span>
+          }
+        </div>
+      </section>
+    </section>
+  }
+
+  @if (rows().length > 0) {
+    <section class="results" [attr.aria-label]="heading() + ' projected stats at Lv ' + level()">
+      <header class="results__header">
+        <label class="level-control">
+          <span class="level-control__prefix">Lv</span>
+          <input
+            class="level-control__number"
+            type="number"
+            inputmode="numeric"
+            [min]="start()!.level"
+            [max]="maxLevel"
+            [value]="level()"
+            aria-label="Projected level"
+            title="Click to change the level"
+            (focus)="selectValue($event)"
+            (change)="setLevel($any($event.target))"
+          />
+          <input
+            class="level-control__slider"
+            type="range"
+            [min]="start()!.level"
+            [max]="maxLevel"
+            [value]="level()"
+            aria-label="Projected level slider"
+            (input)="setLevel($any($event.target))"
+          />
+        </label>
+        <!-- Always takes its space, so the slider stops in the same place with or without it. -->
+        <button
+          type="button"
+          class="link-button"
+          [class.link-button--hidden]="!hasActual()"
+          [attr.aria-hidden]="!hasActual()"
+          [tabindex]="hasActual() ? 0 : -1"
+          (click)="clearActual()"
+        >
+          Clear actual stats
+        </button>
+      </header>
+
+      <ul class="rows">
+        @for (row of rows(); track row.stat) {
+          <li class="row" [attr.data-tone]="row.tone">
+            <span class="row__label">{{ row.label }}</span>
+            <span class="row__mean" [title]="'Standard deviation ' + fixed(row.summary.sd)">
+              {{ fixed(row.summary.mean) }} <small>± {{ fixed(row.summary.sd, 1) }}</small>
+            </span>
+            <span class="row__range">
+              {{ row.summary.p25 }}–{{ row.summary.p75 }}
+              @if (options().wideRange) {
+                <small>({{ row.summary.p10 }}–{{ row.summary.p90 }})</small>
+              }
+            </span>
+            <span
+              class="row__bar"
+              [title]="'Possible ' + row.summary.low + '–' + row.summary.high + '; middle 50% ' + row.summary.p25 + '–' + row.summary.p75"
+            >
+              @if (options().wideRange) {
+                <span class="row__band row__band--wide" [style.left.%]="row.bar.wideFrom" [style.width.%]="row.bar.wideTo - row.bar.wideFrom"></span>
+              }
+              <span class="row__band" [style.left.%]="row.bar.from" [style.width.%]="row.bar.to - row.bar.from"></span>
+              <span class="row__mean-mark" [style.left.%]="row.bar.mean"></span>
+              @if (row.bar.actual !== null) {
+                <span class="row__actual-mark" [style.left.%]="row.bar.actual"></span>
+              }
+            </span>
+            <label class="row__actual">
+              <input
+                type="number"
+                inputmode="numeric"
+                min="0"
+                placeholder="Actual"
+                [attr.aria-label]="'Actual ' + row.label + ' at Lv ' + level()"
+                [value]="row.actual ?? ''"
+                (change)="setActual(row.stat, $event)"
+              />
+            </label>
+          </li>
+        }
+      </ul>
+
+      <section class="histogram-panel" aria-label="Distribution histogram">
+        <div class="stat-tabs" role="group" aria-label="Histogram stat">
+          @for (stat of statKeys; track stat) {
+            <button
+              type="button"
+              [class.stat-tabs--active]="stat === histogramStat()"
+              [attr.aria-pressed]="stat === histogramStat()"
+              (click)="histogramStat.set(stat)"
+            >
+              {{ statLabels[stat] }}
+            </button>
+          }
+        </div>
+        @if (histogramRow(); as row) {
+          <app-stat-histogram
+            [distribution]="row.distribution"
+            [summary]="row.summary"
+            [statLabel]="row.label"
+            [actual]="row.actual"
+          />
+          @if (row.verdict) {
+            <p class="histogram-panel__verdict">{{ row.label }} {{ row.actual }}: {{ row.verdict }}</p>
+          }
+        }
+      </section>
+    </section>
+  }
+</article>

@@ -11,6 +11,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'projected-stats',
+    title: 'Projected Stats',
+    loadComponent: () =>
+      import('./projected-stats-page/projected-stats-page.component').then(
+        (m) => m.ProjectedStatsPageComponent,
+      ),
+  },
+  {
     path: 'seed-mapper',
     title: 'Seed Mapper',
     loadComponent: () =>

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, HostListener, input, OnInit, output, signal } from '@angular/core';
 import { describeBounds, knownOutcome, RollBounds } from '../models/seed-roll';
-import { snapRank } from '../projection-dialog/projection-dialog.component';
+import { snapRank } from '../class-plan/class-plan.component';
 import { SearchableSelectComponent, SelectItemGroup } from '../searchable-select/searchable-select.component';
 import { ExamDraft } from '../services/seed-mapper-state.service';
 

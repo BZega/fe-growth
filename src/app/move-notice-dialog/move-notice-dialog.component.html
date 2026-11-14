@@ -1,0 +1,27 @@
+<div class="backdrop" (click)="close()"></div>
+
+<div class="dialog dialog--notice" role="dialog" aria-modal="true" aria-labelledby="move-notice-title">
+  <header class="dialog__header">
+    <div>
+      <p class="dialog__eyebrow">FE Growth</p>
+      <h2 id="move-notice-title">We're moving to FE Forge</h2>
+    </div>
+    <button type="button" class="dialog__close" aria-label="Close" (click)="close()">&times;</button>
+  </header>
+
+  <p class="notice__text">
+    We are so happy you have enjoyed FE Growth this far. This site is being deprecated and is moving to
+    <a href="https://feforge.app" target="_blank" rel="noopener noreferrer">FE Forge</a>. We can't wait to see you there!
+  </p>
+
+  <footer class="notice__footer">
+    <label class="notice__dismiss">
+      <input type="checkbox" [checked]="dontShowAgain()" (change)="dontShowAgain.set($any($event.target).checked)" />
+      Don't show this again
+    </label>
+    <a class="button button--primary notice__go" href="https://feforge.app" target="_blank" rel="noopener noreferrer">
+      Go to FE Forge
+    </a>
+    <button type="button" class="button" (click)="close()">Close</button>
+  </footer>
+</div>

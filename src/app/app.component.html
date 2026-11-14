@@ -105,3 +105,7 @@
 @if (supportOpen()) {
   <app-support-dialog (closed)="supportOpen.set(false)" />
 }
+
+@if (moveNoticeOpen()) {
+  <app-move-notice-dialog (closed)="moveNoticeOpen.set(false)" />
+}

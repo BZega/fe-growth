@@ -1,5 +1,6 @@
 import { afterNextRender, Component, DestroyRef, ElementRef, HostListener, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { MoveNoticeDialogComponent, moveNoticeHidden } from './move-notice-dialog/move-notice-dialog.component';
 import { SPOILER_TIERS, SpoilerService, SpoilerTier } from './services/spoiler.service';
 import { SuggestionDialogComponent } from './suggestion-dialog/suggestion-dialog.component';
 import { SupportDialogComponent } from './support-dialog/support-dialog.component';
@@ -12,7 +13,7 @@ const isEditing = () => document.activeElement?.matches(TEXT_FIELD) ?? false;
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, SuggestionDialogComponent, SupportDialogComponent],
+  imports: [MoveNoticeDialogComponent, RouterOutlet, RouterLink, RouterLinkActive, SuggestionDialogComponent, SupportDialogComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -34,6 +35,7 @@ export class AppComponent {
   readonly menuOpen = signal(false);
   readonly suggestionsOpen = signal(false);
   readonly supportOpen = signal(false);
+  readonly moveNoticeOpen = signal(!moveNoticeHidden());
   readonly hideSpoilers = this.spoilers.hidden;
   readonly hiddenTiers = this.spoilers.hiddenTiers;
   readonly spoilerTiers = SPOILER_TIERS;
